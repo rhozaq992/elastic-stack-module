@@ -10,8 +10,12 @@ duluan) memakai `function_score` dan `boost`.
 ## b. Output yang Diharapkan
 
 Sesi ini selesai kalau:
-- Robot Shop jalan (`docker compose ps` semua `healthy`) dan index
-  `robot-shop-catalogue` di Elasticsearch sudah berisi data produk asli.
+- Robot Shop jalan — 7 servis yang punya healthcheck (`catalogue`, `user`,
+  `cart`, `shipping`, `ratings`, `payment`, `web`) berstatus `healthy` di
+  `docker compose ps` (5 servis pendukung — `mongodb`, `redis`, `rabbitmq`,
+  `mysql`, `dispatch` — tidak punya healthcheck sendiri, cukup pastikan
+  statusnya `Up`) — dan index `robot-shop-catalogue` di Elasticsearch
+  sudah berisi data produk asli.
 - Kamu berhasil menjalankan query pencarian yang hasilnya BERUBAH urutan
   setelah ditambah `function_score`/`boost`, dan bisa jelaskan kenapa.
 
@@ -61,8 +65,12 @@ kalau tidak diberi tahu dulu):
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml up -d
 ```
-Tunggu semua service `healthy` (`docker compose ps`) — termasuk `shipping`/
-`ratings` yang butuh waktu lebih lama saat MySQL inisialisasi pertama kali.
+Tunggu servis yang punya healthcheck jadi `healthy` (`docker compose ps`)
+— `catalogue`/`user`/`cart`/`payment`/`web` biasanya cepat, sementara
+`shipping`/`ratings` butuh waktu lebih lama saat MySQL inisialisasi
+pertama kali. (`mongodb`/`redis`/`rabbitmq`/`mysql`/`dispatch` tidak
+punya healthcheck sendiri dan akan selalu tampil tanpa status `healthy`
+di `docker compose ps` — itu normal, cukup pastikan statusnya `Up`.)
 
 > **[Terminal] WAJIB dilakukan dulu — isi rating awal.** Robot Shop yang BARU pertama
 > kali dijalankan punya `avg_rating: 0` untuk SEMUA produk (belum pernah

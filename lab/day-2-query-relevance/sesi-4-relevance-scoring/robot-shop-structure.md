@@ -9,27 +9,31 @@ kamu observasi lewat Elasticsearch/Kibana.
 ## Topologi
 
 ```
-                    ┌─────────┐
-                    │   web   │  (nginx, port 8080 — pintu masuk semua request)
-                    └────┬────┘
-          ┌──────────────┼──────────────┬─────────────┐
-          ▼              ▼              ▼             ▼
-     ┌─────────┐   ┌──────────┐   ┌──────────┐  ┌──────────┐
-     │catalogue│   │   user   │   │ shipping │  │ payment  │
-     └────┬────┘   └────┬─────┘   └────┬─────┘  └────┬─────┘
-          │             │              │             │
-          ▼             ▼              ▼             ▼
-     ┌─────────┐   ┌──────────┐   ┌──────────┐  ┌──────────┐
-     │ mongodb │   │mongodb + │   │  mysql   │  │ rabbitmq │
-     │         │   │  redis   │   │          │  │          │
-     └─────────┘   └──────────┘   └──────────┘  └────┬─────┘
-                                                       ▼
-                                                  ┌──────────┐
-     ┌─────────┐   ┌──────────┐                  │ dispatch │
-     │  cart   │   │ ratings  │                  └──────────┘
-     │ (redis) │   │ (mysql)  │
-     └─────────┘   └──────────┘
+                                 ┌─────────┐
+                                 │   web   │  (nginx, port 8080 — pintu masuk semua request)
+                                 └─────────┘
+                                      │
+     ┌────────────┬────────────┬──────┼─────┬────────────┬────────────┐
+     ▼            ▼            ▼            ▼            ▼            ▼
+┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
+│catalogue│  │   user  │  │   cart  │  │ shipping│  │ ratings │  │ payment │
+└─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘
+     ▼            ▼            ▼            ▼            ▼            ▼
+┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
+│ mongodb │  │mongodb +│  │  redis  │  │  mysql  │  │  mysql  │  │ rabbitmq│
+│         │  │  redis  │  │         │  │         │  │         │  │         │
+└─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘
+                                                                      ▼
+                                                                 ┌─────────┐
+                                                                 │ dispatch│
+                                                                 └─────────┘
 ```
+
+Semua servis di baris atas (`catalogue`, `user`, `cart`, `shipping`,
+`ratings`, `payment`) diakses lewat `web` — konsisten dengan "pintu masuk
+semua request" di atas. `dispatch` beda: dia bukan API yang diakses lewat
+`web`, tapi consumer asinkron yang mengambil pesan dari `rabbitmq` setelah
+`payment` selesai memproses transaksi.
 
 ## Daftar Service
 
