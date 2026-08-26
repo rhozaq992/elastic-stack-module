@@ -80,7 +80,7 @@ campuran tipe data (teks, angka, boolean).
 
 ### Tugas
 
-1. Index index baru bernama `exercise-inventory` lewat `_bulk` API — kali
+1. Index index baru bernama `exercise-toko-produk` lewat `_bulk` API — kali
    ini **susun sendiri** request `_bulk`-nya (tidak ada template
    disediakan), berisi **minimal 5 produk** dengan field:
    - `sku` (kode produk, string, mis. `"SKU-001"`)
@@ -97,7 +97,7 @@ campuran tipe data (teks, angka, boolean).
 
 ### Kriteria Selesai
 
-- Index `exercise-inventory` ada, minimal 5 dokumen dengan field di atas.
+- Index `exercise-toko-produk` ada, minimal 5 dokumen dengan field di atas.
 - Kamu bisa tunjukkan hasil query langkah 2 (minimal 1 hasil).
 - `curl "http://localhost:9200/_cluster/health"` menunjukkan `status`
   bukan `red`.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Validasi Exercise Sesi 1: Latihan 1 (exercise-server-monitoring) dan
-# Latihan 2 (exercise-inventory) ada dengan jumlah dokumen minimal, cluster sehat.
+# Latihan 2 (exercise-toko-produk) ada dengan jumlah dokumen minimal, cluster sehat.
 set -uo pipefail
 
 PASS=0
@@ -26,12 +26,12 @@ else
   check "Latihan 1: index exercise-server-monitoring punya minimal 5 dokumen (count=$count)" 1
 fi
 
-inv_count=$(curl -s "http://localhost:9200/exercise-inventory/_count" 2>/dev/null | grep -o '"count":[0-9]*' | head -1 | grep -o '[0-9]*')
+inv_count=$(curl -s "http://localhost:9200/exercise-toko-produk/_count" 2>/dev/null | grep -o '"count":[0-9]*' | head -1 | grep -o '[0-9]*')
 inv_count=${inv_count:-0}
 if [ "$inv_count" -ge 5 ] 2>/dev/null; then
-  check "Latihan 2: index exercise-inventory punya minimal 5 dokumen (count=$inv_count)" 0
+  check "Latihan 2: index exercise-toko-produk punya minimal 5 dokumen (count=$inv_count)" 0
 else
-  check "Latihan 2: index exercise-inventory punya minimal 5 dokumen (count=$inv_count)" 1
+  check "Latihan 2: index exercise-toko-produk punya minimal 5 dokumen (count=$inv_count)" 1
 fi
 
 status=$(curl -s "http://localhost:9200/_cluster/health" 2>/dev/null | grep -o '"status":"[a-z]*"' | grep -o '[a-z]*"$' | tr -d '"')
