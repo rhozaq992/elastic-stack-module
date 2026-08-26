@@ -1,0 +1,18 @@
+# Load generator Robot Shop -- traffic nyata untuk latihan performance
+# tuning. NUM_CLIENTS default image cuma 1 (terlalu kecil), dinaikkan di
+# sini. ERROR=1 mengaktifkan transaksi anomali (~4% dari traffic, lihat
+# exercise/sesi-6) -- fitur bawaan Robot Shop, image-nya sudah di-tune
+# supaya frekuensinya realistis (lihat docs/instructor untuk detail).
+services:
+  load:
+    image: shirojack/rs-load:v2
+    environment:
+      HOST: http://web:8080
+      NUM_CLIENTS: 20
+      ERROR: 1
+    networks: [robot-shop]
+
+networks:
+  robot-shop:
+    external: true
+    name: sesi-4-relevance-scoring_robot-shop
