@@ -48,9 +48,29 @@ docker compose -f docker-compose.load.yml up -d
 ```
 Expected Output (aktual, dari `docker logs -f <container>_load_1` setelah
 beberapa menit): traffic asli mengalir ke `/api/user/login`,
-`/api/catalogue/*`, `/api/shipping/confirm/*`, dst. — **1383 request, 6
-gagal (0.43%)** pada satu pengukuran nyata (jumlahmu akan beda, traffic
-Robot Shop random — lihat catatan di Sesi 4).
+`/api/catalogue/*`, `/api/shipping/confirm/*`, dst. (jumlahmu akan beda,
+traffic Robot Shop random — lihat catatan di Sesi 4).
+
+> **Temuan performa nyata (bukan cuma teori):** `NUM_CLIENTS` di
+> `docker-compose.load.yml` sengaja diset **rendah (6)** — dicoba nyata
+> dengan `NUM_CLIENTS: 20`, service `payment` (uwsgi, single worker process
+> — lihat `[pid: 6|app: 0|...]` di log-nya) langsung kewalahan dan
+> mengembalikan **HTTP 429** (Too Many Requests) untuk MAYORITAS
+> request — bahkan di `NUM_CLIENTS: 6` pun 429 tetap muncul signifikan.
+> Ini contoh nyata bottleneck performa: satu service dengan kapasitas
+> concurrent request kecil, gejala persis yang mestinya kamu deteksi &
+> selidiki di produksi sungguhan (lihat exercise Sesi 6 untuk latihan
+> membedakan pola 429 "kapasitas" vs pola 500 "anomali transaksi").
+
+Cek breakdown status code hasil traffic ini:
+```
+GET payment-service-parsed-*/_search
+{ "size": 0, "aggs": { "by_status": { "terms": { "field": "http_status" } } } }
+```
+Expected Output (aktual, satu pengukuran nyata): `429: 133`, `200: 14`,
+`500: 13` — **429 justru mendominasi**, bukan 200. Ini sinyal performa
+nyata: `payment` (uwsgi single-worker) adalah bottleneck di topologi Robot
+Shop ini begitu ada beberapa request concurrent.
 
 **Ukur query TANPA cache (request pertama):**
 ```
