@@ -159,6 +159,58 @@ Expected Output (aktual): `"result":"deleted"`, `"_version":3`.
 
 **5. GET setelah delete:** Expected Output (aktual): HTTP 404, `"found":false`.
 
+### Preview: Lihat & Export Data Lewat Discover
+
+Sejauh ini kamu selalu lihat data lewat Dev Tools Console (respons JSON
+mentah). Kibana juga punya **Discover** — tampilan tabel untuk menjelajah
+dokumen tanpa nulis query JSON (dalamnya dipakai penuh mulai Sesi 3).
+Di sini kita coba sekilas pakai data `lab-mapping-demo` yang barusan kamu buat.
+
+**1. Buat Data View** (index custom seperti `lab-mapping-demo` perlu
+didaftarkan dulu supaya muncul di Discover — beda dengan sample data
+bawaan Kibana yang sudah otomatis terdaftar): buka menu ☰ → Discover,
+klik nama data view aktif di kiri atas → **"Create a data view"** → isi
+**Name** dan **Index pattern** dengan `lab-mapping-demo` (index ini tidak
+punya field tanggal, jadi field **Timestamp** dibiarkan kosong) → **Save
+data view to Kibana**.
+
+**2. Filter data pakai KQL** (Kibana Query Language — search bar di atas
+tabel, beda syntax dari Query DSL Dev Tools Console):
+
+![Discover menampilkan 2 dokumen lab-mapping-demo setelah data view dibuat](../../../docs/screenshots/sesi-2/06-discover-lab-mapping-demo.png)
+
+*Discover dengan data view `lab-mapping-demo` aktif — 2 dokumen yang kamu index di bagian (d) muncul di tabel.*
+
+Ketik di search bar: `jabatan_keyword: "Security Operations Analyst"`, lalu Enter.
+
+![Discover dengan filter KQL aktif, menampilkan 1 dokumen hasil filter](../../../docs/screenshots/sesi-2/07-discover-filter-kql.png)
+
+*Filter KQL — hanya 1 dokumen yang cocok, kata yang match di-highlight kuning.*
+
+**3. Export hasil filter ke CSV**: klik ikon **⋮** (More, di sebelah
+kanan "Query in ES|QL") → **Export tab results** → **CSV**:
+
+![Modal Export Discover session as CSV dengan tombol Generate CSV](../../../docs/screenshots/sesi-2/08-export-csv-modal.png)
+
+*Modal export — klik **Generate CSV** untuk memproses hasil filter jadi file CSV.*
+
+Setelah **Generate CSV**, muncul notifikasi "Queued report for search" —
+proses generate-nya **async** (bukan langsung download), buka **Stack
+Management → Reporting** untuk ambil hasilnya:
+
+![Halaman Stack Management Reporting menampilkan laporan CSV siap diunduh](../../../docs/screenshots/sesi-2/09-reporting-download.png)
+
+*Status **Done** — klik ikon download di kolom Actions untuk mengunduh file CSV-nya.*
+
+Expected Output (aktual, isi file CSV yang terunduh):
+```csv
+"_id","_ignored","_index","_score","jabatan_keyword","jabatan_text"
+1,"-","lab-mapping-demo",0.693,"Security Operations Analyst","Security Operations Analyst"
+```
+CSV berisi PERSIS dokumen yang lolos filter (bukan seluruh index) — cara
+ini yang dipakai kalau kamu perlu bagikan hasil pencarian ke orang lain
+dalam bentuk spreadsheet, tanpa mereka perlu akses Kibana.
+
 ## f. Referensi Exercise
 
 Lanjutkan latihan mandiri di [`exercise/sesi-2/README.md`](../../../exercise/sesi-2/README.md).

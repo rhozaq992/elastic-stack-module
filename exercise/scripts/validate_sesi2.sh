@@ -27,6 +27,14 @@ else
   check "Index exercise-inventory punya mapping text DAN keyword" 1
 fi
 
+has_stock=$(echo "$mapping" | grep -o '"stock":{"type":"\(integer\|long\)"}')
+has_kategori=$(echo "$mapping" | grep -o '"kategori":{"type":"keyword"}')
+if [ -n "$has_stock" ] && [ -n "$has_kategori" ]; then
+  check "Mapping punya field stock (angka) dan kategori (keyword) -- minimal 4 field" 0
+else
+  check "Mapping punya field stock (angka) dan kategori (keyword) -- minimal 4 field" 1
+fi
+
 count=$(curl -s "http://localhost:9200/exercise-inventory/_count" 2>/dev/null | grep -o '"count":[0-9]*' | head -1 | grep -o '[0-9]*')
 count=${count:-0}
 if [ "$count" -ge 2 ] 2>/dev/null; then
