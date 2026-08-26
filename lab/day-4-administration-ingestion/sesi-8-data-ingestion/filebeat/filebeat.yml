@@ -1,0 +1,16 @@
+# Filebeat kirim log SEMUA container ke Logstash (bukan langsung ke
+# Elasticsearch) -- Logstash yang menyaring & mem-parsing baris dari
+# container payment/cart/web lewat kondisi filter di masing-masing .conf.
+filebeat.inputs:
+  - type: filestream
+    id: sesi8-all-container-logs
+    paths:
+      - "/var/lib/docker/containers/*/*.log"
+    parsers:
+      - container: ~
+
+output.logstash:
+  hosts: ["logstash-sesi8:5044"]
+
+logging.level: info
+logging.to_stderr: true
