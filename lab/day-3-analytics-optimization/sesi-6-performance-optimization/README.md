@@ -124,6 +124,17 @@ PUT kibana_sample_data_logs/_settings
 { "index": { "refresh_interval": "1s" } }
 ```
 
+**Lihat semua index dari satu tempat** — Kibana **Stack Management → Index
+Management** menampilkan seluruh index di cluster sekaligus (health, status,
+jumlah dokumen, ukuran storage) — cara cepat cek index mana yang paling
+besar/perlu dioptimasi:
+
+![Kibana Index Management menampilkan daftar seluruh index lab dengan document count dan storage size](../../../docs/screenshots/sesi-6/01-index-management.png)
+
+*Stack Management → Index Management → Indices — semua index yang sudah
+kamu buat sepanjang lab ini (sample data, hasil pipeline, index exercise)
+terlihat sekaligus di sini.*
+
 ## f. Referensi Exercise
 
 Lanjutkan latihan mandiri di [`exercise/sesi-6/README.md`](../../../exercise/sesi-6/README.md)

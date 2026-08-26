@@ -124,6 +124,12 @@ Buka Kibana di browser: `http://localhost:5601`. Ini yang akan kamu pakai
 sepanjang lab untuk eksplorasi data (Discover), membuat visualisasi, dan
 administrasi cluster — mulai dipakai aktif dari Sesi 2 seterusnya.
 
+![Kibana halaman utama setelah instalasi berhasil](../../../docs/screenshots/sesi-2/01-kibana-home.png)
+
+*Tampilan Kibana Home kalau instalasi berhasil — kartu Elasticsearch,
+Observability, Security, Analytics, dan tombol "Add integrations" di
+sidebar kiri bawah.*
+
 ## f. Referensi Exercise
 
 Lanjutkan latihan mandiri di [`exercise/sesi-1/README.md`](../../../exercise/sesi-1/README.md).

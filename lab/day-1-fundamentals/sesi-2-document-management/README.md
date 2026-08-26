@@ -35,8 +35,21 @@ tipe field secara otomatis (*dynamic mapping*) saat dokumen pertama masuk.
   **PERSIS** sama — makanya field seperti status, kategori, ID, atau field
   yang dipakai untuk agregasi/sorting sebaiknya bertipe `keyword`.
 
-**Cara menjalankan query di lab ini — Kibana Dev Tools Console.** Mulai
-sesi ini, kamu akan melihat blok seperti:
+**Cara menjalankan query di lab ini — Kibana Dev Tools Console.**
+
+![Kibana halaman utama, klik ikon menu hamburger di kiri atas](../../../docs/screenshots/sesi-2/01-kibana-home.png)
+
+*1. Buka Kibana, klik ikon ☰ (menu) di kiri atas.*
+
+![Sidebar menu Kibana terbuka menampilkan Analytics, Elasticsearch, Observability](../../../docs/screenshots/sesi-2/02-klik-menu-hamburger.png)
+
+*2. Menu sidebar terbuka — Dev Tools ada di bagian bawah menu Elasticsearch/Management (scroll kalau perlu).*
+
+![Kibana Dev Tools Console kosong, siap diisi query](../../../docs/screenshots/sesi-2/03-dev-tools-console-kosong.png)
+
+*3. Halaman Dev Tools Console — panel kiri untuk menulis query, panel kanan untuk hasil.*
+
+Mulai sesi ini, kamu akan melihat blok seperti:
 ```
 GET lab-mapping-demo/_search
 { "query": { ... } }
@@ -76,6 +89,17 @@ POST lab-mapping-demo/_doc/1
 POST lab-mapping-demo/_doc/2?refresh=true
 { "jabatan_text": "Network Security Engineer", "jabatan_keyword": "Network Security Engineer" }
 ```
+
+**Coba dulu query paling sederhana** (`match_all`, tampilkan semua dokumen)
+supaya kamu terbiasa dengan alur ketik-jalankan-baca hasil di Console:
+
+![Query match_all diketik di Dev Tools Console, siap dijalankan](../../../docs/screenshots/sesi-2/04-dev-tools-query-diketik.png)
+
+*4. Ketik query di panel kiri (perhatikan tombol ▶ biru muncul di ujung baris pertama).*
+
+![Hasil response query match_all di Dev Tools Console, menampilkan 2 dokumen](../../../docs/screenshots/sesi-2/05-dev-tools-hasil-response.png)
+
+*5. Klik ▶ (atau `Cmd+Enter`/`Ctrl+Enter`) — hasil muncul di panel kanan: 2 dokumen `lab-mapping-demo` yang barusan kamu index.*
 
 **Query 1** — `match` di field `text` dengan kata `"Security"` (partial match):
 ```

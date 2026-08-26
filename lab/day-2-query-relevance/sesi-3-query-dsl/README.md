@@ -94,6 +94,25 @@ GET kibana_sample_data_ecommerce/_search
 Expected Output (aktual): **469 hits** — pelanggan FEMALE **dan** total
 belanja > 100.
 
+**Query yang sama, lewat UI Discover** (bukan cuma lewat Dev Tools Console
+— Discover pakai sintaks KQL, mirip tapi tidak identik dengan Query DSL):
+
+![Kibana Discover awal, data view belum dipilih](../../../docs/screenshots/sesi-3/01-discover-awal.png)
+
+*1. Buka menu ☰ → Analytics → Discover.*
+
+![Kibana Discover dengan data view Kibana Sample Data eCommerce dipilih](../../../docs/screenshots/sesi-3/03-discover-data-ecommerce.png)
+
+*2. Pilih data view "Kibana Sample Data eCommerce" di pojok kiri atas.*
+
+![Kibana Discover dengan filter KQL customer_gender MALE dan taxful_total_price di atas 200, menampilkan hasil dan histogram](../../../docs/screenshots/sesi-3/04-discover-kql-filter.png)
+
+*3. Ketik filter KQL `customer_gender: "MALE" and taxful_total_price > 200`
+di search bar, tekan Enter — histogram & daftar dokumen ter-update
+otomatis. (Jumlah dokumen di layar bisa beda dari hasil query DSL langsung
+ke ES — Discover membatasi hasil sesuai rentang waktu yang dipilih di
+kanan atas, sedangkan query lewat Dev Tools Console di atas tidak dibatasi waktu.)*
+
 ## e. Contoh Implementasi
 
 **Jebakan: `range` pada field bertipe salah TIDAK error, hasilnya salah diam-diam.**

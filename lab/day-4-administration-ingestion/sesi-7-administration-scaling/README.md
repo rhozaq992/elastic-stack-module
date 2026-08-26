@@ -112,6 +112,16 @@ Expected Output (aktual): count SEBELUM dan SESUDAH restore identik (**1**
 di kedua sisi) — dikonfirmasi nyata, restore benar-benar mengembalikan
 data persis sama, di cluster 3-node sekalipun.
 
+Semua langkah di atas juga bisa dilakukan lewat UI: **Stack Management →
+Snapshot and Restore**:
+
+![Kibana Snapshot and Restore, halaman awal sebelum repository didaftarkan](../../../docs/screenshots/sesi-7/02-snapshot-restore.png)
+
+*Stack Management → Snapshot and Restore — kalau belum ada repository
+terdaftar, tampilannya seperti ini ("Start by registering a repository").
+Setelah kamu register lewat API di atas, tab "Repositories" dan
+"Snapshots" akan menampilkan `lab-fs-repo` dan `snapshot-1`.*
+
 ### Simulasi Failure (High Availability)
 
 ```bash
@@ -151,6 +161,14 @@ PUT _ilm/policy/lab-cluster-policy
 Terapkan lewat index template ke pattern index yang kamu mau kelola
 otomatis (lihat Sesi 8 untuk contoh index hasil pipeline Logstash yang
 cocok dipasangi ILM ini).
+
+Cek lewat UI: **Stack Management → Index Lifecycle Policies**:
+
+![Kibana Index Lifecycle Policies menampilkan lab-cluster-policy dalam daftar policy](../../../docs/screenshots/sesi-7/01-ilm-policies.png)
+
+*Stack Management → Index Lifecycle Policies — `lab-cluster-policy` yang
+barusan kamu buat lewat API muncul di sini bersama policy sistem bawaan
+Elasticsearch/Kibana lainnya.*
 
 ## f. Referensi Exercise
 

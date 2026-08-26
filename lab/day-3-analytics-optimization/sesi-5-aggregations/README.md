@@ -110,13 +110,29 @@ dokumen`. `precision: 3` mengatur seberapa detail grid-nya (angka lebih
 besar = grid lebih kecil/detail, cocok untuk zoom level peta yang berbeda).
 
 **Visualisasi di Kibana.** Hasil agregasi seperti ini adalah dasar dari
-visualisasi Kibana (Discover → Visualize) — `geohash_grid` misalnya
-langsung dipetakan ke visualisasi **Maps**, `date_histogram` ke bar
-chart/line chart time-series. Buka **Kibana → Analytics → Visualize
-Library → Create visualization**, pilih data view
-`kibana_sample_data_logs`, coba bikin bar chart "Count per day" (X-axis:
-`@timestamp` date histogram, Y-axis: Count) untuk melihat langsung hasil
-`requests_per_day` di atas dalam bentuk grafik.
+visualisasi Kibana — `geohash_grid` misalnya langsung dipetakan ke
+visualisasi **Maps**, `date_histogram` ke bar chart/line chart time-series.
+
+![Kibana Visualize Library menampilkan daftar visualisasi tersimpan](../../../docs/screenshots/sesi-5/01-visualize-library.png)
+
+*1. Buka menu ☰ → Analytics → Visualize Library.*
+
+![Modal Create visualization menampilkan pilihan Visualization, Maps, Vega](../../../docs/screenshots/sesi-5/02-pilih-tipe-visualisasi.png)
+
+*2. Klik "Create visualization" — pilih tipe "Visualization" (editor
+point-and-click) untuk bikin bar chart "Count per day" (X-axis:
+`@timestamp` date histogram, Y-axis: Count) dari `kibana_sample_data_logs`
+— hasilnya langsung mencerminkan angka `requests_per_day` yang barusan kamu hitung lewat query.*
+
+**Referensi — dashboard eCommerce bawaan Kibana** (contoh dashboard
+lengkap dengan banyak visualisasi digabung, ship otomatis bareng Kibana
+Sample Data eCommerce):
+
+![Kibana Dashboard eCommerce Revenue menampilkan metric sum of revenue $77,218.02, breakdown kategori, transaksi per hari](../../../docs/screenshots/sesi-5/05-dashboard-ecommerce-jadi.png)
+
+*Buka Dashboards → "[eCommerce] Revenue Dashboard" untuk lihat contoh
+dashboard jadi — gabungan metric, bar chart, dan breakdown kategori,
+semuanya interaktif (klik filter Manufacturer/Category di atas).*
 
 ## f. Referensi Exercise
 
