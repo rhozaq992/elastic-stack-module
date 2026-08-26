@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Validasi Exercise Sesi 6: kibana_sample_data_ecommerce tersedia dan
-# request cache-nya sudah pernah dipakai (hit_count > 0).
+# Validasi Exercise Sesi 6: Bagian 1 (kibana_sample_data_ecommerce +
+# request cache) dan Bagian 2 (data trace APM cart & payment tersedia).
 set -uo pipefail
 
 PASS=0
@@ -34,8 +34,18 @@ else
   check "Request cache punya hit_count > 0 (hit_count=$hits) -- jalankan query size:0 yang sama 2x" 1
 fi
 
+apm_services=$(curl -s "http://localhost:9200/traces-apm-default/_search" -H 'Content-Type: application/json' -d '{"size":0,"aggs":{"svc":{"terms":{"field":"service.name"}}}}' 2>/dev/null | grep -o '"key":"[a-z]*"' | sort -u | wc -l | tr -d ' ')
+apm_services=${apm_services:-0}
+if [ "$apm_services" -ge 2 ] 2>/dev/null; then
+  check "Data trace APM ada untuk minimal 2 service (ditemukan $apm_services)" 0
+else
+  check "Data trace APM ada untuk minimal 2 service (ditemukan $apm_services) -- pastikan load generator sudah jalan beberapa menit" 1
+fi
+
 echo ""
 echo "Ringkasan: $PASS pass, $FAIL fail"
+echo "(Bagian 2 -- perbandingan service tercepat/terlambat dan span breakdown"
+echo "kamu tunjukkan sendiri dari Kibana APM UI, sesuai kriteria di README.)"
 
 if [ "$FAIL" -eq 0 ]; then
   exit 0

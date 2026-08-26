@@ -1,0 +1,136 @@
+# Robot Shop, stack LENGKAP milik sesi ini sendiri (BUKAN reuse network
+# Sesi 4) -- dua service (`cart`, `payment`) pakai image `:v2-apm`
+# (sudah disisipi Elastic APM agent), semua service lain pakai image
+# `:v2` yang sama seperti Sesi 4. Ditambah `apm-server` yang menerima data
+# trace dari kedua service ber-APM itu dan mengirimkannya ke Elasticsearch
+# Sesi 1 (network elk-lab-net, external -- WAJIB stack Sesi 1 sudah jalan).
+#
+# WAJIB: matikan dulu stack Robot Shop Sesi 4 kalau masih jalan
+# (`docker compose down` di folder sesi-4-relevance-scoring) sebelum
+# `docker compose up` di sini -- menjalankan dua Robot Shop sekaligus
+# akan membebani resource host secara signifikan tanpa manfaat tambahan.
+services:
+  mongodb:
+    image: shirojack/rs-mongodb:v2
+    networks: [robot-shop]
+  redis:
+    image: redis:6.2-alpine
+    networks: [robot-shop]
+  rabbitmq:
+    image: rabbitmq:3.8-management-alpine
+    networks: [robot-shop]
+  catalogue:
+    image: shirojack/rs-catalogue:v2
+    depends_on: [mongodb]
+    networks: [robot-shop]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+  user:
+    image: shirojack/rs-user:v2
+    depends_on: [mongodb, redis]
+    networks: [robot-shop]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+  cart:
+    image: shirojack/rs-cart:v2-apm
+    depends_on:
+      redis:
+        condition: service_started
+      apm-server:
+        condition: service_healthy
+    environment:
+      ELASTIC_APM_SERVER_URL: http://apm-server:8200
+      ELASTIC_APM_ENVIRONMENT: training
+    networks: [robot-shop]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+  mysql:
+    image: shirojack/rs-mysql-db:v2
+    cap_add: [NET_ADMIN]
+    networks: [robot-shop]
+  shipping:
+    image: shirojack/rs-shipping:v2
+    depends_on: [mysql]
+    networks: [robot-shop]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+  ratings:
+    image: shirojack/rs-ratings:v2
+    environment:
+      APP_ENV: prod
+    depends_on: [mysql]
+    networks: [robot-shop]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/_health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+  payment:
+    image: shirojack/rs-payment:v2-apm
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      apm-server:
+        condition: service_healthy
+    environment:
+      ELASTIC_APM_SERVER_URL: http://apm-server:8200
+      ELASTIC_APM_ENVIRONMENT: training
+    networks: [robot-shop]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+  dispatch:
+    image: shirojack/rs-dispatch:v2
+    depends_on: [rabbitmq]
+    networks: [robot-shop]
+  web:
+    image: shirojack/rs-web:v2
+    depends_on: [catalogue, user, shipping, payment]
+    ports:
+      - "8080:8080"
+    networks: [robot-shop]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:9.5.2
+    container_name: elk-lab-apm-server
+    depends_on: []
+    volumes:
+      - ./apm-server/apm-server.yml:/usr/share/apm-server/apm-server.yml:ro
+    command: >
+      -e --strict.perms=false
+      -E output.elasticsearch.hosts=["elasticsearch:9200"]
+      -E setup.kibana.host=kibana:5601
+    ports:
+      - "8200:8200"
+    networks: [robot-shop, elk-lab-net]
+    healthcheck:
+      # image apm-server tidak punya curl/wget -- pakai bash /dev/tcp
+      # sebagai pengecekan port terbuka (bash ADA di image ini).
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8200' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+networks:
+  robot-shop:
+  elk-lab-net:
+    external: true

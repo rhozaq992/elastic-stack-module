@@ -1,11 +1,15 @@
-# Exercise Sesi 6 — Profiling Aggregation eCommerce
+# Exercise Sesi 6 — Profiling Aggregation eCommerce + Analisis APM
 
-## Use Case
+Dua bagian: **Bagian 1** lanjutkan agregasi revenue eCommerce dari Sesi 5
+(fokus profiling & cache), **Bagian 2** analisis data trace APM `cart`/
+`payment` yang sudah mengalir dari load generator sesi ini.
+
+## Bagian 1 — Use Case
 
 Lanjutkan agregasi revenue per kategori dari Sesi 5 — kali ini fokus ke
 performanya: apakah query itu efisien, dan apakah request cache benar-benar bekerja?
 
-## Tugas
+## Tugas Bagian 1
 
 1. Jalankan query aggregation `terms` (per `category.keyword`) + `avg` (
    `taxful_total_price`) pada `kibana_sample_data_ecommerce`, dengan
@@ -22,7 +26,7 @@ performanya: apakah query itu efisien, dan apakah request cache benar-benar beke
    selalu terlihat di data kecil. Buktikan pakai `_stats/request_cache`
    (hit_count), bukan cuma `took`.
 
-## Kriteria Selesai
+## Kriteria Bagian 1
 
 - Kamu punya angka `time_in_nanos` dari hasil `_profile`.
 - Kamu punya bukti `hit_count` di `_stats/request_cache` naik setelah
@@ -30,10 +34,8 @@ performanya: apakah query itu efisien, dan apakah request cache benar-benar beke
 - Kamu bisa jelaskan kenapa `took` saja tidak selalu cukup untuk
   membuktikan cache bekerja (terutama di dataset kecil).
 
-## Petunjuk (buka kalau stuck)
-
 <details>
-<summary>Klik untuk lihat command</summary>
+<summary>Petunjuk Bagian 1 (klik kalau stuck)</summary>
 
 ```
 GET kibana_sample_data_ecommerce/_search
@@ -54,7 +56,41 @@ curl "http://localhost:9200/kibana_sample_data_ecommerce/_stats/request_cache?pr
 ```
 </details>
 
-Validasi hasil kerjamu:
+---
+
+## Bagian 2 — Use Case
+
+Tim SRE mau tahu, dari dua service yang sudah ber-APM (`cart`, `payment`),
+service mana yang paling banyak menyumbang latency ke pengalaman
+checkout pengguna, dan endpoint SPESIFIK mana di service itu yang paling
+lambat.
+
+## Tugas Bagian 2
+
+1. Lewat Kibana APM (Service inventory), catat **Latency (avg.)** untuk
+   `cart` dan `payment` — mana yang lebih lambat, dan berapa kali lipat?
+2. Klik ke service yang lebih lambat → tab **Transactions** → catat nama
+   endpoint (`POST /...`) dengan latency tertinggi.
+3. Klik endpoint itu → lihat panel **"Time spent by span type"** — apakah
+   waktunya mayoritas di `app` (kode sendiri) atau di span lain
+   (`http`/`db`/dll)? Ini menentukan ke mana optimasi harus diarahkan.
+4. Susun query Dev Tools Console SENDIRI (tanpa contoh, pola sama seperti
+   di lab bagian e) ke index `traces-apm-default` untuk menghitung
+   `avg(transaction.duration.us)` per `service.name` — bandingkan hasilnya
+   dengan yang kamu lihat di UI langkah 1.
+
+## Kriteria Bagian 2
+
+- Kamu bisa sebutkan service mana yang lebih lambat dan endpoint
+  spesifiknya.
+- Kamu bisa jelaskan APAKAH lambatnya endpoint itu karena kode aplikasi
+  sendiri atau karena panggilan ke sistem lain (berdasarkan "Time spent
+  by span type").
+- Query aggregation manualmu di `traces-apm-default` menghasilkan angka
+  yang KONSISTEN (bukan harus identik persis, tapi service yang sama
+  yang muncul sebagai paling lambat) dengan yang tampil di Kibana APM UI.
+
+Validasi hasil kerjamu (Bagian 1):
 ```bash
 bash exercise/scripts/validate_sesi6.sh
 ```
