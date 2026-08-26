@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 460" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="1000" height="460" fill="#ffffff" rx="12" />
+  <text x="500" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#1a1a1a">High Availability: Cluster 3-Node Elasticsearch</text>
+
+  <!-- Panel 1: Normal -->
+  <text x="250" y="66" text-anchor="middle" font-size="15" font-weight="700" fill="#065f46">Normal — status green</text>
+
+  <rect x="60" y="85" width="130" height="130" rx="10" fill="#ecfdf5" stroke="#047857" stroke-width="2" />
+  <text x="125" y="108" text-anchor="middle" font-size="13" font-weight="700" fill="#065f46">es-node1</text>
+  <text x="125" y="130" text-anchor="middle" font-size="12" fill="#065f46">P0</text>
+  <text x="125" y="150" text-anchor="middle" font-size="12" fill="#065f46">R1</text>
+  <text x="125" y="175" text-anchor="middle" font-size="10" fill="#047857">(master)</text>
+
+  <rect x="205" y="85" width="130" height="130" rx="10" fill="#ecfdf5" stroke="#047857" stroke-width="2" />
+  <text x="270" y="108" text-anchor="middle" font-size="13" font-weight="700" fill="#065f46">es-node2</text>
+  <text x="270" y="130" text-anchor="middle" font-size="12" fill="#065f46">P1</text>
+  <text x="270" y="150" text-anchor="middle" font-size="12" fill="#065f46">R0</text>
+
+  <rect x="350" y="85" width="130" height="130" rx="10" fill="#ecfdf5" stroke="#047857" stroke-width="2" />
+  <text x="415" y="108" text-anchor="middle" font-size="13" font-weight="700" fill="#065f46">es-node3</text>
+  <text x="415" y="130" text-anchor="middle" font-size="12" fill="#065f46">R0</text>
+  <text x="415" y="150" text-anchor="middle" font-size="12" fill="#065f46">R1</text>
+
+  <text x="250" y="242" text-anchor="middle" font-size="11.5" fill="#3f3f46">Tiap primary (P) punya replica (R) di node LAIN.</text>
+  <text x="250" y="260" text-anchor="middle" font-size="11.5" fill="#3f3f46">Semua primary + replica ter-assign -&gt; status green.</text>
+
+  <!-- Divider -->
+  <line x1="500" y1="70" x2="500" y2="420" stroke="#e4e4e7" stroke-width="2" />
+
+  <!-- Panel 2: Node down -->
+  <text x="750" y="66" text-anchor="middle" font-size="15" font-weight="700" fill="#9a3412">1 Node Mati — status yellow, tetap MELAYANI</text>
+
+  <rect x="560" y="85" width="130" height="130" rx="10" fill="#fffbeb" stroke="#b45309" stroke-width="2" />
+  <text x="625" y="108" text-anchor="middle" font-size="13" font-weight="700" fill="#78350f">es-node1</text>
+  <text x="625" y="130" text-anchor="middle" font-size="12" fill="#78350f">P0</text>
+  <text x="625" y="150" text-anchor="middle" font-size="12" fill="#78350f">R1</text>
+  <text x="625" y="175" text-anchor="middle" font-size="10" fill="#b45309">(master)</text>
+
+  <rect x="705" y="85" width="130" height="130" rx="10" fill="#fffbeb" stroke="#b45309" stroke-width="2" />
+  <text x="770" y="108" text-anchor="middle" font-size="13" font-weight="700" fill="#78350f">es-node2</text>
+  <text x="770" y="130" text-anchor="middle" font-size="12" fill="#78350f">P1</text>
+  <text x="770" y="150" text-anchor="middle" font-size="12" fill="#78350f">R0</text>
+
+  <rect x="850" y="85" width="130" height="130" rx="10" fill="#fafafa" stroke="#a1a1aa" stroke-width="2" stroke-dasharray="6 4" />
+  <text x="915" y="108" text-anchor="middle" font-size="13" font-weight="700" fill="#71717a" text-decoration="line-through">es-node3</text>
+  <text x="915" y="135" text-anchor="middle" font-size="11" fill="#a1a1aa">mati</text>
+  <text x="915" y="155" text-anchor="middle" font-size="20" fill="#dc2626">&#10007;</text>
+
+  <text x="750" y="242" text-anchor="middle" font-size="11.5" fill="#3f3f46">R0 di node3 hilang, tapi P0 di node1 dan P1 di node2 utuh.</text>
+  <text x="750" y="260" text-anchor="middle" font-size="11.5" fill="#3f3f46">Baca/tulis tetap jalan -&gt; ini yang disebut High Availability.</text>
+
+  <rect x="60" y="300" width="920" height="130" rx="10" fill="#f4f4f5" stroke="#d4d4d8" stroke-width="1.5" />
+  <text x="80" y="326" font-size="13" font-weight="700" fill="#27272a">Kenapa ini penting dibanding single-node (Sesi 1-6):</text>
+  <text x="80" y="350" font-size="12.5" fill="#3f3f46">Single-node: replica TIDAK PUNYA tempat lain -&gt; status selalu yellow, dan kalau node itu mati, SEMUA data</text>
+  <text x="80" y="370" font-size="12.5" fill="#3f3f46">tidak bisa diakses (tidak ada salinan di tempat lain).</text>
+  <text x="80" y="396" font-size="12.5" fill="#3f3f46">Cluster 3-node: replica tersebar di node lain -&gt; satu node boleh mati, primary DAN replica-nya yang tersisa</text>
+  <text x="80" y="416" font-size="12.5" fill="#3f3f46">di node lain tetap melayani permintaan, tanpa downtime.</text>
+</svg>

@@ -37,7 +37,50 @@ di single-node:
   meski statusnya turun ke `yellow` sampai node itu kembali atau
   Elasticsearch realokasi shard ke node yang tersisa.
 
+![Diagram High Availability cluster 3-node: normal semua node hidup vs 1 node mati tapi tetap melayani](../../../docs/diagrams/sesi7-ha-cluster.svg)
+
+*Perbandingan langsung: di kondisi normal (kiri) primary (P) dan replica
+(R) tersebar di 3 node berbeda. Kalau `es-node3` mati (kanan), primary
+`P0`/`P1` yang tersisa di `es-node1`/`es-node2` masih utuh — cluster
+turun status jadi `yellow` (bukan `red`) dan TETAP melayani baca/tulis.
+Ini yang akan kamu buktikan sendiri di bagian "Simulasi Failure" nanti.*
+
+**Data Retention — hubungannya dengan storage.** "Retention" adalah
+kebijakan berapa lama data disimpan sebelum dihapus otomatis. Ini bukan
+soal disiplin administratif semata — ada hubungan matematis langsung ke
+kapasitas disk:
+
+```
+kebutuhan storage ≈ (rata-rata data masuk per hari) × (jumlah hari retensi) × (1 + jumlah replica)
+```
+
+Index yang tidak pernah dihapus akan tumbuh TANPA BATAS sampai disk
+penuh (lihat catatan `disk_threshold` di bagian d) — makin lama retensi,
+makin besar storage yang dibutuhkan, dan faktor replica (tiap replica =
+salinan penuh data) melipatgandakannya lagi. Inilah kenapa `delete` phase
+di ILM (dibahas di bagian e) bukan fitur opsional untuk data
+log/metrik/trace bervolume tinggi — tanpa retensi, cluster produksi biasa
+akan kehabisan disk dalam hitungan minggu/bulan, bukan tahun. Kebijakan
+retensi yang umum: log aplikasi 7-30 hari, metrik 30-90 hari, data
+compliance/audit bisa tahunan (biasanya dipindah ke tier storage lebih
+murah, bukan disimpan penuh di hot tier — di luar cakupan lab ini).
+
 ## d. Praktik: Instalasi & Konfigurasi
+
+**Sebelum mulai — cek kapasitas host** (dilakukan PROAKTIF, sebelum
+`docker compose up`, supaya tidak ketemu masalah storage/memory di
+tengah jalan seperti catatan `disk_threshold` di bawah):
+```bash
+docker system df                                    # cek disk terpakai Docker
+docker info --format '{{.MemTotal}}'                 # cek RAM total dialokasikan ke Docker Desktop
+```
+Kalau `docker system df` menunjukkan banyak image/build cache menumpuk
+dari sesi-sesi sebelumnya (wajar setelah mengerjakan Sesi 1-6 di host
+yang sama), bersihkan DULU sebelum lanjut: `docker builder prune -f`
+(aman, cuma build cache). Kalau RAM Docker Desktop di bawah 12GB (lihat
+catatan RAM di bawah), naikkan dulu lewat Docker Desktop → Settings →
+Resources → Memory, SEBELUM `docker compose up` — jauh lebih mudah
+dibanding mendiagnosis cluster yang gagal `green` di tengah sesi.
 
 > **RAM:** cluster 3-node ini makan RAM jauh lebih banyak dari single-node
 > Sesi 1-6 — dites nyata, tiap node pakai **~1.4GB RAM** (total **~4.2GB**
