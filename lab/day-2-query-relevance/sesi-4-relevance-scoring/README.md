@@ -39,7 +39,15 @@ dst. Dua cara utama:
 
 *(Prasyarat: stack Sesi 1 masih jalan untuk Elasticsearch/Kibana.)*
 
-**Jalankan Robot Shop** (lihat [`robot-shop-structure.md`](robot-shop-structure.md) untuk detail arsitektur):
+> **Ke mana tiap command di bawah dijalankan?** Sesi ini gabung dua
+> tempat — **Terminal** (semua yang diawali `$`/blok berlabel `bash`:
+> `docker compose`, `curl`, `python3`) untuk operasi di luar Elasticsearch
+> (jalankan Robot Shop, panggil API Robot Shop, transfer data), dan
+> **Kibana Dev Tools Console** (blok `GET`/`POST` TANPA `curl` di
+> depannya, format sama seperti Sesi 2-3) khusus untuk query ke
+> Elasticsearch. Tiap blok di bawah diberi label eksplisit supaya jelas.
+
+**[Terminal] Jalankan Robot Shop** (lihat [`robot-shop-structure.md`](robot-shop-structure.md) untuk detail arsitektur):
 ```bash
 cd lab/day-2-query-relevance/sesi-4-relevance-scoring
 docker compose up -d
@@ -56,7 +64,7 @@ docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml up -d
 Tunggu semua service `healthy` (`docker compose ps`) — termasuk `shipping`/
 `ratings` yang butuh waktu lebih lama saat MySQL inisialisasi pertama kali.
 
-> **WAJIB dilakukan dulu — isi rating awal.** Robot Shop yang BARU pertama
+> **[Terminal] WAJIB dilakukan dulu — isi rating awal.** Robot Shop yang BARU pertama
 > kali dijalankan punya `avg_rating: 0` untuk SEMUA produk (belum pernah
 > ada yang kasih rating) — kalau langsung lanjut ke contoh `function_score`
 > di bawah tanpa langkah ini, query-nya akan jalan tanpa error, TAPI
@@ -78,7 +86,7 @@ Tunggu semua service `healthy` (`docker compose ps`) — termasuk `shipping`/
 > Harvesting Juggernaut, `RMC`=Robotic Mining Cyborg, `STAN-1`=Stan — lihat
 > daftar lengkap lewat `GET /api/catalogue/products`.)
 
-**Ambil data produk asli dari Robot Shop, gabung dengan data rating, index ke Elasticsearch:**
+**[Terminal] Ambil data produk asli dari Robot Shop, gabung dengan data rating, index ke Elasticsearch:**
 ```bash
 python3 << 'PYEOF'
 import json, urllib.request
@@ -115,7 +123,8 @@ index `robot-shop-catalogue`.
 > mirip proses **ETL (Extract-Transform-Load)** sederhana yang umum di
 > dunia nyata sebelum data bisa dicari lewat Elasticsearch.
 
-**Coba search dulu tanpa scoring khusus** — cari produk kategori "Robot":
+**[Dev Tools Console] Coba search dulu tanpa scoring khusus** — buka
+`http://localhost:5601/app/dev_tools#/console`, cari produk kategori "Robot":
 ```
 GET robot-shop-catalogue/_search
 { "query": { "match": { "categories": "Robot" } } }
@@ -127,7 +136,7 @@ produk yang sebenarnya lebih baik/populer.
 
 ## e. Contoh Implementasi
 
-**Boost berdasarkan rating** (`function_score` + `field_value_factor`):
+**[Dev Tools Console] Boost berdasarkan rating** (`function_score` + `field_value_factor`):
 ```
 GET robot-shop-catalogue/_search
 {
@@ -149,15 +158,20 @@ tinggi naik ke atas:
 ```
 2.054  Robotic Mining Cyborg     (rating 5)
 1.948  Stan                      (rating 5)
-1.936  High-Powered Travel Droid (rating 4.33)
+1.872  High-Powered Travel Droid (rating 4.33)
 1.361  Ultimate Harvesting Juggernaut (rating 2)
 0.262  ... (sisanya, rating 0 — skor tidak berubah dari baseline)
 ```
+(Angka desimal ke-2/3 di belakang koma bisa sedikit beda tiap kali index
+dibangun ulang — bagian `match` dari skor ikut bergantung pada statistik
+korpus (jumlah dokumen, panjang field rata-rata), bukan cuma
+`avg_rating`. Urutan dan pola naik/turunnya tetap konsisten.)
+
 `modifier: "ln1p"` (log(1+x)) dipakai supaya rating 5 tidak "meledak"
 dibanding rating 4 — pola umum untuk field yang skalanya kecil (1-5).
 `missing: 0` menangani produk yang belum punya rating sama sekali.
 
-**Boosting kategori tertentu** (`bool.should` dengan `boost`):
+**[Dev Tools Console] Boosting kategori tertentu** (`bool.should` dengan `boost`):
 ```
 GET robot-shop-catalogue/_search
 {
@@ -181,6 +195,34 @@ tapi yang kategorinya "Artificial Intelligence" melonjak ke atas:
 ```
 Ini pola umum e-commerce nyata: "tampilkan semua produk, tapi utamakan
 kategori promosi/prioritas di atas."
+
+**[Kibana UI] Query yang sama, lewat Discover** (tanpa nulis Query DSL
+sama sekali):
+
+**1. Buat Data View** untuk `robot-shop-catalogue` (index custom, sama
+seperti langkah di Sesi 2 untuk `lab-mapping-demo`): buka menu ☰ →
+Discover, klik data view aktif → **Create a data view** → Name & Index
+pattern isi `robot-shop-catalogue` → **Save data view to Kibana**.
+
+![Discover menampilkan 11 dokumen robot-shop-catalogue setelah data view dibuat](../../../docs/screenshots/sesi-4/01-discover-data-view-dibuat.png)
+
+*Data view `robot-shop-catalogue` aktif — 11 produk Robot Shop yang
+di-index di bagian (d) muncul di tabel.*
+
+**2. Tambah kolom `name`, `avg_rating`, `price`** (hover field di
+sidebar kiri → klik ikon **+**, lihat Sesi 3 kalau lupa caranya), lalu
+ketik filter KQL yang setara dengan query `bool.should` di atas:
+`categories: "Artificial Intelligence"`
+
+![Discover dengan filter kategori Artificial Intelligence, kolom name avg_rating price](../../../docs/screenshots/sesi-4/02-discover-search-ai-category.png)
+
+*3 produk kategori "Artificial Intelligence" — Watson, Ewooid, Stan —
+persis sama dengan yang lolos filter di query Dev Tools Console di atas.
+Bedanya: di sini kamu TIDAK dapat kontrol `_score`/`boost` numerik seperti
+Query DSL (KQL cuma filter ya/tidak) — untuk kebutuhan RANKING numerik
+seperti boost rating, tetap perlu Query DSL lewat Dev Tools Console atau
+lewat API dari aplikasi. Discover paling pas untuk eksplorasi cepat,
+bukan pengganti Query DSL untuk relevance tuning.*
 
 ## f. Referensi Exercise
 
