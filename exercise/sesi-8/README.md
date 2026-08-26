@@ -99,8 +99,15 @@ sering punya format log sendiri-sendiri.
    untuk contoh `if [message] =~ "..."`, atau `web-service.conf` untuk
    contoh output ke index baru), grok pattern kamu susun sendiri dari
    struktur yang kamu amati di langkah 3.
-5. Reload Logstash: `docker compose restart logstash-sesi8`, generate
-   traffic baru lagi (langkah 2), lalu verifikasi field ter-extract benar
+5. Reload Logstash — **balik dulu ke folder Sesi 8** (`docker compose
+   restart` butuh dijalankan dari folder yang punya `docker-compose.yml`
+   dengan service itu, bukan dari `crud-app/` tempat kamu terakhir `cd`
+   di langkah 1):
+   ```bash
+   cd lab/day-4-administration-ingestion/sesi-8-data-ingestion
+   docker compose restart logstash-sesi8
+   ```
+   Lalu generate traffic baru lagi (langkah 2, dari `crud-app/`), lalu verifikasi field ter-extract benar
    (bukan `null`, dan field angka seperti `status`/`duration_ms` benar-benar
    bertipe angka, bukan string — cek lewat `_mapping`).
 
