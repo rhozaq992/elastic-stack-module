@@ -39,13 +39,44 @@ dst. Dua cara utama:
 
 *(Prasyarat: stack Sesi 1 masih jalan untuk Elasticsearch/Kibana.)*
 
-**Jalankan Robot Shop** (lihat [`robot-shop-structure.md`](robot-shop-structure.md) untuk detail/catatan ARM):
+**Jalankan Robot Shop** (lihat [`robot-shop-structure.md`](robot-shop-structure.md) untuk detail arsitektur):
 ```bash
 cd lab/day-2-query-relevance/sesi-4-relevance-scoring
 docker compose up -d
 ```
+**Kalau laptopmu ARM (Apple Silicon)** — cek dulu lewat
+`docker info --format '{{.Architecture}}'` (lihat `prerequisites.md`).
+Kalau hasilnya `arm64`, pakai command ini SEBAGAI GANTI yang di atas
+(bukan tambahan) — tanpa ini, `mysql` akan jalan lewat emulasi dengan
+warning platform-mismatch (tetap jalan, tapi lebih lambat & membingungkan
+kalau tidak diberi tahu dulu):
+```bash
+docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml up -d
+```
 Tunggu semua service `healthy` (`docker compose ps`) — termasuk `shipping`/
 `ratings` yang butuh waktu lebih lama saat MySQL inisialisasi pertama kali.
+
+> **WAJIB dilakukan dulu — isi rating awal.** Robot Shop yang BARU pertama
+> kali dijalankan punya `avg_rating: 0` untuk SEMUA produk (belum pernah
+> ada yang kasih rating) — kalau langsung lanjut ke contoh `function_score`
+> di bawah tanpa langkah ini, query-nya akan jalan tanpa error, TAPI
+> urutan hasilnya TIDAK BERUBAH sama sekali (boost dari rating 0 selalu 0),
+> bertentangan dengan Expected Output yang didokumentasikan. Kirim
+> beberapa rating dulu:
+> ```bash
+> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/Watson/5" -o /dev/null
+> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/Watson/4" -o /dev/null
+> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/HPTD/5" -o /dev/null
+> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/HPTD/5" -o /dev/null
+> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/HPTD/3" -o /dev/null
+> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/UHJ/2" -o /dev/null
+> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/RMC/5" -o /dev/null
+> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/RMC/5" -o /dev/null
+> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/STAN-1/5" -o /dev/null
+> ```
+> (SKU: `Watson`, `HPTD`=High-Powered Travel Droid, `UHJ`=Ultimate
+> Harvesting Juggernaut, `RMC`=Robotic Mining Cyborg, `STAN-1`=Stan — lihat
+> daftar lengkap lewat `GET /api/catalogue/products`.)
 
 **Ambil data produk asli dari Robot Shop, gabung dengan data rating, index ke Elasticsearch:**
 ```bash
