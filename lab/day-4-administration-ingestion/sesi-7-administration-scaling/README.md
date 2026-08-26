@@ -67,6 +67,16 @@ murah, bukan disimpan penuh di hot tier — di luar cakupan lab ini).
 
 ## d. Praktik: Instalasi & Konfigurasi
 
+**Matikan dulu stack single-node Sesi 1** — cluster 3-node sesi ini pakai
+port yang SAMA (`9200`) dengan Elasticsearch single-node Sesi 1-6, jadi
+keduanya tidak bisa jalan bersamaan:
+```bash
+cd lab/day-1-fundamentals/sesi-1-intro-elk
+docker compose down
+```
+(Nanti waktu lanjut ke Sesi 8, kamu akan nyalakan lagi stack Sesi 1 ini —
+lihat catatan di README Sesi 8.)
+
 **Sebelum mulai — cek kapasitas host** (dilakukan PROAKTIF, sebelum
 `docker compose up`, supaya tidak ketemu masalah storage/memory di
 tengah jalan seperti catatan `disk_threshold` di bawah):
@@ -124,6 +134,14 @@ Expected Output:
 > `docker system prune` (lebih agresif, hapus image tak terpakai) — cluster
 > akan otomatis re-cek disk dan pindah ke `green` dalam ~30 detik setelah
 > ruang cukup.
+>
+> **Efeknya bukan cuma status `yellow`** — kalau disk-nya BENAR-BENAR
+> penuh (bukan cuma di atas watermark tipis), operasi yang butuh
+> ALOKASI SHARD BARU (termasuk snapshot restore, bukan cuma index baru)
+> bisa gagal total dengan error `no_shard_available_action_exception`,
+> bukan cuma lambat. Kalau kamu ketemu ini saat snapshot/restore
+> (exercise sesi ini), solusinya SAMA: bersihkan disk Docker Desktop
+> dulu, baru ulangi restore-nya — bukan tanda snapshot-nya rusak.
 
 **Lihat daftar node:**
 ```bash
