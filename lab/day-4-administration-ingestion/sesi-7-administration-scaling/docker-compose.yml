@@ -1,0 +1,79 @@
+services:
+  es-node1:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.2
+    container_name: elk-lab-es-node1
+    environment:
+      - node.name=es-node1
+      - cluster.name=elk-lab-cluster
+      - discovery.seed_hosts=es-node2,es-node3
+      - cluster.initial_master_nodes=es-node1,es-node2,es-node3
+      - xpack.security.enabled=false
+      - path.repo=/usr/share/elasticsearch/snapshots
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-node1-data:/usr/share/elasticsearch/data
+      - es-snapshots:/usr/share/elasticsearch/snapshots
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [default]
+
+  es-node2:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.2
+    container_name: elk-lab-es-node2
+    environment:
+      - node.name=es-node2
+      - cluster.name=elk-lab-cluster
+      - discovery.seed_hosts=es-node1,es-node3
+      - cluster.initial_master_nodes=es-node1,es-node2,es-node3
+      - xpack.security.enabled=false
+      - path.repo=/usr/share/elasticsearch/snapshots
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    ports:
+      - "9201:9200"
+    volumes:
+      - es-node2-data:/usr/share/elasticsearch/data
+      - es-snapshots:/usr/share/elasticsearch/snapshots
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [default]
+
+  es-node3:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.2
+    container_name: elk-lab-es-node3
+    environment:
+      - node.name=es-node3
+      - cluster.name=elk-lab-cluster
+      - discovery.seed_hosts=es-node1,es-node2
+      - cluster.initial_master_nodes=es-node1,es-node2,es-node3
+      - xpack.security.enabled=false
+      - path.repo=/usr/share/elasticsearch/snapshots
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    ports:
+      - "9202:9200"
+    volumes:
+      - es-node3-data:/usr/share/elasticsearch/data
+      - es-snapshots:/usr/share/elasticsearch/snapshots
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [default]
+
+networks:
+  default:
+    name: elk-lab-cluster-net
+
+volumes:
+  es-node1-data:
+  es-node2-data:
+  es-node3-data:
+  es-snapshots:

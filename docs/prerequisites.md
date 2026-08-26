@@ -31,9 +31,10 @@ tanpa dicek).
 - **Docker Compose v2** — sudah termasuk di Docker Desktop modern (`docker compose version`,
   bukan `docker-compose` versi lama).
 - **RAM minimal 8GB** dialokasikan ke Docker Desktop (Settings → Resources → Memory)
-  untuk sesi single-node (Hari 1–3). **Sesi 7 (Hari 4, cluster multi-node)
-  butuh RAM lebih besar** — angka pastinya akan disebutkan di README Sesi 7
-  setelah diverifikasi lewat pengujian nyata, jangan asumsikan 8GB cukup untuk sesi itu.
+  untuk sesi single-node (Hari 1–3). **Sesi 7 (Hari 4, cluster 3-node)
+  butuh minimal 12GB** — dites nyata, tiap node Elasticsearch pakai ~1.4GB
+  RAM (~4.2GB total cuma untuk Elasticsearch, di luar overhead Docker
+  Desktop dan Robot Shop yang mungkin masih jalan dari sesi sebelumnya).
 - **Koneksi internet** untuk pull image Docker.
 - **Git** — untuk clone repo.
 
