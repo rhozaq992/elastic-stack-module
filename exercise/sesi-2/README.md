@@ -49,7 +49,7 @@ PUT exercise-inventory
   }
 }
 
-POST exercise-inventory/_doc/1
+PUT exercise-inventory/_doc/1
 { "item_name_text": "Pulpen Standard AE7", "item_name_keyword": "Pulpen Standard AE7", "stock": 50, "kategori": "tulis" }
 
 POST exercise-inventory/_update/1

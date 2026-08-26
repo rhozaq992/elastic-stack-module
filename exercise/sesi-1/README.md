@@ -37,8 +37,11 @@ curl -X POST "http://localhost:9200/exercise-server-monitoring/_bulk?refresh=tru
 ```
 
 2. Cari server mana yang `cpu_percent`-nya di atas 90 (threshold alert) —
-   susun sendiri query-nya pakai `bool`/`filter`/`range` (lihat tabel
-   endpoint di lab Sesi 1 bagian c kalau lupa polanya).
+   susun sendiri query-nya pakai `bool`/`filter`/`range` di endpoint
+   `GET <index>/_search` (lihat tabel endpoint di lab Sesi 1 bagian c untuk
+   pola `<METHOD> host/index/_endpoint`-nya; syntax `bool`/`filter`/`range`
+   sendiri belum pernah diajarkan — belum pernah lihat sebelumnya itu
+   normal, coba dulu, dan buka petunjuk di bawah kalau stuck).
 3. Pastikan cluster tetap `yellow`/`green` (bukan `red`) setelah bulk index.
 
 ### Kriteria Selesai

@@ -83,10 +83,10 @@ Expected Output: `{"acknowledged":true,"shards_acknowledged":true,"index":"lab-m
 
 **Index 2 dokumen contoh:**
 ```
-POST lab-mapping-demo/_doc/1
+PUT lab-mapping-demo/_doc/1
 { "jabatan_text": "Security Operations Analyst", "jabatan_keyword": "Security Operations Analyst" }
 
-POST lab-mapping-demo/_doc/2?refresh=true
+PUT lab-mapping-demo/_doc/2?refresh=true
 { "jabatan_text": "Network Security Engineer", "jabatan_keyword": "Network Security Engineer" }
 ```
 
@@ -132,7 +132,7 @@ CRUD dokumen lewat Dev Tools Console, pakai index baru `lab-demo`:
 
 **1. INDEX (create):**
 ```
-POST lab-demo/_doc/1
+PUT lab-demo/_doc/1
 { "nama": "Budi Santoso", "jabatan": "Security Analyst", "level": "L1" }
 ```
 Expected Output: `"result":"created"`, `"_version":1`, `"_seq_no":0`, `"_primary_term":1`.

@@ -134,7 +134,9 @@ wajar kalau butuh puluhan detik lagi sampai ketiganya `healthy`/`running`.
 ```bash
 docker compose ps
 ```
-Expected Output:
+Expected Output (ringkasan kolom yang penting — output aslimu juga akan
+punya kolom `COMMAND`/`SERVICE`/`CREATED`/`PORTS`, itu normal, fokus ke
+`STATUS`):
 ```
 NAME                    IMAGE                                                 STATUS
 elk-lab-elasticsearch   docker.elastic.co/elasticsearch/elasticsearch:9.5.2  Up (healthy)
@@ -183,8 +185,11 @@ Expected Output:
   "active_shards_percent_as_number" : 96.07843137254902
 }
 ```
-Status **`yellow`** itu **normal** untuk single-node (lihat penjelasan
-Replikasi di atas) — bukan berarti ada yang rusak. Yang harus diperhatikan:
+Angka `active_primary_shards` dan `active_shards_percent_as_number` di
+layarmu **boleh beda** — jumlahnya tergantung index sistem internal Kibana
+yang dibuat otomatis (bisa sedikit beda tiap versi). Status **`yellow`** itu
+**normal** untuk single-node (lihat penjelasan Replikasi di atas) — bukan
+berarti ada yang rusak. Yang harus SAMA dan WAJIB diperhatikan:
 **`unassigned_primary_shards` harus 0**. Kalau bukan nol, baru itu tanda
 ada masalah nyata.
 
