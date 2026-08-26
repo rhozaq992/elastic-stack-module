@@ -67,6 +67,21 @@ Expected Output (aktual):
 ```
 **`green`** — beda dari single-node yang selalu `yellow` (lihat penjelasan di atas).
 
+> **Kalau cluster tetap `yellow` lebih dari ~1 menit** (bukan langsung
+> `green`), cek dulu penyebabnya sebelum curiga ada yang rusak:
+> ```bash
+> curl "http://localhost:9200/_cluster/allocation/explain?pretty"
+> ```
+> Kalau alasannya `disk_threshold` — itu bukan masalah cluster, itu disk
+> Docker Desktop-mu yang penuh (default watermark ES: 85% terpakai baru
+> menahan alokasi shard). Ini kemungkinan besar terjadi kalau kamu sudah
+> mengerjakan banyak sesi sebelumnya di host yang sama (image/volume
+> menumpuk). Solusi: `docker system df` untuk cek pemakaian, lalu
+> `docker builder prune -f` (aman, cuma build cache) atau
+> `docker system prune` (lebih agresif, hapus image tak terpakai) — cluster
+> akan otomatis re-cek disk dan pindah ke `green` dalam ~30 detik setelah
+> ruang cukup.
+
 **Lihat daftar node:**
 ```bash
 curl "http://localhost:9200/_cat/nodes?v"
@@ -77,6 +92,20 @@ salah satunya ditandai `*` di kolom `master` (node yang sedang jadi elected mast
 ## e. Contoh Implementasi
 
 ### Snapshot & Restore
+
+> **WAJIB dilakukan dulu — perbaiki permission volume snapshot.** Volume
+> Docker baru (`es-snapshots`) dibuat dengan owner `root:root` dan mode
+> `755` (grup cuma read+execute, TIDAK write), sementara proses
+> Elasticsearch jalan sebagai `uid 1000` (grup `root`/gid 0). Tanpa langkah
+> ini, `PUT _snapshot` di bawah akan **selalu gagal** dengan
+> `HTTP 500 access_denied_exception: "path is not accessible on master node"`
+> — dikonfirmasi terjadi di SETIAP run baru, di host manapun (bukan
+> masalah sesekali). Jalankan sekali sebelum lanjut:
+> ```bash
+> docker run --rm -v sesi-7-administration-scaling_es-snapshots:/snap alpine chmod -R 775 /snap
+> ```
+> (Ganti prefix nama volume kalau folder project-mu berbeda — cek nama
+> volume asli dengan `docker volume ls | grep es-snapshots`.)
 
 **Setup repository** (`path.repo` di-set saat startup container, sudah
 ada di `docker-compose.yml`):
