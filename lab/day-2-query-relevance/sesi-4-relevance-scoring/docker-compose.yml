@@ -1,0 +1,93 @@
+# Robot Shop -- aplikasi microservice e-commerce contoh, dipakai sebagai
+# studi kasus Sesi 4, 6, dan 8. Semua image di bawah sudah PRE-BUILT
+# (multi-arch: amd64 + arm64) -- kamu HANYA menjalankan `docker compose up`,
+# tidak perlu build/compile apa pun. Lihat robot-shop-structure.md untuk
+# penjelasan arsitekturnya.
+services:
+  mongodb:
+    image: shirojack/rs-mongodb:v2
+    networks: [robot-shop]
+  redis:
+    image: redis:6.2-alpine
+    networks: [robot-shop]
+  rabbitmq:
+    image: rabbitmq:3.8-management-alpine
+    networks: [robot-shop]
+  catalogue:
+    image: shirojack/rs-catalogue:v2
+    depends_on: [mongodb]
+    networks: [robot-shop]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+  user:
+    image: shirojack/rs-user:v2
+    depends_on: [mongodb, redis]
+    networks: [robot-shop]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+  cart:
+    image: shirojack/rs-cart:v2
+    depends_on: [redis]
+    networks: [robot-shop]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+  mysql:
+    image: shirojack/rs-mysql-db:v2
+    cap_add: [NET_ADMIN]
+    networks: [robot-shop]
+  shipping:
+    image: shirojack/rs-shipping:v2
+    depends_on: [mysql]
+    networks: [robot-shop]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+  ratings:
+    image: shirojack/rs-ratings:v2
+    environment:
+      APP_ENV: prod
+    depends_on: [mysql]
+    networks: [robot-shop]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/_health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+  payment:
+    image: shirojack/rs-payment:v2
+    depends_on: [rabbitmq]
+    networks: [robot-shop]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+  dispatch:
+    image: shirojack/rs-dispatch:v2
+    depends_on: [rabbitmq]
+    networks: [robot-shop]
+  web:
+    image: shirojack/rs-web:v2
+    depends_on: [catalogue, user, shipping, payment]
+    ports:
+      - "8080:8080"
+    networks: [robot-shop]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+networks:
+  robot-shop:

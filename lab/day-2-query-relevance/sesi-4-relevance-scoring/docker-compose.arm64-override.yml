@@ -1,0 +1,16 @@
+# WAJIB kalau laptopmu ARM (Apple Silicon) -- lihat prerequisites.md
+# langkah 1 untuk cara cek arsitekturmu.
+#
+# Kenapa perlu ini: 10 dari 11 image Robot Shop custom-built multi-arch
+# (jalan native di ARM maupun amd64). SATU pengecualian: `mysql` (base image
+# `mysql:5.7`) TIDAK punya varian arm64 sama sekali (dikonfirmasi lewat
+# `docker manifest inspect mysql:5.7` -- cuma ada manifest amd64). Force
+# platform amd64 di bawah ini membuat Docker Desktop menjalankannya lewat
+# emulasi (Rosetta di Mac / QEMU) -- fungsional normal, cuma startup-nya
+# sedikit lebih lambat dari service lain.
+#
+# Kalau laptopmu x86/amd64, kamu TIDAK perlu file override ini sama sekali
+# -- mysql sudah native di arsitekturmu.
+services:
+  mysql:
+    platform: linux/amd64
