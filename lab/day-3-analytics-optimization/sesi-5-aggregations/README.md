@@ -46,7 +46,7 @@ segi-enam/kotak, tiap dokumen masuk ke grid sesuai koordinatnya.
 curl -X POST "http://localhost:5601/api/sample_data/logs" \
   -H "kbn-xsrf: true" -H "x-elastic-internal-origin: kibana"
 ```
-Expected Output (aktual): `{"elasticsearchIndicesCreated":{"kibana_sample_data_logs":14074},"kibanaSavedObjectsLoaded":8}`
+Expected Output: `{"elasticsearchIndicesCreated":{"kibana_sample_data_logs":14074},"kibanaSavedObjectsLoaded":8}`
 
 **Agregasi dasar bertingkat** — breakdown response code + rata-rata ukuran response:
 ```
@@ -61,7 +61,7 @@ GET kibana_sample_data_logs/_search
   }
 }
 ```
-Expected Output (aktual):
+Expected Output:
 ```
 200: count=12832, avg_bytes=5897.9
 404: count=801,   avg_bytes=5049.2
@@ -89,7 +89,7 @@ GET kibana_sample_data_logs/_search
   }
 }
 ```
-Expected Output (aktual):
+Expected Output:
 ```
 requests_per_day: 61 bucket harian (mis. "2026-08-16": 1,531,493 bytes)
 avg_daily_bytes:  1,306,978.5
@@ -117,7 +117,7 @@ GET kibana_sample_data_logs/_search
   }
 }
 ```
-Expected Output (aktual):
+Expected Output:
 ```
 595 grid cell terisi
 grid terpadat: "c1c" -> 135 dokumen

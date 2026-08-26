@@ -97,7 +97,7 @@ docker compose up -d
 ```bash
 curl "http://localhost:9200/_cluster/health?pretty"
 ```
-Expected Output (aktual):
+Expected Output:
 ```json
 {
   "cluster_name" : "elk-lab-cluster",
@@ -129,7 +129,7 @@ Expected Output (aktual):
 ```bash
 curl "http://localhost:9200/_cat/nodes?v"
 ```
-Expected Output (aktual): 3 baris (`es-node1`, `es-node2`, `es-node3`),
+Expected Output: 3 baris (`es-node1`, `es-node2`, `es-node3`),
 salah satunya ditandai `*` di kolom `master` (node yang sedang jadi elected master).
 
 ## e. Contoh Implementasi
@@ -143,11 +143,11 @@ saat `docker compose up` — tidak ada langkah manual tambahan):
 PUT _snapshot/lab-fs-repo
 { "type": "fs", "settings": { "location": "/usr/share/elasticsearch/snapshots/lab-fs-repo" } }
 ```
-Expected Output (aktual): `{"acknowledged":true}`. Verifikasi:
+Expected Output: `{"acknowledged":true}`. Verifikasi:
 ```
 POST _snapshot/lab-fs-repo/_verify
 ```
-Expected Output (aktual): `{"nodes":{...3 entry, satu per node...}}`.
+Expected Output: `{"nodes":{...3 entry, satu per node...}}`.
 
 **Index data contoh, lalu snapshot:**
 ```
@@ -157,7 +157,7 @@ POST lab-cluster-demo/_doc?refresh=true
 PUT _snapshot/lab-fs-repo/snapshot-1?wait_for_completion=true
 { "indices": "lab-cluster-demo", "ignore_unavailable": true }
 ```
-Expected Output (aktual): `"state":"SUCCESS"`.
+Expected Output: `"state":"SUCCESS"`.
 
 **Uji restore penuh (hapus lalu kembalikan):**
 ```
@@ -167,7 +167,7 @@ POST _snapshot/lab-fs-repo/snapshot-1/_restore?wait_for_completion=true
 { "indices": "lab-cluster-demo", "include_global_state": false }
 GET lab-cluster-demo/_count                          # -> count: 1 lagi
 ```
-Expected Output (aktual): count SEBELUM dan SESUDAH restore identik (**1**
+Expected Output: count SEBELUM dan SESUDAH restore identik (**1**
 di kedua sisi) — restore benar-benar mengembalikan data persis sama, di
 cluster 3-node sekalipun.
 
@@ -187,13 +187,13 @@ Setelah kamu register lewat API di atas, tab "Repositories" dan
 docker stop elk-lab-es-node3
 curl "http://localhost:9200/_cluster/health?pretty"
 ```
-Expected Output (aktual): status turun ke **`yellow`** (BUKAN `red`),
+Expected Output: status turun ke **`yellow`** (BUKAN `red`),
 `number_of_nodes: 2`, `unassigned_primary_shards: 0` — **data tetap utuh
 dan tetap bisa dibaca**:
 ```bash
 curl "http://localhost:9200/lab-cluster-demo/_search"
 ```
-Expected Output (aktual): dokumen tetap muncul normal, walau 1 dari 3 node mati.
+Expected Output: dokumen tetap muncul normal, walau 1 dari 3 node mati.
 
 **Kembalikan node:**
 ```bash

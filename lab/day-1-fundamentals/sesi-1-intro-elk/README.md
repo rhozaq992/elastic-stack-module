@@ -134,7 +134,7 @@ wajar kalau butuh puluhan detik lagi sampai ketiganya `healthy`/`running`.
 ```bash
 docker compose ps
 ```
-Expected Output (aktual):
+Expected Output:
 ```
 NAME                    IMAGE                                                 STATUS
 elk-lab-elasticsearch   docker.elastic.co/elasticsearch/elasticsearch:9.5.2  Up (healthy)
@@ -146,7 +146,7 @@ elk-lab-logstash        docker.elastic.co/logstash/logstash:9.5.2            Up
 ```bash
 curl http://localhost:9200
 ```
-Expected Output (aktual):
+Expected Output:
 ```json
 {
   "name" : "ec388c5aafb6",
@@ -163,7 +163,7 @@ instance, normal.)
 ```bash
 curl http://localhost:5601/api/status
 ```
-Expected Output (aktual): `{"status":{"overall":{"level":"available"}}}`
+Expected Output: `{"status":{"overall":{"level":"available"}}}`
 
 Kalau belum `available`, tunggu ~20-30 detik lagi (Kibana butuh waktu
 inisialisasi setelah container start) lalu coba ulang.
@@ -172,7 +172,7 @@ inisialisasi setelah container start) lalu coba ulang.
 ```bash
 curl "http://localhost:9200/_cluster/health?pretty"
 ```
-Expected Output (aktual):
+Expected Output:
 ```json
 {
   "cluster_name" : "docker-cluster",
@@ -208,19 +208,19 @@ di atas, lewat terminal (Dev Tools Console baru dikenalkan Sesi 2):
 curl -X PUT "http://localhost:9200/lab-intro-demo/_doc/1" \
   -H 'Content-Type: application/json' -d '{"pesan": "halo elasticsearch", "sesi": 1}'
 ```
-Expected Output (aktual): `{"_index":"lab-intro-demo","_id":"1","result":"created", ...}`
+Expected Output: `{"_index":"lab-intro-demo","_id":"1","result":"created", ...}`
 
 ```bash
 # GET -- ambil kembali dokumen yang barusan disimpan, pakai ID yang sama
 curl "http://localhost:9200/lab-intro-demo/_doc/1?pretty"
 ```
-Expected Output (aktual): `"_source" : { "pesan" : "halo elasticsearch", "sesi" : 1 }`
+Expected Output: `"_source" : { "pesan" : "halo elasticsearch", "sesi" : 1 }`
 
 ```bash
 # DELETE -- bersihkan index demo, tidak dipakai lagi setelah ini
 curl -X DELETE "http://localhost:9200/lab-intro-demo"
 ```
-Expected Output (aktual): `{"acknowledged":true}`
+Expected Output: `{"acknowledged":true}`
 
 Tiga command di atas persis mengikuti pola `<METHOD>
 http://host:9200/<index>/_<endpoint>` yang dijelaskan di bagian (c) — ini

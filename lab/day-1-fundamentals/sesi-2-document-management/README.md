@@ -79,7 +79,7 @@ PUT lab-mapping-demo
   }
 }
 ```
-Expected Output (aktual): `{"acknowledged":true,"shards_acknowledged":true,"index":"lab-mapping-demo"}`
+Expected Output: `{"acknowledged":true,"shards_acknowledged":true,"index":"lab-mapping-demo"}`
 
 **Index 2 dokumen contoh:**
 ```
@@ -106,7 +106,7 @@ supaya kamu terbiasa dengan alur ketik-jalankan-baca hasil di Console:
 GET lab-mapping-demo/_search
 { "query": { "match": { "jabatan_text": "Security" } } }
 ```
-Expected Output (aktual): **2 hits** (kedua dokumen match — `match`
+Expected Output: **2 hits** (kedua dokumen match — `match`
 men-tokenize "Security" dan mencari token itu, cocok di keduanya).
 
 **Query 2** — `term` di field `keyword` dengan kata `"Security"` saja (bukan nilai lengkap):
@@ -114,7 +114,7 @@ men-tokenize "Security" dan mencari token itu, cocok di keduanya).
 GET lab-mapping-demo/_search
 { "query": { "term": { "jabatan_keyword": "Security" } } }
 ```
-Expected Output (aktual): **0 hits** — `term` mencari nilai `keyword` yang
+Expected Output: **0 hits** — `term` mencari nilai `keyword` yang
 PERSIS sama, dan tidak ada dokumen yang nilai `jabatan_keyword`-nya cuma
 `"Security"` (nilainya adalah kalimat lengkap).
 
@@ -123,7 +123,7 @@ PERSIS sama, dan tidak ada dokumen yang nilai `jabatan_keyword`-nya cuma
 GET lab-mapping-demo/_search
 { "query": { "term": { "jabatan_keyword": "Security Operations Analyst" } } }
 ```
-Expected Output (aktual): **1 hit** (dokumen `_id: 1`) — sekarang nilainya
+Expected Output: **1 hit** (dokumen `_id: 1`) — sekarang nilainya
 persis sama, `term` berhasil match.
 
 ## e. Contoh Implementasi
@@ -135,29 +135,29 @@ CRUD dokumen lewat Dev Tools Console, pakai index baru `lab-demo`:
 POST lab-demo/_doc/1
 { "nama": "Budi Santoso", "jabatan": "Security Analyst", "level": "L1" }
 ```
-Expected Output (aktual): `"result":"created"`, `"_version":1`, `"_seq_no":0`, `"_primary_term":1`.
+Expected Output: `"result":"created"`, `"_version":1`, `"_seq_no":0`, `"_primary_term":1`.
 
 **2. GET:**
 ```
 GET lab-demo/_doc/1
 ```
-Expected Output (aktual): `"found":true`, `_source` berisi data yang barusan di-index.
+Expected Output: `"found":true`, `_source` berisi data yang barusan di-index.
 
 **3. UPDATE (partial — cuma field `level`):**
 ```
 POST lab-demo/_update/1
 { "doc": { "level": "L2" } }
 ```
-Expected Output (aktual): `"result":"updated"`, `"_version":2` (naik dari 1).
+Expected Output: `"result":"updated"`, `"_version":2` (naik dari 1).
 `GET` ulang menunjukkan `"level": "L2"` sementara field lain tidak berubah.
 
 **4. DELETE:**
 ```
 DELETE lab-demo/_doc/1
 ```
-Expected Output (aktual): `"result":"deleted"`, `"_version":3`.
+Expected Output: `"result":"deleted"`, `"_version":3`.
 
-**5. GET setelah delete:** Expected Output (aktual): HTTP 404, `"found":false`.
+**5. GET setelah delete:** Expected Output: HTTP 404, `"found":false`.
 
 ### Preview: Lihat & Export Data Lewat Discover
 
@@ -202,7 +202,7 @@ Management → Reporting** untuk ambil hasilnya:
 
 *Status **Done** — klik ikon download di kolom Actions untuk mengunduh file CSV-nya.*
 
-Expected Output (aktual, isi file CSV yang terunduh):
+Expected Output (isi file CSV yang terunduh):
 ```csv
 "_id","_ignored","_index","_score","jabatan_keyword","jabatan_text"
 1,"-","lab-mapping-demo",0.693,"Security Operations Analyst","Security Operations Analyst"

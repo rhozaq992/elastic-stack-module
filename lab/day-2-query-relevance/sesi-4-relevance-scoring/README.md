@@ -112,7 +112,7 @@ PYEOF
 curl -s -X POST "http://localhost:9200/robot-shop-catalogue/_bulk?refresh=true" \
   -H 'Content-Type: application/x-ndjson' --data-binary @/tmp/catalogue_bulk.ndjson
 ```
-Expected Output (aktual): `"errors":false`, 11 item — 11 produk asli
+Expected Output: `"errors":false`, 11 item — 11 produk asli
 Robot Shop (nama, deskripsi, harga, stok, kategori, rating) sekarang ada di
 index `robot-shop-catalogue`.
 
@@ -129,7 +129,7 @@ index `robot-shop-catalogue`.
 GET robot-shop-catalogue/_search
 { "query": { "match": { "categories": "Robot" } } }
 ```
-Expected Output (aktual): **9 hits**, tapi perhatikan `_score`-nya —
+Expected Output: **9 hits**, tapi perhatikan `_score`-nya —
 hampir semua dokumen dapat skor **SAMA** (`0.262`), karena `match` cuma
 menilai relevansi teks "Robot" di field `categories`, tidak tahu mana
 produk yang sebenarnya lebih baik/populer.
@@ -153,7 +153,7 @@ GET robot-shop-catalogue/_search
   }
 }
 ```
-Expected Output (aktual) — urutan sekarang berubah total, produk rating
+Expected Output — urutan sekarang berubah total, produk rating
 tinggi naik ke atas:
 ```
 2.054  Robotic Mining Cyborg     (rating 5)
@@ -185,7 +185,7 @@ GET robot-shop-catalogue/_search
   }
 }
 ```
-Expected Output (aktual) — SEMUA produk tetap muncul (`must: match_all`),
+Expected Output — SEMUA produk tetap muncul (`must: match_all`),
 tapi yang kategorinya "Artificial Intelligence" melonjak ke atas:
 ```
 7.208  Watson   (kategori: Artificial Intelligence)

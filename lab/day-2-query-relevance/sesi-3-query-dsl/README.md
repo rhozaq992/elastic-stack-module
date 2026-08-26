@@ -60,7 +60,7 @@ sepanjang Sesi 3-5):
 curl -X POST "http://localhost:5601/api/sample_data/ecommerce" \
   -H "kbn-xsrf: true" -H "x-elastic-internal-origin: kibana"
 ```
-Expected Output (aktual): `{"elasticsearchIndicesCreated":{"kibana_sample_data_ecommerce":4675},"kibanaSavedObjectsLoaded":7}`
+Expected Output: `{"elasticsearchIndicesCreated":{"kibana_sample_data_ecommerce":4675},"kibanaSavedObjectsLoaded":7}`
 
 Field yang relevan: `category` (text), `customer_gender` (keyword),
 `taxful_total_price` (angka), `order_date` (tanggal).
@@ -70,7 +70,7 @@ Field yang relevan: `category` (text), `customer_gender` (keyword),
 GET kibana_sample_data_ecommerce/_search
 { "query": { "match": { "category": "Clothing" } } }
 ```
-Expected Output (aktual): **3927 hits.** `match` tokenize "Clothing" dan
+Expected Output: **3927 hits.** `match` tokenize "Clothing" dan
 mencocokkan ke field `category` yang juga di-tokenize — cocok dengan
 "Women's Clothing", "Men's Clothing", dll., bukan cuma yang persis "Clothing".
 
@@ -79,7 +79,7 @@ mencocokkan ke field `category` yang juga di-tokenize — cocok dengan
 GET kibana_sample_data_ecommerce/_search
 { "query": { "match_phrase": { "category": "Women's Clothing" } } }
 ```
-Expected Output (aktual): **1903 hits.** Beda dengan `match` biasa —
+Expected Output: **1903 hits.** Beda dengan `match` biasa —
 `match_phrase` mensyaratkan kata-katanya berurutan bersebelahan, jadi
 dokumen dengan category "Men's Clothing" TIDAK ikut match.
 
@@ -88,7 +88,7 @@ dokumen dengan category "Men's Clothing" TIDAK ikut match.
 GET kibana_sample_data_ecommerce/_search
 { "query": { "term": { "customer_gender": "FEMALE" } } }
 ```
-Expected Output (aktual): **2433 hits.** `customer_gender` bertipe
+Expected Output: **2433 hits.** `customer_gender` bertipe
 `keyword`, jadi `term` mencari nilai yang PERSIS `"FEMALE"` (case-sensitive,
 tidak di-tokenize).
 
@@ -104,7 +104,7 @@ GET kibana_sample_data_ecommerce/_search
   }
 }
 ```
-Expected Output (aktual): **469 hits** — pelanggan FEMALE **dan** total
+Expected Output: **469 hits** — pelanggan FEMALE **dan** total
 belanja > 100.
 
 **Query yang sama, lewat UI Discover** (bukan cuma lewat Dev Tools Console
@@ -197,7 +197,7 @@ Beda dengan `term` di atas yang tegas menolak nilai tidak persis, `range`
 GET kibana_sample_data_ecommerce/_search
 { "query": { "range": { "customer_gender": { "gt": 100 } } } }
 ```
-Expected Output (aktual): **HTTP 200, mengembalikan SEMUA 4675 dokumen** —
+Expected Output: **HTTP 200, mengembalikan SEMUA 4675 dokumen** —
 bukan error, bukan 0 hits. Elasticsearch membandingkan `100` sebagai
 **string** `"100"` secara leksikografis terhadap `"FEMALE"`/`"MALE"`, dan
 kebetulan kedua nilai itu > `"100"` secara alfabetis, jadi semua dokumen

@@ -84,7 +84,7 @@ curl "http://localhost:9200/payment-service-parsed-*/_count"
 curl "http://localhost:9200/cart-service-parsed-*/_count"
 curl "http://localhost:9200/web-service-parsed-*/_count"
 ```
-Expected Output (aktual, satu pengukuran nyata — angkamu akan beda,
+Expected Output (satu pengukuran nyata — angkamu akan beda,
 tergantung berapa lama traffic sudah mengalir):
 ```
 payment-service-parsed-*: 322
@@ -125,14 +125,14 @@ apt-get update -qq
 ```bash
 apt-get install -y filebeat=9.5.2 logstash=1:9.5.2-1
 ```
-Expected Output (aktual): kedua paket ke-download & ter-install lewat
+Expected Output: kedua paket ke-download & ter-install lewat
 `dpkg`, sama persis seperti install package Linux lain (`apt-get install
 nginx`, dst.) — TIDAK ada langkah spesial. Verifikasi:
 ```bash
 /usr/share/filebeat/bin/filebeat version
 /usr/share/logstash/bin/logstash --version
 ```
-Expected Output (aktual): `filebeat version 9.5.2 (arm64)...` dan
+Expected Output: `filebeat version 9.5.2 (arm64)...` dan
 `logstash 9.5.2`.
 
 **3. Buat config Logstash** — pipeline sederhana, baca file, parsing
@@ -202,7 +202,7 @@ sebelum lanjut ke langkah 7 — cek dengan `tail -f /tmp/ls-logs/logstash-plain.
   --path.home /usr/share/filebeat --path.config /etc/filebeat \
   --path.data /tmp/fb-data --path.logs /tmp/fb-logs
 ```
-Expected Output (aktual) — di terminal Logstash (langkah 6), 5 dokumen
+Expected Output — di terminal Logstash (langkah 6), 5 dokumen
 ter-parse, tiap dokumen berisi `response.status_code`, `url.original`,
 `source.address`, `user_agent.original` — PERSIS field yang sama seperti
 hasil parsing `web-service.conf` terhadap log Robot Shop, membuktikan
@@ -233,7 +233,7 @@ docker rm -f native-vm
 GET payment-service-parsed-*/_search
 { "query": { "exists": { "field": "http_status" } }, "size": 1 }
 ```
-Expected Output (aktual) — field `payment_user`, `http_status`,
+Expected Output — field `payment_user`, `http_status`,
 `response_time_ms`, `response_bytes` ter-extract dari baris log plain-text:
 ```json
 {
@@ -252,7 +252,7 @@ MUNGKIN ada tergantung performa host-mu (429, kapasitas):
 GET payment-service-parsed-*/_search
 { "size": 0, "aggs": { "by_status": { "terms": { "field": "http_status" } } } }
 ```
-Expected Output (aktual, dari SALAH SATU pengukuran nyata — punyamu bisa
+Expected Output (dari SALAH SATU pengukuran nyata — punyamu bisa
 beda total): `429: 133`, `200: 14`, `500: 13`. **Kalau di layarmu tidak ada
 `429` sama sekali dan hampir semua `200`** — itu normal juga, artinya host-mu
 cukup kuat menangani `NUM_CLIENTS: 6` tanpa `payment` kewalahan (lihat
@@ -265,7 +265,7 @@ GET payment-service-parsed-*/_search
 { "size": 0, "query": { "term": { "http_status": 500 } },
   "aggs": { "by_user": { "terms": { "field": "payment_user.keyword" } } } }
 ```
-Expected Output (aktual): **SEMUA dokumen `http_status: 500` berasal
+Expected Output: **SEMUA dokumen `http_status: 500` berasal
 dari SATU user id yang sama, `partner-57`** — bukan pola `anonymous-N`
 normal. Ini transaksi yang sengaja disuntik (fitur `ERROR=1` load
 generator, lihat Sesi 6) — pola KONSENTRASI pada satu identitas

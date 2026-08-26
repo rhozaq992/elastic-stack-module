@@ -110,7 +110,7 @@ sumber data trace APM untuk `cart`/`payment`):
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.load.yml up -d load
 ```
-Expected Output (aktual, dari `docker compose logs -f load` setelah
+Expected Output (dari `docker compose logs -f load` setelah
 beberapa menit): traffic asli mengalir ke `/api/user/login`,
 `/api/catalogue/*`, `/api/shipping/confirm/*`, dst. (jumlahmu akan beda,
 traffic Robot Shop random — lihat catatan di Sesi 4).
@@ -140,19 +140,19 @@ traffic Robot Shop random — lihat catatan di Sesi 4).
 GET kibana_sample_data_logs/_search
 { "size": 0, "query": { "bool": { "filter": [ { "range": { "bytes": { "gt": 5000 } } } ] } } }
 ```
-Expected Output (aktual): `"took": 3` (ms), `"hits":{"total":{"value":7696}}`.
+Expected Output: `"took": 3` (ms), `"hits":{"total":{"value":7696}}`.
 
 **Jalankan query PERSIS SAMA lagi:**
 ```
 GET kibana_sample_data_logs/_search
 { "size": 0, "query": { "bool": { "filter": [ { "range": { "bytes": { "gt": 5000 } } } ] } } }
 ```
-Expected Output (aktual): `"took": 0` (ms) — request cache Elasticsearch
+Expected Output: `"took": 0` (ms) — request cache Elasticsearch
 langsung mengembalikan hasil tanpa eksekusi ulang. Cek statistiknya:
 ```
 GET kibana_sample_data_logs/_stats/request_cache
 ```
-Expected Output (aktual): `hit_count: 1`, `miss_count: 4` (angka `miss`
+Expected Output: `hit_count: 1`, `miss_count: 4` (angka `miss`
 lebih dari 1 karena tiap shard punya cache-nya sendiri).
 
 ## e. Contoh Implementasi
@@ -239,7 +239,7 @@ GET traces-apm-default/_search
   }
 }
 ```
-Expected Output (aktual, pola-nya — angka pastimu tergantung berapa lama
+Expected Output (pola-nya — angka pastimu tergantung berapa lama
 load generator sudah jalan): dua bucket, `cart` dengan
 `avg_duration_ms` di kisaran satuan milidetik, `payment` di kisaran
 ratusan milidetik — konsisten dengan yang tampil di Service Inventory di atas.
@@ -255,7 +255,7 @@ GET kibana_sample_data_logs/_search
   "query": { "bool": { "filter": [ { "range": { "bytes": { "gt": 5000 } } } ] } }
 }
 ```
-Expected Output (aktual): `profile.shards[0].searches[0].query[0]` berisi
+Expected Output: `profile.shards[0].searches[0].query[0]` berisi
 `"type": "ConstantScoreQuery"`, `"time_in_nanos": 299250` (~0.3ms), dan
 `breakdown` — rincian per operasi internal (`match_count`,
 `next_doc`, dst.). Query kompleks/lambat akan menunjukkan operasi mana
@@ -268,7 +268,7 @@ index jutaan dokumen, menaikkan interval ini mengurangi overhead):
 PUT kibana_sample_data_logs/_settings
 { "index": { "refresh_interval": "30s" } }
 ```
-Expected Output (aktual): `{"acknowledged":true}`. **Setelah bulk load
+Expected Output: `{"acknowledged":true}`. **Setelah bulk load
 selesai, WAJIB dikembalikan** ke default (atau nilai produksi normal),
 supaya data baru kembali cepat muncul di pencarian:
 ```
