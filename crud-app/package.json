@@ -1,0 +1,13 @@
+{
+  "name": "task-tracker-crud-app",
+  "version": "1.0.0",
+  "description": "Simple in-memory Task Tracker CRUD API, custom pipe-delimited access log format -- used for Sesi 8 manual log parsing exercise.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Validasi Exercise Sesi 8: index payment-service-parsed-* punya transaksi
-# anomali (http_status 500) yang bisa dianalisis.
+# Validasi Exercise Sesi 8: Bagian 1 (payment-service-parsed-* punya
+# transaksi anomali http_status 500) dan Bagian 2 (pipeline parser
+# custom untuk Task Tracker menghasilkan index dengan field numerik benar).
 set -uo pipefail
 
 PASS=0
@@ -42,6 +43,21 @@ if [ "$count_200" -gt 0 ] 2>/dev/null; then
   check "payment-service-parsed-* punya transaksi normal http_status=200 untuk pembanding (count=$count_200)" 0
 else
   check "payment-service-parsed-* punya transaksi normal http_status=200 untuk pembanding (count=$count_200)" 1
+fi
+
+tt_count=$(curl -s "http://localhost:9200/task-tracker-parsed-*/_count" 2>/dev/null | grep -o '"count":[0-9]*' | head -1 | grep -o '[0-9]*')
+tt_count=${tt_count:-0}
+if [ "$tt_count" -gt 0 ] 2>/dev/null; then
+  check "Bagian 2: index task-tracker-parsed-* punya dokumen ter-parse (count=$tt_count)" 0
+else
+  check "Bagian 2: index task-tracker-parsed-* punya dokumen ter-parse (count=$tt_count) -- pastikan pipeline .conf sudah dibuat dan logstash-sesi8 sudah di-restart" 1
+fi
+
+tt_status_type=$(curl -s "http://localhost:9200/task-tracker-parsed-*/_mapping" 2>/dev/null | grep -o '"status":{"type":"[a-z]*"' | head -1 | grep -oE '"(long|integer|short)"$')
+if [ -n "$tt_status_type" ]; then
+  check "Bagian 2: field status di-mapping sebagai tipe numerik" 0
+else
+  check "Bagian 2: field status di-mapping sebagai tipe numerik -- cek grok pattern-mu pakai :int" 1
 fi
 
 echo ""

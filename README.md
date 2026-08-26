@@ -33,3 +33,6 @@ lebih dulu, lalu **[`docs/prerequisites.md`](docs/prerequisites.md)**.
 Silabus lengkap (tujuan, topik, output tiap sesi): [`Silabus_ELK_Training_V2.xlsx`](Silabus_ELK_Training_V2.xlsx).
 
 Setelah tiap sesi, lanjutkan ke latihan mandiri di [`exercise/`](exercise/).
+
+[`crud-app/`](crud-app/) — aplikasi CRUD demo kecil dipakai khusus untuk
+latihan parsing log manual di Exercise Sesi 8.

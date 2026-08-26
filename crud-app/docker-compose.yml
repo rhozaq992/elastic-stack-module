@@ -1,0 +1,6 @@
+services:
+  task-tracker:
+    build: .
+    container_name: task-tracker
+    ports:
+      - "3000:3000"

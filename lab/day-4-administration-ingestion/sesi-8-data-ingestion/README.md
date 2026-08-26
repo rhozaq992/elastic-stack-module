@@ -5,13 +5,19 @@
 Setelah sesi ini, kamu mampu membangun pipeline ingestion data dari sumber
 nyata (log container Robot Shop) ke Elasticsearch memakai Filebeat +
 Logstash, termasuk parsing 3 format log yang berbeda (grok manual, JSON,
-dan format standar industri).
+dan format standar industri) — DAN kamu tahu cara **install Filebeat &
+Logstash langsung di Linux (VM/bare-metal)**, bukan cuma lewat image
+Docker resmi, supaya skill ini bisa kamu terapkan di server nyata di
+luar lab ini.
 
 ## b. Output yang Diharapkan
 
 Sesi ini selesai kalau index `payment-service-parsed-*`,
 `cart-service-parsed-*`, dan `web-service-parsed-*` terisi dokumen nyata
-dari log Robot Shop, dengan field yang benar ter-extract (bukan `null`).
+dari log Robot Shop (dengan field yang benar ter-extract, bukan `null`),
+DAN kamu berhasil install + jalankan Filebeat & Logstash secara manual
+(bukan image Docker Elastic) di sebuah container Linux polos, memverifikasi
+sendiri datanya mengalir Filebeat → Logstash → parsed output.
 
 ## c. Teori & Struktur Sistem
 
@@ -32,7 +38,7 @@ Filebeat (root, baca /var/lib/docker/containers)
 
 > **Kenapa balik ke single-node Sesi 1, bukan lanjut cluster 3-node
 > Sesi 7?** Dites nyata: menjalankan cluster 3-node Sesi 7 BERSAMAAN
-> dengan Robot Shop (Sesi 4) + load generator (Sesi 6) + pipeline sesi ini
+> dengan Robot Shop (Sesi 6) + load generator + pipeline sesi ini
 > sekaligus butuh RAM lebih dari yang tersedia di banyak laptop — pada
 > pengujian ini bahkan sampai bikin salah satu node ES mati ke-OOM-kill
 > Docker. Sesi 7 sengaja jadi modul MANDIRI (boleh kamu matikan setelah
@@ -56,7 +62,9 @@ field `tags` di ES kalau field yang diharapkan kosong.
 
 ## d. Praktik: Instalasi & Konfigurasi
 
-*(Prasyarat: stack single-node Sesi 1 dan Robot Shop Sesi 4 masih jalan.
+*(Prasyarat: stack single-node Sesi 1 dan Robot Shop Sesi 6 masih jalan.
+Kalau sudah kamu matikan, nyalakan lagi dulu:
+`cd lab/day-3-analytics-optimization/sesi-6-performance-optimization && docker compose up -d`.
 Traffic dari load generator Sesi 6 sebaiknya masih mengalir supaya ada log
 untuk di-parsing.)*
 
@@ -82,6 +90,140 @@ tergantung berapa lama traffic sudah mengalir):
 payment-service-parsed-*: 322
 cart-service-parsed-*: 2206
 web-service-parsed-*: 3138
+```
+
+### Instalasi Manual Filebeat & Logstash (VM / Bare-Metal)
+
+Semua Filebeat/Logstash yang kamu pakai sepanjang lab ini jalan lewat
+**image Docker resmi Elastic** — praktis untuk lab, tapi di dunia nyata
+kamu akan sering ketemu server (VM cloud, bare-metal on-prem) yang TIDAK
+pakai Docker sama sekali. Bagian ini melatih skill itu: install Filebeat
+& Logstash **langsung di OS Linux** pakai package manager, bukan cuma
+`docker pull`.
+
+**Siapkan "VM" percobaan** (container Ubuntu polos — di server sungguhan,
+ini langsung jadi VM/bare-metal Linux-mu, langkah-langkah di bawah PERSIS
+SAMA):
+```bash
+docker run -d --name native-vm ubuntu:22.04 sleep infinity
+docker exec -it native-vm bash
+```
+Sisa langkah di bagian ini dijalankan **DI DALAM** `native-vm` (prompt shell-nya).
+
+**1. Tambahkan repository resmi Elastic** (APT, untuk Debian/Ubuntu — versi
+RHEL/CentOS pakai `yum`/`dnf` dengan repo `.repo` setara, pola sama):
+```bash
+apt-get update -qq && apt-get install -y curl gnupg apt-transport-https
+
+curl -fsSL https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor -o /usr/share/keyrings/elastic.gpg
+echo "deb [signed-by=/usr/share/keyrings/elastic.gpg] https://artifacts.elastic.co/packages/9.x/apt stable main" > /etc/apt/sources.list.d/elastic-9.x.list
+apt-get update -qq
+```
+
+**2. Install Filebeat & Logstash** (pin versi sama dengan stack lab ini,
+9.5.2 — supaya kompatibel):
+```bash
+apt-get install -y filebeat=9.5.2 logstash=1:9.5.2-1
+```
+Expected Output (aktual): kedua paket ke-download & ter-install lewat
+`dpkg`, sama persis seperti install package Linux lain (`apt-get install
+nginx`, dst.) — TIDAK ada langkah spesial. Verifikasi:
+```bash
+/usr/share/filebeat/bin/filebeat version
+/usr/share/logstash/bin/logstash --version
+```
+Expected Output (aktual): `filebeat version 9.5.2 (arm64)...` dan
+`logstash 9.5.2`.
+
+**3. Buat config Logstash** — pipeline sederhana, baca file, parsing
+`%{COMBINEDAPACHELOG}` (pattern bawaan Logstash, sama seperti
+`web-service.conf` yang kamu pakai untuk Robot Shop), output ke `stdout`
+dulu (supaya hasilnya langsung kelihatan tanpa perlu setup Elasticsearch
+di container percobaan ini):
+```bash
+mkdir -p /etc/logstash/conf.d
+cat > /etc/logstash/conf.d/native-demo.conf << 'EOF'
+input {
+  beats { port => 5044 }
+}
+filter {
+  grok { match => { "message" => "%{COMBINEDAPACHELOG}" } }
+}
+output {
+  stdout { codec => rubydebug }
+}
+EOF
+chown logstash:logstash /etc/logstash/conf.d/native-demo.conf
+```
+
+**4. Buat config Filebeat** — baca file log contoh, kirim ke Logstash
+(pola arsitektur SAMA seperti bagian d di atas — Filebeat baca file,
+kirim ke Logstash lewat port beats):
+```bash
+mkdir -p /etc/filebeat
+cat > /etc/filebeat/filebeat.yml << 'EOF'
+filebeat.inputs:
+  - type: filestream
+    id: native-demo
+    paths:
+      - /tmp/sample-access.log
+
+output.logstash:
+  hosts: ["localhost:5044"]
+EOF
+```
+
+**5. Siapkan data contoh** (mensimulasikan log Apache/Nginx access —
+format standar yang sama seperti yang kamu temukan di dokumentasi resmi
+Apache/Nginx atau tutorial mana pun di internet soal Combined Log Format):
+```bash
+cat > /tmp/sample-access.log << 'EOF'
+203.0.113.42 - - [12/Mar/2026:08:14:23 +0000] "GET /index.html HTTP/1.1" 200 4523 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+198.51.100.17 - - [12/Mar/2026:08:14:25 +0000] "GET /images/logo.png HTTP/1.1" 200 1820 "http://example.com/index.html" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
+203.0.113.99 - - [12/Mar/2026:08:14:31 +0000] "POST /api/login HTTP/1.1" 401 512 "-" "curl/8.4.0"
+198.51.100.5 - - [12/Mar/2026:08:14:40 +0000] "GET /favicon.ico HTTP/1.1" 404 209 "-" "Mozilla/5.0 (X11; Linux x86_64)"
+203.0.113.7 - - [12/Mar/2026:08:15:02 +0000] "GET /products?category=shoes HTTP/1.1" 200 8877 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)"
+EOF
+```
+
+**6. Jalankan Logstash** (background, non-root user `logstash` — di
+server sungguhan ini biasanya `systemctl enable --now logstash`, tapi
+container percobaan ini tidak punya systemd, jadi jalankan manual):
+```bash
+mkdir -p /tmp/ls-data /tmp/ls-logs && chown logstash:logstash /tmp/ls-data /tmp/ls-logs
+su logstash -c "/usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/native-demo.conf --path.data /tmp/ls-data --path.logs /tmp/ls-logs &"
+```
+Tunggu sampai muncul log `Pipelines running` (~30-40 detik, JVM startup)
+sebelum lanjut ke langkah 7 — cek dengan `tail -f /tmp/ls-logs/logstash-plain.log`.
+
+**7. Jalankan Filebeat** (root, di server sungguhan `systemctl enable --now filebeat`):
+```bash
+/usr/share/filebeat/bin/filebeat -e -c /etc/filebeat/filebeat.yml \
+  --path.home /usr/share/filebeat --path.config /etc/filebeat \
+  --path.data /tmp/fb-data --path.logs /tmp/fb-logs
+```
+Expected Output (aktual) — di terminal Logstash (langkah 6), 5 dokumen
+ter-parse, tiap dokumen berisi `response.status_code`, `url.original`,
+`source.address`, `user_agent.original` — PERSIS field yang sama seperti
+hasil parsing `web-service.conf` terhadap log Robot Shop, membuktikan
+instalasi manual ini menghasilkan pipeline yang fungsinya identik dengan
+versi Docker:
+```
+{
+    "url" => { "original" => "/products?category=shoes" },
+    "http" => {
+        "response" => { "status_code" => 200, "body" => { "bytes" => 8877 } }
+    },
+    "source" => { "address" => "203.0.113.7" },
+    "user_agent" => { "original" => "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)" }
+}
+```
+
+**Bersihkan** container percobaan setelah selesai (bukan bagian dari lab
+utama, cuma latihan skill install):
+```bash
+exit                    # keluar dari native-vm
+docker rm -f native-vm
 ```
 
 ## e. Contoh Implementasi
@@ -142,4 +284,5 @@ butuh perbaikan kapasitas/scaling.
 ## f. Referensi Exercise
 
 Lanjutkan latihan mandiri di [`exercise/sesi-8/README.md`](../../../exercise/sesi-8/README.md)
-— termasuk latihan deteksi transaksi anomali secara lengkap.
+— Bagian 1 deteksi transaksi anomali, Bagian 2 menyusun grok pattern
+sendiri untuk format log custom aplikasi [`crud-app/`](../../../crud-app/README.md).
