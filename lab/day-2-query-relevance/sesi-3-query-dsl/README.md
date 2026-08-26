@@ -41,6 +41,19 @@ relevance score memang dibutuhkan.
 
 *(Prasyarat: stack Sesi 1 masih jalan.)*
 
+**Kibana Sample Data — apa saja yang tersedia.** Sebelum load data,
+kenalan dulu dengan katalognya: buka menu ☰ → **Home**, klik **"Try
+sample data"** (atau langsung `http://localhost:5601/app/home#/tutorial_directory/sampleData`):
+
+![Katalog Kibana Sample Data menampilkan 3 dataset: eCommerce orders, Flight data, Web logs](../../../docs/screenshots/sesi-3/00-sample-data-catalog.png)
+
+*Tiga dataset bawaan Kibana — **eCommerce orders** (transaksi toko
+online, dipakai lab Sesi 3-5), **Flight data** (data penerbangan, dipakai
+di exercise sesi ini), dan **Web logs** (log akses web). Ketiganya bisa
+di-load lewat halaman ini (klik "View data" pada kartu yang belum
+ter-install) ATAU lewat API `POST /api/sample_data/<nama>` seperti
+command di bawah — dua-duanya hasilnya sama.*
+
 **Load sample data eCommerce** (dataset transaksi toko online, dipakai
 sepanjang Sesi 3-5):
 ```bash
@@ -112,6 +125,68 @@ di search bar, tekan Enter — histogram & daftar dokumen ter-update
 otomatis. (Jumlah dokumen di layar bisa beda dari hasil query DSL langsung
 ke ES — Discover membatasi hasil sesuai rentang waktu yang dipilih di
 kanan atas, sedangkan query lewat Dev Tools Console di atas tidak dibatasi waktu.)*
+
+**Filter TANPA ketik KQL — lewat UI.** Selain ketik KQL manual, Discover
+punya beberapa cara "klik saja" untuk filter/atur tampilan data. (Catatan:
+jumlah dokumen di semua screenshot di bawah bersifat **time-relative** —
+"Last 90 days" bergeser tiap hari, jadi angkamu pasti beda, itu normal.)
+
+**a) Tambah filter lewat form (bukan ketik KQL):** klik **"+ Add filter"**
+di sebelah kiri search bar:
+
+![Form Add filter kosong -- pilih field, operator, value](../../../docs/screenshots/sesi-3/05-add-filter-kosong.png)
+
+*Form kosong — pilih **Field**, **Operator**, lalu **Value**.*
+
+![Form Add filter terisi dengan field category.keyword, operator is, value Women's Clothing](../../../docs/screenshots/sesi-3/06-add-filter-terisi.png)
+
+*Field `category.keyword`, operator `is`, value `Women's Clothing` —
+klik **Add filter** untuk menerapkan.*
+
+![Filter pill category.keyword: Women's Clothing aktif di atas tabel hasil](../../../docs/screenshots/sesi-3/07-filter-ui-terapan.png)
+
+*Filter muncul sebagai "pill" di atas tabel — klik `×` di pill untuk
+hapus, atau klik pill-nya untuk edit/nonaktifkan sementara.*
+
+**b) Atur kolom tabel** (default cuma `order_date` + `_source` mentah,
+sering kepanjangan): hover field di sidebar kiri, klik ikon **+** yang
+muncul untuk jadikan kolom:
+
+![Tabel Discover dengan kolom custom customer_full_name dan category, menggantikan kolom _source mentah](../../../docs/screenshots/sesi-3/08-toggle-kolom.png)
+
+*Setelah `customer_full_name` dan `category` ditambah sebagai kolom,
+tabel jadi jauh lebih ringkas dibanding `_source` mentah — field yang
+sedang jadi kolom tampil di grup "Selected fields" di sidebar, klik ikon
+**–** di situ untuk hapus kolom lagi.*
+
+**c) Filter langsung dari nilai dokumen** ("filter for/out value"): klik
+ikon perbesar (⤢) di kiri baris dokumen untuk buka detail, lalu hover nilai
+field yang mau di-filter:
+
+![Detail dokumen menampilkan ikon filter for/out saat hover di baris customer_gender](../../../docs/screenshots/sesi-3/09-doc-flyout-hover-filter.png)
+
+*Hover baris `customer_gender` — muncul ikon **+** (filter for, cuma
+tampilkan dokumen dengan nilai ini) dan **–** (filter out, sembunyikan
+dokumen dengan nilai ini).*
+
+![Filter customer_gender: FEMALE otomatis terbentuk setelah klik ikon +](../../../docs/screenshots/sesi-3/10-filter-for-value-hasil.png)
+
+*Klik **+** pada `FEMALE` — filter pill `customer_gender: FEMALE`
+langsung terbentuk, tanpa ketik apa pun.*
+
+**d) Simpan filter jadi Saved Search** — supaya bisa dibuka lagi nanti
+tanpa setup ulang: klik **Save** di kanan atas, kasih nama:
+
+![Modal Save Discover session dengan title Wanita - Kategori Pakaian](../../../docs/screenshots/sesi-3/11-save-search-modal.png)
+
+*Isi **Title**, biarkan "Add to dashboard" = **None** kalau belum perlu
+dashboard, klik **Save and add to library**.*
+
+![Discover session tersimpan, breadcrumb menampilkan nama Wanita - Kategori Pakaian](../../../docs/screenshots/sesi-3/12-save-search-selesai.png)
+
+*Tersimpan — breadcrumb di kiri atas sekarang menampilkan nama yang kamu
+kasih, dan search ini bisa dibuka lagi lewat menu ☰ → Discover → buka
+session tersimpan.*
 
 ## e. Contoh Implementasi
 

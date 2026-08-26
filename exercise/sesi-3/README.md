@@ -19,6 +19,13 @@ dipakai di lab) untuk latihan Query DSL.
    berapa pun kota yang kamu coba — kenapa? (Petunjuk: cek tipe field-nya,
    lalu bandingkan dengan field `category` yang dipakai di lab Sesi 3 —
    tipe field-nya apa?)
+5. Cari penerbangan yang DIBATALKAN **HANYA dalam 7 hari terakhir** (bukan
+   seluruh dataset seperti langkah 2) — pakai `range` query pada field
+   `timestamp` dikombinasikan dengan `Cancelled: true`. Field `timestamp`
+   bertipe `date`, jadi kamu bisa pakai **relative date math**
+   Elasticsearch (`now-7d`) alih-alih tanggal tetap — ini penting karena
+   data sample selalu ter-generate ulang relatif ke waktu sekarang setiap
+   kali di-load, jadi tanggal tetap (hardcoded) akan salah di lain waktu.
 
 ## Kriteria Selesai
 
@@ -29,6 +36,8 @@ dipakai di lab) untuk latihan Query DSL.
   supaya beda — field ini memang tidak akan pernah menunjukkan
   perbedaan, dan itu sendiri poin pembelajarannya) — sebutkan tipe field
   `OriginCityName` vs tipe field `category` di lab sebagai alasannya.
+- Kamu punya angka pasti untuk penerbangan dibatalkan dalam 7 hari
+  terakhir (query-nya pakai `now-7d`, bukan tanggal hardcoded).
 
 ## Petunjuk (buka kalau stuck)
 
@@ -50,6 +59,17 @@ GET kibana_sample_data_flights/_search
       "filter": [
         { "term": { "Carrier": "Logstash Airways" } },
         { "range": { "FlightDelayMin": { "gt": 60 } } }
+      ]
+    }
+  }
+}
+GET kibana_sample_data_flights/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "term": { "Cancelled": true } },
+        { "range": { "timestamp": { "gte": "now-7d/d", "lte": "now" } } }
       ]
     }
   }
