@@ -114,9 +114,14 @@ belanja > 100.
 
 *1. Buka menu ☰ → Analytics → Discover.*
 
+![Dropdown pemilihan data view menampilkan tiga pilihan: Kibana Sample Data eCommerce, Flights, dan Logs](../../../docs/screenshots/sesi-3/02-pilih-data-view.png)
+
+*2. Klik nama data view di pojok kiri atas untuk buka dropdown, lalu pilih
+"Kibana Sample Data eCommerce".*
+
 ![Kibana Discover dengan data view Kibana Sample Data eCommerce dipilih](../../../docs/screenshots/sesi-3/03-discover-data-ecommerce.png)
 
-*2. Pilih data view "Kibana Sample Data eCommerce" di pojok kiri atas.*
+*Data view eCommerce aktif — tabel dokumen ter-update sesuai pilihan.*
 
 ![Kibana Discover dengan filter KQL customer_gender MALE dan taxful_total_price di atas 200, menampilkan hasil dan histogram](../../../docs/screenshots/sesi-3/04-discover-kql-filter.png)
 
