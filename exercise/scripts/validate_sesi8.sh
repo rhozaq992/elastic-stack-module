@@ -26,12 +26,14 @@ else
   check "payment-service-parsed-* punya transaksi anomali http_status=500 (count=$count_500)" 1
 fi
 
+# 429 TIDAK selalu muncul -- tergantung performa host (lihat catatan Sesi 6/8).
+# Ini info, BUKAN syarat lulus (tidak menambah PASS/FAIL).
 count_429=$(curl -s "http://localhost:9200/payment-service-parsed-*/_count" -H 'Content-Type: application/json' -d '{"query":{"term":{"http_status":429}}}' 2>/dev/null | grep -o '"count":[0-9]*' | head -1 | grep -o '[0-9]*')
 count_429=${count_429:-0}
 if [ "$count_429" -gt 0 ] 2>/dev/null; then
-  check "payment-service-parsed-* punya transaksi kapasitas http_status=429 (count=$count_429)" 0
+  echo "INFO - payment-service-parsed-* punya transaksi kapasitas http_status=429 (count=$count_429) -- host-mu kena bottleneck, bahan bagus buat perbandingan"
 else
-  check "payment-service-parsed-* punya transaksi kapasitas http_status=429 (count=$count_429)" 1
+  echo "INFO - payment-service-parsed-* tidak ada http_status=429 (count=0) -- normal, host-mu cukup kuat menangani NUM_CLIENTS:6 tanpa payment kewalahan"
 fi
 
 count_200=$(curl -s "http://localhost:9200/payment-service-parsed-*/_count" -H 'Content-Type: application/json' -d '{"query":{"term":{"http_status":200}}}' 2>/dev/null | grep -o '"count":[0-9]*' | head -1 | grep -o '[0-9]*')

@@ -103,34 +103,41 @@ Expected Output (aktual) — field `payment_user`, `http_status`,
 }
 ```
 
-**Cari transaksi anomali.** Traffic Robot Shop di sesi ini sebenarnya
-punya DUA pola "tidak normal" yang berbeda sifatnya (lihat catatan
-performa di Sesi 6):
+**Cari transaksi anomali.** Traffic Robot Shop di sesi ini punya SATU pola
+"tidak normal" yang PASTI ada (500, disuntik sengaja), dan SATU pola yang
+MUNGKIN ada tergantung performa host-mu (429, kapasitas):
 ```
 GET payment-service-parsed-*/_search
 { "size": 0, "aggs": { "by_status": { "terms": { "field": "http_status" } } } }
 ```
-Expected Output (aktual): `429: 133`, `200: 14`, `500: 13`. Breakdown per
-`payment_user` untuk masing-masing status menunjukkan pola yang SANGAT
-berbeda:
+Expected Output (aktual, dari SALAH SATU pengukuran nyata — punyamu bisa
+beda total): `429: 133`, `200: 14`, `500: 13`. **Kalau di layarmu tidak ada
+`429` sama sekali dan hampir semua `200`** — itu normal juga, artinya host-mu
+cukup kuat menangani `NUM_CLIENTS: 6` tanpa `payment` kewalahan (lihat
+catatan Sesi 6). Yang PASTI selalu ada (tidak tergantung performa host):
+field `500`.
+
+Breakdown per `payment_user` untuk status `500` menunjukkan pola yang jelas:
 ```
 GET payment-service-parsed-*/_search
 { "size": 0, "query": { "term": { "http_status": 500 } },
   "aggs": { "by_user": { "terms": { "field": "payment_user.keyword" } } } }
 ```
-Expected Output (aktual): **SEMUA 13 dokumen `http_status: 500` berasal
+Expected Output (aktual): **SEMUA dokumen `http_status: 500` berasal
 dari SATU user id yang sama, `partner-57`** — bukan pola `anonymous-N`
 normal. Ini transaksi yang sengaja disuntik (fitur `ERROR=1` load
 generator, lihat Sesi 6) — pola KONSENTRASI pada satu identitas
 mencurigakan adalah tanda anomali/fraud.
 
-Bandingkan dengan `http_status: 429` — breakdown per user menunjukkan **133
-dokumen TERSEBAR ke ~130 user id `anonymous-N` yang berbeda-beda** (masing-
-masing cuma 1 kejadian) — ini BUKAN anomali/fraud, tapi tanda **kapasitas
-service kewalahan** (lihat Sesi 6): banyak user LEGITIMATE yang kebetulan
-sama-sama gagal karena `payment` tidak sanggup menampung request
-bersamaan. Dua pola yang sama-sama "tidak normal", tapi butuh respons
-berbeda — 500 butuh investigasi keamanan, 429 butuh perbaikan kapasitas/scaling.
+**Kalau `429` MUNCUL di traffic-mu**, breakdown per user-nya akan
+menunjukkan pola yang SANGAT berbeda dari 500 — tersebar ke banyak user id
+`anonymous-N` yang berbeda-beda (masing-masing cuma 1-2 kejadian), bukan
+terkonsentrasi di satu id. Itu tandanya BUKAN anomali/fraud, tapi
+**kapasitas service kewalahan** (lihat Sesi 6): banyak user LEGITIMATE
+yang kebetulan sama-sama gagal karena `payment` tidak sanggup menampung
+request bersamaan. Dua pola yang sama-sama "tidak normal" tapi butuh
+respons berbeda — 500 butuh investigasi keamanan, 429 (kalau muncul)
+butuh perbaikan kapasitas/scaling.
 
 ## f. Referensi Exercise
 

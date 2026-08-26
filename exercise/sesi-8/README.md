@@ -2,12 +2,20 @@
 
 ## Use Case
 
-Traffic payment Robot Shop menunjukkan dua jenis status "tidak normal":
-`http_status: 500` dan `http_status: 429`. Tim finance dan tim
-infrastruktur SAMA-SAMA khawatir, tapi butuh penjelasan yang beda: yang
-satu mungkin butuh investigasi fraud, yang satu lagi mungkin cuma butuh
-tambah kapasitas server. Tugasmu: pakai data di `payment-service-parsed-*`
-untuk membuktikan MANA YANG MANA — jangan cuma tebak dari nama status code-nya.
+Traffic payment Robot Shop bisa menunjukkan dua jenis status "tidak
+normal": `http_status: 500` (SELALU ada, disuntik sengaja lewat load
+generator) dan `http_status: 429` (MUNGKIN ada, tergantung seberapa kuat
+laptopmu menangani beban — lihat catatan Sesi 6/8). Tim finance dan tim
+infrastruktur SAMA-SAMA khawatir soal status "tidak normal", tapi butuh
+penjelasan yang beda: yang satu butuh investigasi fraud, yang satu lagi
+cuma butuh tambah kapasitas server. Tugasmu: pakai data di
+`payment-service-parsed-*` untuk membuktikan MANA YANG MANA — jangan cuma
+tebak dari nama status code-nya.
+
+**Kalau traffic-mu tidak punya `429` sama sekali** (cek dulu breakdown di
+tugas 1) — itu normal, bukan kegagalan. Kerjakan tugas 2, 4, 5 dengan
+membandingkan `500` vs `200` saja, dan tugas 3 boleh dilewati (catat di
+kesimpulanmu kenapa: "429 tidak muncul karena host saya cukup kuat").
 
 ## Tugas
 
@@ -26,12 +34,16 @@ untuk membuktikan MANA YANG MANA — jangan cuma tebak dari nama status code-nya
 
 ## Kriteria Selesai
 
-- Kamu punya angka pasti untuk breakdown per status, breakdown per
-  `payment_user` untuk status 500 DAN 429 secara terpisah, dan
-  perbandingan `avg response_time_ms` ketiganya.
-- Kesimpulanmu menjelaskan MINIMAL 1 perbedaan pola konkret antara 500 dan
-  429 (mis. "500 terkonsentrasi pada 1 user id, 429 tersebar ke puluhan
-  user id berbeda") — bukan cuma menyimpulkan dari nama status HTTP-nya.
+- Kamu punya angka pasti untuk breakdown per status dan breakdown per
+  `payment_user` untuk status **500** (wajib, selalu ada).
+- **Kalau `429` ada di traffic-mu**: kamu juga punya breakdown per user
+  untuk 429, dan kesimpulanmu menjelaskan MINIMAL 1 perbedaan pola konkret
+  antara 500 dan 429 (mis. "500 terkonsentrasi pada 1 user id, 429
+  tersebar ke puluhan user id berbeda").
+- **Kalau `429` TIDAK ada**: kesimpulanmu tetap menjelaskan pola 500
+  (konsentrasi pada 1 user id + response time abnormal) sebagai bukti
+  anomali/fraud, dan mencatat bahwa host-mu tidak menunjukkan gejala
+  kapasitas kali ini.
 
 ## Petunjuk (buka kalau stuck)
 
