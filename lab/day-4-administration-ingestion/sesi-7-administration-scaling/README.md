@@ -93,22 +93,9 @@ salah satunya ditandai `*` di kolom `master` (node yang sedang jadi elected mast
 
 ### Snapshot & Restore
 
-> **WAJIB dilakukan dulu — perbaiki permission volume snapshot.** Volume
-> Docker baru (`es-snapshots`) dibuat dengan owner `root:root` dan mode
-> `755` (grup cuma read+execute, TIDAK write), sementara proses
-> Elasticsearch jalan sebagai `uid 1000` (grup `root`/gid 0). Tanpa langkah
-> ini, `PUT _snapshot` di bawah akan **selalu gagal** dengan
-> `HTTP 500 access_denied_exception: "path is not accessible on master node"`
-> — dikonfirmasi terjadi di SETIAP run baru, di host manapun (bukan
-> masalah sesekali). Jalankan sekali sebelum lanjut:
-> ```bash
-> docker run --rm -v sesi-7-administration-scaling_es-snapshots:/snap alpine chmod -R 775 /snap
-> ```
-> (Ganti prefix nama volume kalau folder project-mu berbeda — cek nama
-> volume asli dengan `docker volume ls | grep es-snapshots`.)
-
-**Setup repository** (`path.repo` di-set saat startup container, sudah
-ada di `docker-compose.yml`):
+**Setup repository** (`path.repo` sudah di-set saat startup container di
+`docker-compose.yml`, volume snapshot-nya juga sudah disiapkan otomatis
+saat `docker compose up` — tidak ada langkah manual tambahan):
 ```
 PUT _snapshot/lab-fs-repo
 { "type": "fs", "settings": { "location": "/usr/share/elasticsearch/snapshots/lab-fs-repo" } }
@@ -138,8 +125,8 @@ POST _snapshot/lab-fs-repo/snapshot-1/_restore?wait_for_completion=true
 GET lab-cluster-demo/_count                          # -> count: 1 lagi
 ```
 Expected Output (aktual): count SEBELUM dan SESUDAH restore identik (**1**
-di kedua sisi) — dikonfirmasi nyata, restore benar-benar mengembalikan
-data persis sama, di cluster 3-node sekalipun.
+di kedua sisi) — restore benar-benar mengembalikan data persis sama, di
+cluster 3-node sekalipun.
 
 Semua langkah di atas juga bisa dilakukan lewat UI: **Stack Management →
 Snapshot and Restore**:
