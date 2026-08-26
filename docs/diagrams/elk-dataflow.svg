@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 380" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="980" height="380" fill="#ffffff" rx="12" />
+
+  <!-- Title -->
+  <text x="490" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#1a1a1a">Alur Data ELK Stack</text>
+
+  <!-- Box 1: Data Sources -->
+  <rect x="30" y="90" width="190" height="150" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="2" />
+  <text x="125" y="125" text-anchor="middle" font-size="15" font-weight="700" fill="#312e81">Sumber Data</text>
+  <text x="125" y="155" text-anchor="middle" font-size="12" fill="#3730a3">Application logs</text>
+  <text x="125" y="175" text-anchor="middle" font-size="12" fill="#3730a3">Server metrics</text>
+  <text x="125" y="195" text-anchor="middle" font-size="12" fill="#3730a3">File / access log</text>
+  <text x="125" y="215" text-anchor="middle" font-size="12" fill="#3730a3">(mis. Robot Shop)</text>
+
+  <!-- Arrow 1 -->
+  <line x1="220" y1="165" x2="288" y2="165" stroke="#52525b" stroke-width="2.5" marker-end="url(#arrow)" />
+
+  <!-- Box 2: Beats & Logstash -->
+  <rect x="290" y="90" width="190" height="150" rx="10" fill="#ecfdf5" stroke="#047857" stroke-width="2" />
+  <text x="385" y="125" text-anchor="middle" font-size="15" font-weight="700" fill="#065f46">Beats &amp; Logstash</text>
+  <text x="385" y="155" text-anchor="middle" font-size="12" fill="#065f46">Kumpulkan (collect)</text>
+  <text x="385" y="175" text-anchor="middle" font-size="12" fill="#065f46">Parsing (grok/JSON)</text>
+  <text x="385" y="195" text-anchor="middle" font-size="12" fill="#065f46">Transform</text>
+  <text x="385" y="215" text-anchor="middle" font-size="11" fill="#047857">(detail di Sesi 8)</text>
+
+  <!-- Arrow 2 -->
+  <line x1="480" y1="165" x2="548" y2="165" stroke="#52525b" stroke-width="2.5" marker-end="url(#arrow)" />
+
+  <!-- Box 3: Elasticsearch -->
+  <rect x="550" y="90" width="190" height="150" rx="10" fill="#fffbeb" stroke="#b45309" stroke-width="2" />
+  <text x="645" y="125" text-anchor="middle" font-size="15" font-weight="700" fill="#78350f">Elasticsearch</text>
+  <text x="645" y="155" text-anchor="middle" font-size="12" fill="#78350f">Simpan (index)</text>
+  <text x="645" y="175" text-anchor="middle" font-size="12" fill="#78350f">Cari &amp; agregasi</text>
+  <text x="645" y="195" text-anchor="middle" font-size="12" fill="#78350f">REST API :9200</text>
+  <text x="645" y="215" text-anchor="middle" font-size="11" fill="#b45309">(cluster/node/shard)</text>
+
+  <!-- Arrow 3 -->
+  <line x1="740" y1="150" x2="808" y2="150" stroke="#52525b" stroke-width="2.5" marker-end="url(#arrow)" />
+  <text x="774" y="140" text-anchor="middle" font-size="10" fill="#52525b">query</text>
+  <line x1="808" y1="185" x2="740" y2="185" stroke="#a1a1aa" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrow-grey)" />
+  <text x="774" y="200" text-anchor="middle" font-size="10" fill="#71717a">hasil</text>
+
+  <!-- Box 4: Kibana -->
+  <rect x="810" y="90" width="150" height="150" rx="10" fill="#fdf2f8" stroke="#be185d" stroke-width="2" />
+  <text x="885" y="125" text-anchor="middle" font-size="15" font-weight="700" fill="#831843">Kibana</text>
+  <text x="885" y="155" text-anchor="middle" font-size="12" fill="#831843">Discover</text>
+  <text x="885" y="175" text-anchor="middle" font-size="12" fill="#831843">Visualize</text>
+  <text x="885" y="195" text-anchor="middle" font-size="12" fill="#831843">Dashboard</text>
+  <text x="885" y="215" text-anchor="middle" font-size="11" fill="#be185d">:5601</text>
+
+  <!-- Footer note -->
+  <text x="490" y="300" text-anchor="middle" font-size="12.5" fill="#3f3f46">Lab ini pakai Elasticsearch + Kibana sejak Sesi 1; Logstash mulai dipakai penuh di Sesi 8.</text>
+  <text x="490" y="322" text-anchor="middle" font-size="12.5" fill="#3f3f46">Peserta juga bisa bicara langsung ke Elasticsearch lewat REST API (curl / Dev Tools Console) tanpa lewat Kibana.</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#52525b" />
+    </marker>
+    <marker id="arrow-grey" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#a1a1aa" />
+    </marker>
+  </defs>
+</svg>
