@@ -90,6 +90,10 @@ GET kibana_sample_data_logs/_search
 Expected Output (aktual): 61 bucket harian (mis. `2026-08-16: 1,531,493
 bytes`), dan `avg_daily_bytes: 1,306,978.5` — rata-rata dari SEMUA total
 harian itu, dihitung oleh `avg_bucket` tanpa perlu ambil data mentah lagi.
+(**Tanggal & angka persis di layarmu akan beda** — `kibana_sample_data_logs`
+itu data time-relative, Kibana generate ulang rentang tanggalnya relatif
+ke kapan kamu load datanya, bukan tanggal tetap. Jumlah bucket ~61 dan
+pola angkanya akan konsisten, cuma tanggal & totalnya bergeser.)
 Perhatikan `buckets_path: "requests_per_day>total_bytes"` — sintaks untuk
 "ambil hasil agregasi `total_bytes` di dalam tiap bucket `requests_per_day`".
 
