@@ -188,11 +188,25 @@ EOF
 
 **6. Jalankan Logstash** (background, non-root user `logstash` — di
 server sungguhan ini biasanya `systemctl enable --now logstash`, tapi
-container percobaan ini tidak punya systemd, jadi jalankan manual):
+container percobaan ini tidak punya systemd, jadi jalankan manual). User
+`logstash` yang dibuat package APT punya login shell `/usr/sbin/nologin`
+(memang sengaja — best practice service account tidak boleh login
+interaktif) — makanya perlu `su -s /bin/bash` (paksa pakai bash untuk
+command ini saja), `su logstash` polos akan ditolak dengan error
+`This account is currently not available`:
 ```bash
 mkdir -p /tmp/ls-data /tmp/ls-logs && chown logstash:logstash /tmp/ls-data /tmp/ls-logs
-su logstash -c "/usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/native-demo.conf --path.data /tmp/ls-data --path.logs /tmp/ls-logs &"
+su -s /bin/bash logstash -c "/usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/native-demo.conf --path.settings /etc/logstash --path.data /tmp/ls-data --path.logs /tmp/ls-logs &"
 ```
+`--path.settings /etc/logstash` WAJIB disebutkan eksplisit di sini — beda
+dari kalau kamu jalankan lewat `systemctl` (yang otomatis tahu lokasi
+config), invocation manual seperti ini tidak otomatis menemukan
+`log4j2.properties`/`jvm.options` paket APT (lokasinya di `/etc/logstash`,
+bukan `/usr/share/logstash/config` yang malah tidak ada) — tanpa flag ini
+Logstash tetap jalan, tapi fallback ke logging konsol-saja dan
+`/tmp/ls-logs/logstash-plain.log` di langkah verifikasi berikut tidak
+akan pernah dibuat.
+
 Tunggu sampai muncul log `Pipelines running` (~30-40 detik, JVM startup)
 sebelum lanjut ke langkah 7 — cek dengan `tail -f /tmp/ls-logs/logstash-plain.log`.
 
