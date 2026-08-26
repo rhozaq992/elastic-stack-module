@@ -141,6 +141,10 @@ GET kibana_sample_data_logs/_search
 { "size": 0, "query": { "bool": { "filter": [ { "range": { "bytes": { "gt": 5000 } } } ] } } }
 ```
 Expected Output: `"took": 3` (ms), `"hits":{"total":{"value":7696}}`.
+`hits.total.value` akan selalu persis `7696` (data sample statis, tidak
+tergantung waktu) — tapi angka `took` sendiri bisa beda beberapa ms di
+laptopmu (tergantung beban CPU/proses lain yang jalan bersamaan), itu
+normal.
 
 **Jalankan query PERSIS SAMA lagi:**
 ```
@@ -148,7 +152,10 @@ GET kibana_sample_data_logs/_search
 { "size": 0, "query": { "bool": { "filter": [ { "range": { "bytes": { "gt": 5000 } } } ] } } }
 ```
 Expected Output: `"took": 0` (ms) — request cache Elasticsearch
-langsung mengembalikan hasil tanpa eksekusi ulang. Cek statistiknya:
+langsung mengembalikan hasil tanpa eksekusi ulang. **Query ini memang
+sudah sangat cepat dari awal**, jadi `took` kadang TIDAK terlihat turun
+banyak (bisa saja masih 1-2ms) — bukti yang lebih diandalkan adalah
+statistik cache-nya langsung, bukan cuma `took`:
 ```
 GET kibana_sample_data_logs/_stats/request_cache
 ```
@@ -256,10 +263,11 @@ GET kibana_sample_data_logs/_search
 }
 ```
 Expected Output: `profile.shards[0].searches[0].query[0]` berisi
-`"type": "ConstantScoreQuery"`, `"time_in_nanos": 299250` (~0.3ms), dan
-`breakdown` — rincian per operasi internal (`match_count`,
-`next_doc`, dst.). Query kompleks/lambat akan menunjukkan operasi mana
-yang paling banyak makan waktu lewat breakdown ini.
+`"type": "ConstantScoreQuery"`, `"time_in_nanos"` di kisaran ratusan ribu
+(sub-milidetik — contoh: `299250` ≈ 0.3ms, angka persisnya bergantung
+beban host-mu saat itu), dan `breakdown` — rincian per operasi internal
+(`match_count`, `next_doc`, dst.). Query kompleks/lambat akan menunjukkan
+operasi mana yang paling banyak makan waktu lewat breakdown ini.
 
 **Ubah `refresh_interval` sebelum bulk load besar** (index baru butuh
 waktu ~1 detik default sebelum dokumen bisa dicari — kalau kamu mau bulk

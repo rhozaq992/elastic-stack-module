@@ -185,11 +185,15 @@ lagi di dashboard mana pun tanpa bikin ulang dari nol.*
 lengkap dengan banyak visualisasi digabung, ship otomatis bareng Kibana
 Sample Data eCommerce):
 
+![Kibana Dashboards library menampilkan daftar dashboard bawaan, termasuk eCommerce Revenue Dashboard](../../../docs/screenshots/sesi-5/04-dashboards-library.png)
+
+*Buka menu ☰ → Analytics → Dashboards — daftar dashboard bawaan muncul,
+termasuk **"[eCommerce] Revenue Dashboard"**. Klik untuk membukanya:*
+
 ![Kibana Dashboard eCommerce Revenue menampilkan metric sum of revenue $77,218.02, breakdown kategori, transaksi per hari](../../../docs/screenshots/sesi-5/05-dashboard-ecommerce-jadi.png)
 
-*Buka Dashboards → "[eCommerce] Revenue Dashboard" untuk lihat contoh
-dashboard jadi — gabungan metric, bar chart, dan breakdown kategori,
-semuanya interaktif (klik filter Manufacturer/Category di atas).*
+*Contoh dashboard jadi — gabungan metric, bar chart, dan breakdown
+kategori, semuanya interaktif (klik filter Manufacturer/Category di atas).*
 
 ## f. Referensi Exercise
 
