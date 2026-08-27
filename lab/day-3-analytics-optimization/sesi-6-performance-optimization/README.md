@@ -118,21 +118,22 @@ docker compose -f docker-compose.yml -f docker-compose.load.yml up -d load
 ```
 Expected Output (dari `docker compose logs -f load` setelah
 beberapa menit): traffic asli mengalir ke `/api/user/login`,
-`/api/catalogue/*`, `/api/shipping/confirm/*`, dst. (jumlah Anda akan
-berbeda, traffic Robot Shop bersifat acak — lihat catatan di Sesi 4).
+`/api/catalogue/*`, `/api/shipping/confirm/*`, dst.
 
-> **Catatan performa (perilaku dapat berbeda tergantung host):**
-> `NUM_CLIENTS` di `docker-compose.load.yml` sengaja diset rendah (6),
-> bukan tinggi, karena `payment` (uwsgi, single worker process, lihat
-> `[pid: 6|app: 0|...]` pada log-nya) hanya memiliki kapasitas concurrent
-> request yang kecil. Pada pengujian instruktur (host dengan beban Docker
-> lain berjalan bersamaan), ini menyebabkan `payment` mengembalikan
-> **HTTP 429** (Too Many Requests) untuk sebagian besar request. **Namun
-> hal ini TIDAK selalu terjadi** — pada host yang lebih lega (CPU/RAM
-> cukup, tidak banyak proses lain berjalan bersamaan), uwsgi mungkin
-> sanggup menangani `NUM_CLIENTS: 6` tanpa masalah sama sekali, dan
-> traffic-nya akan 100% `200`. Apabila hal itu yang terjadi pada
-> perangkat Anda, itu bukan kegagalan — justru itu bukti sistemnya
+> **INFORMATION:** jumlah request yang tampil pada layar Anda akan
+> berbeda — traffic Robot Shop bersifat acak (lihat catatan di Sesi 4).
+
+> **INFORMATION:** `NUM_CLIENTS` di `docker-compose.load.yml` sengaja
+> diset rendah (6), bukan tinggi, karena `payment` (uwsgi, single worker
+> process, lihat `[pid: 6|app: 0|...]` pada log-nya) hanya memiliki
+> kapasitas concurrent request yang kecil. Pada host dengan beban Docker
+> lain yang berjalan bersamaan, hal ini dapat menyebabkan `payment`
+> mengembalikan **HTTP 429** (Too Many Requests) untuk sebagian besar
+> request. **Namun hal ini TIDAK selalu terjadi** — pada host yang lebih
+> lega (CPU/RAM cukup, tidak banyak proses lain berjalan bersamaan),
+> uwsgi mungkin sanggup menangani `NUM_CLIENTS: 6` tanpa masalah sama
+> sekali, dan traffic-nya akan 100% `200`. Apabila hal itu yang terjadi
+> pada perangkat Anda, itu bukan kegagalan — justru itu bukti sistemnya
 > memiliki kapasitas yang cukup untuk beban ini.
 >
 > Anda baru bisa memverifikasi status code traffic ini secara nyata pada
@@ -149,10 +150,11 @@ GET kibana_sample_data_logs/_search
 { "size": 0, "query": { "bool": { "filter": [ { "range": { "bytes": { "gt": 5000 } } } ] } } }
 ```
 Expected Output: `"took": 3` (ms), `"hits":{"total":{"value":7696}}`.
-`hits.total.value` akan selalu persis `7696` (data sample bersifat statis,
-tidak tergantung waktu) — tetapi angka `took` sendiri bisa berbeda
-beberapa ms pada perangkat Anda (tergantung beban CPU/proses lain yang
-berjalan bersamaan), hal ini normal.
+
+> **INFORMATION:** `hits.total.value` akan selalu persis `7696` (data
+> sample bersifat statis, tidak tergantung waktu) — tetapi angka `took`
+> sendiri bisa berbeda beberapa ms pada perangkat Anda (tergantung beban
+> CPU/proses lain yang berjalan bersamaan), hal ini normal.
 
 **Jalankan query PERSIS SAMA lagi:**
 ```
@@ -174,12 +176,13 @@ lebih dari 1 karena tiap shard memiliki cache-nya sendiri).
 
 ### Melihat Latency per Microservice Lewat APM
 
-**Cara install APM agent** (contoh nyata, dua bahasa berbeda — Anda
-TIDAK perlu menjalankan ini sendiri, `cart`/`payment` pada stack sesi ini
-sudah disiapkan demikian; ini referensi apabila nanti Anda melakukan
-instrumentasi pada aplikasi Anda sendiri). Pola umumnya SAMA di semua
-bahasa: agent di-`start()` pada titik paling awal aplikasi, diberi
-`serverUrl` APM Server tujuan.
+**Cara install APM agent** (contoh nyata, dua bahasa berbeda):
+
+> **INFORMATION:** Anda TIDAK perlu menjalankan kode ini sendiri —
+> `cart`/`payment` pada stack sesi ini sudah disiapkan demikian; ini
+> referensi apabila nanti Anda melakukan instrumentasi pada aplikasi Anda
+> sendiri. Pola umumnya SAMA di semua bahasa: agent di-`start()` pada
+> titik paling awal aplikasi, diberi `serverUrl` APM Server tujuan.
 
 Python (Flask) — `payment`:
 ```python
@@ -239,10 +242,13 @@ sendiri), optimasi perlu diarahkan ke kode; apabila mayoritas di
 `http`/`db` (panggilan keluar), masalahnya ada pada service/dependency
 lain yang dipanggil, bukan pada `payment` itu sendiri.*
 
-**Query data trace-nya secara langsung** (APM Server menyimpannya sebagai
-index Elasticsearch biasa — dapat di-query seperti index lain, inilah
-yang membuat traffic load generator akhirnya "terpakai" untuk latihan
-aggregation juga):
+**Query data trace-nya secara langsung**:
+
+> **INFORMATION:** APM Server menyimpan data trace sebagai index
+> Elasticsearch biasa — dapat di-query seperti index lain, inilah yang
+> membuat traffic load generator akhirnya "terpakai" untuk latihan
+> aggregation juga.
+
 ```
 GET traces-apm-default/_search
 {
@@ -257,10 +263,12 @@ GET traces-apm-default/_search
   }
 }
 ```
-Expected Output (pola-nya — angka pasti Anda tergantung berapa lama
-load generator sudah berjalan): dua bucket, `cart` dengan
-`avg_duration_ms` di kisaran satuan milidetik, `payment` di kisaran
-ratusan milidetik — konsisten dengan yang tampil di Service Inventory di atas.
+Expected Output: dua bucket, `cart` dengan `avg_duration_ms` di kisaran
+satuan milidetik, `payment` di kisaran ratusan milidetik — konsisten
+dengan yang tampil di Service Inventory di atas.
+
+> **INFORMATION:** ini adalah pola yang diharapkan, bukan angka pasti —
+> angka aktual Anda tergantung berapa lama load generator sudah berjalan.
 
 ### Tiga Teknik Optimasi Query (`kibana_sample_data_logs`)
 
@@ -275,20 +283,24 @@ GET kibana_sample_data_logs/_search
 ```
 Expected Output: `profile.shards[0].searches[0].query[0]` berisi
 `"type": "ConstantScoreQuery"`, `"time_in_nanos"` di kisaran ratusan ribu
-(sub-milidetik — contoh: `299250` ≈ 0.3ms, angka pastinya bergantung
-beban host Anda saat itu), dan `breakdown` — rincian per operasi internal
-(`match_count`, `next_doc`, dst.). Query yang kompleks/lambat akan
-menunjukkan operasi mana yang paling banyak memakan waktu lewat
-breakdown ini.
+(sub-milidetik — contoh: `299250` ≈ 0.3ms), dan `breakdown` — rincian per
+operasi internal (`match_count`, `next_doc`, dst.).
 
-**Ubah `refresh_interval` sebelum bulk load besar** (index baru
-membutuhkan waktu ~1 detik secara default sebelum dokumen bisa dicari —
-apabila Anda hendak melakukan bulk index jutaan dokumen, menaikkan
-interval ini mengurangi overhead):
+> **INFORMATION:** angka pasti `time_in_nanos` bergantung beban host Anda
+> saat itu — yang menjadi patokan adalah satuannya (skala sub-milidetik),
+> bukan angka mutlaknya. Query yang kompleks/lambat akan menunjukkan
+> operasi mana yang paling banyak memakan waktu lewat breakdown ini.
+
+**Ubah `refresh_interval` sebelum bulk load besar**:
 ```
 PUT kibana_sample_data_logs/_settings
 { "index": { "refresh_interval": "30s" } }
 ```
+
+> **INFORMATION:** index baru membutuhkan waktu ~1 detik secara default
+> sebelum dokumen bisa dicari — apabila Anda hendak melakukan bulk index
+> jutaan dokumen, menaikkan `refresh_interval` mengurangi overhead ini.
+
 Expected Output: `{"acknowledged":true}`. **Setelah bulk load
 selesai, WAJIB dikembalikan** ke nilai default (atau nilai produksi normal),
 supaya data baru kembali cepat muncul di pencarian:

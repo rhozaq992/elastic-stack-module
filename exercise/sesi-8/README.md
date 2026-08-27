@@ -17,9 +17,10 @@ kapasitas server. Tugas Anda: gunakan data pada `payment-service-parsed-*`
 untuk membuktikan mana yang mana — jangan hanya menebak dari nama status
 code-nya.
 
-**Apabila traffic Anda tidak memiliki `429` sama sekali** (periksa dulu
-breakdown pada tugas 1) — hal itu normal, bukan kegagalan. Kerjakan tugas
-2, 4, 5 dengan membandingkan `500` vs `200` saja, dan tugas 3 boleh
+> **INFORMATION:** apabila traffic Anda tidak memiliki `429` sama sekali
+> (periksa dulu breakdown pada tugas 1) — hal itu normal, bukan kegagalan.
+
+Kerjakan tugas 2, 4, 5 dengan membandingkan `500` vs `200` saja, dan tugas 3 boleh
 dilewati (catat pada kesimpulan Anda alasannya: "429 tidak muncul karena
 host saya cukup kuat").
 
@@ -83,8 +84,10 @@ Tim platform baru saja men-deploy layanan internal baru, **Task Tracker**
 (`crud-app/` di root repo ini) — log aksesnya BUKAN JSON, BUKAN Combined
 Log Format seperti yang sudah Anda tangani di lab, melainkan format
 custom pipe-delimited buatan tim itu sendiri. Anda diminta membuat
-pipeline parsing-nya dari NOL — situasi ini realistis, karena di dunia
-nyata tiap tim sering memiliki format log sendiri-sendiri.
+pipeline parsing-nya dari NOL.
+
+> **INFORMATION:** situasi ini realistis, karena di dunia nyata tiap tim
+> sering memiliki format log sendiri-sendiri.
 
 ### Tugas Bagian 2
 
@@ -95,20 +98,24 @@ nyata tiap tim sering memiliki format log sendiri-sendiri.
    Perhatikan strukturnya SEBELUM mencoba membuat grok pattern — jangan
    asumsikan formatnya sama dengan yang sudah Anda temui di lab.
 4. Buat file pipeline BARU di
-   `lab/day-4-administration-ingestion/sesi-8-data-ingestion/logstash/pipeline/task-tracker.conf`
-   (Logstash sesi 8 otomatis memuat semua file `.conf` pada folder itu) —
+   `lab/day-4-administration-ingestion/sesi-8-data-ingestion/logstash/pipeline/task-tracker.conf` —
    filter berdasarkan isi pesan (lihat pola pada `payment-service.conf`
    untuk contoh `if [message] =~ "..."`, atau `web-service.conf` untuk
    contoh output ke index baru), grok pattern Anda susun sendiri dari
    struktur yang Anda amati pada langkah 3.
-5. Reload Logstash — **kembali dulu ke folder Sesi 8** (`docker compose
-   restart` harus dijalankan dari folder yang memiliki `docker-compose.yml`
-   dengan service tersebut, bukan dari `crud-app/` tempat Anda terakhir
-   melakukan `cd` pada langkah 1):
+
+   > **INFORMATION:** Logstash sesi 8 otomatis memuat semua file `.conf`
+   > pada folder tersebut.
+5. Reload Logstash — **kembali dulu ke folder Sesi 8**:
    ```bash
    cd lab/day-4-administration-ingestion/sesi-8-data-ingestion
    docker compose restart logstash-sesi8
    ```
+   > **INFORMATION:** `docker compose restart` harus dijalankan dari
+   > folder yang memiliki `docker-compose.yml` dengan service tersebut,
+   > bukan dari `crud-app/` tempat Anda terakhir melakukan `cd` pada
+   > langkah 1.
+
    Lalu generate traffic baru lagi (langkah 2, dari `crud-app/`), kemudian
    verifikasi field ter-extract dengan benar (bukan `null`, dan field
    angka seperti `status`/`duration_ms` benar-benar bertipe angka, bukan

@@ -175,12 +175,14 @@ tabel untuk menjelajahi dokumen tanpa perlu menulis query JSON (fitur ini
 akan digunakan secara penuh mulai Sesi 3). Bagian ini mencoba sekilas
 penggunaannya dengan data `lab-mapping-demo` yang baru saja Anda buat.
 
-**1. Buat Data View** (index custom seperti `lab-mapping-demo` perlu
-didaftarkan terlebih dahulu agar muncul di Discover): buka menu ☰ →
-Discover, klik nama data view aktif di kiri atas → **"Create a data
-view"** → isi **Name** dan **Index pattern** dengan `lab-mapping-demo`
-(index ini tidak memiliki field tanggal, sehingga field **Timestamp**
-dibiarkan kosong) → **Save data view to Kibana**.
+**1. Buat Data View**: buka menu ☰ → Discover, klik nama data view aktif
+di kiri atas → **"Create a data view"** → isi **Name** dan **Index
+pattern** dengan `lab-mapping-demo` (index ini tidak memiliki field
+tanggal, sehingga field **Timestamp** dibiarkan kosong) → **Save data
+view to Kibana**.
+
+> **INFORMATION:** index custom seperti `lab-mapping-demo` perlu
+> didaftarkan sebagai data view terlebih dahulu agar muncul di Discover.
 
 **2. Filter data menggunakan KQL** (Kibana Query Language — search bar di
 atas tabel, dengan syntax yang berbeda dari Query DSL Dev Tools Console):
@@ -202,10 +204,13 @@ kanan "Query in ES|QL") → **Export tab results** → **CSV**:
 
 *Modal export — klik **Generate CSV** untuk memproses hasil filter menjadi file CSV.*
 
-Setelah **Generate CSV**, akan muncul notifikasi "Queued report for
-search" — proses pembuatannya bersifat **async** (tidak langsung
-terunduh), sehingga perlu membuka **Stack Management → Reporting** untuk
+Setelah **Generate CSV**, buka **Stack Management → Reporting** untuk
 mengambil hasilnya:
+
+> **INFORMATION:** akan muncul notifikasi "Queued report for search" —
+> proses pembuatannya bersifat **async** (tidak langsung terunduh),
+> sehingga hasil CSV diambil lewat halaman Reporting, bukan diunduh
+> langsung.
 
 ![Halaman Stack Management Reporting menampilkan laporan CSV siap diunduh](../../../docs/screenshots/sesi-2/09-reporting-download.png)
 

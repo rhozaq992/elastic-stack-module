@@ -85,8 +85,11 @@ curl "http://localhost:9200/payment-service-parsed-*/_count"
 curl "http://localhost:9200/cart-service-parsed-*/_count"
 curl "http://localhost:9200/web-service-parsed-*/_count"
 ```
-Expected Output (satu pengukuran nyata — angka Anda akan berbeda,
-tergantung berapa lama traffic sudah mengalir):
+> **INFORMATION:** angka pada Expected Output di bawah adalah satu
+> pengukuran nyata — angka pada tampilan Anda akan berbeda, tergantung
+> berapa lama traffic sudah mengalir.
+
+Expected Output:
 ```
 payment-service-parsed-*: 322
 cart-service-parsed-*: 2206
@@ -95,24 +98,26 @@ web-service-parsed-*: 3138
 
 ### Instalasi Manual Filebeat & Logstash (VM / Bare-Metal)
 
-Seluruh Filebeat/Logstash yang Anda gunakan sepanjang lab ini berjalan
-lewat **image Docker resmi Elastic** — praktis untuk lab, tetapi di dunia
-nyata Anda akan sering menjumpai server (VM cloud, bare-metal on-prem)
-yang TIDAK menggunakan Docker sama sekali. Bagian ini melatih keterampilan
-tersebut: menginstal Filebeat & Logstash **langsung di OS Linux**
-menggunakan package manager, bukan hanya `docker pull`.
+> **INFORMATION:** seluruh Filebeat/Logstash yang Anda gunakan sepanjang
+> lab ini berjalan lewat **image Docker resmi Elastic** — praktis untuk
+> lab, tetapi di dunia nyata Anda akan sering menjumpai server (VM cloud,
+> bare-metal on-prem) yang TIDAK menggunakan Docker sama sekali. Bagian
+> ini melatih keterampilan tersebut: menginstal Filebeat & Logstash
+> **langsung di OS Linux** menggunakan package manager, bukan hanya
+> `docker pull`.
 
-**Siapkan "VM" percobaan** (container Ubuntu polos — pada server
-sungguhan, ini langsung menjadi VM/bare-metal Linux Anda, langkah-langkah
-di bawah PERSIS SAMA):
+**Siapkan "VM" percobaan:**
 ```bash
 docker run -d --name native-vm ubuntu:22.04 sleep infinity
 docker exec -it native-vm bash
 ```
+> **INFORMATION:** container Ubuntu polos ini mensimulasikan VM/bare-metal
+> Linux — pada server sungguhan, langkah-langkah di bawah berlaku PERSIS
+> SAMA.
+
 Sisa langkah pada bagian ini dijalankan **DI DALAM** `native-vm` (prompt shell-nya).
 
-**1. Tambahkan repository resmi Elastic** (APT, untuk Debian/Ubuntu —
-versi RHEL/CentOS menggunakan `yum`/`dnf` dengan repo `.repo` setara, pola sama):
+**1. Tambahkan repository resmi Elastic** (APT, untuk Debian/Ubuntu):
 ```bash
 apt-get update -qq && apt-get install -y curl gnupg apt-transport-https
 
@@ -120,15 +125,20 @@ curl -fsSL https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor -o
 echo "deb [signed-by=/usr/share/keyrings/elastic.gpg] https://artifacts.elastic.co/packages/9.x/apt stable main" > /etc/apt/sources.list.d/elastic-9.x.list
 apt-get update -qq
 ```
+> **INFORMATION:** versi RHEL/CentOS menggunakan `yum`/`dnf` dengan repo
+> `.repo` setara — pola langkahnya sama.
 
 **2. Install Filebeat & Logstash** (pin versi sama dengan stack lab ini,
 9.5.2 — supaya kompatibel):
 ```bash
 apt-get install -y filebeat=9.5.2 logstash=1:9.5.2-1
 ```
-Expected Output: kedua paket berhasil diunduh & terinstal lewat
-`dpkg`, sama persis seperti instalasi package Linux lain (`apt-get install
-nginx`, dst.) — TIDAK ada langkah spesial. Verifikasi:
+Expected Output: kedua paket berhasil diunduh & terinstal lewat `dpkg`.
+
+> **INFORMATION:** proses ini sama persis seperti instalasi package Linux
+> lain (`apt-get install nginx`, dst.) — TIDAK ada langkah spesial.
+
+Verifikasi:
 ```bash
 /usr/share/filebeat/bin/filebeat version
 /usr/share/logstash/bin/logstash --version
@@ -139,8 +149,7 @@ Expected Output: `filebeat version 9.5.2 (arm64)...` dan
 **3. Buat config Logstash** — pipeline sederhana, membaca file, melakukan
 parsing `%{COMBINEDAPACHELOG}` (pattern bawaan Logstash, sama seperti
 `web-service.conf` yang Anda gunakan untuk Robot Shop), output ke `stdout`
-terlebih dahulu (supaya hasilnya langsung terlihat tanpa perlu setup
-Elasticsearch di container percobaan ini):
+terlebih dahulu:
 ```bash
 mkdir -p /etc/logstash/conf.d
 cat > /etc/logstash/conf.d/native-demo.conf << 'EOF'
@@ -156,10 +165,12 @@ output {
 EOF
 chown logstash:logstash /etc/logstash/conf.d/native-demo.conf
 ```
+> **INFORMATION:** output diarahkan ke `stdout` terlebih dahulu supaya
+> hasilnya langsung terlihat tanpa perlu setup Elasticsearch di container
+> percobaan ini.
 
 **4. Buat config Filebeat** — membaca file log contoh, mengirim ke
-Logstash (pola arsitektur SAMA seperti bagian d di atas — Filebeat
-membaca file, mengirim ke Logstash lewat port beats):
+Logstash:
 ```bash
 mkdir -p /etc/filebeat
 cat > /etc/filebeat/filebeat.yml << 'EOF'
@@ -173,10 +184,10 @@ output.logstash:
   hosts: ["localhost:5044"]
 EOF
 ```
+> **INFORMATION:** pola arsitekturnya SAMA seperti bagian d di atas —
+> Filebeat membaca file, mengirim ke Logstash lewat port beats.
 
-**5. Siapkan data contoh** (mensimulasikan log Apache/Nginx access —
-format standar yang sama seperti yang Anda temukan pada dokumentasi resmi
-Apache/Nginx atau tutorial mana pun di internet mengenai Combined Log Format):
+**5. Siapkan data contoh** (mensimulasikan log Apache/Nginx access):
 ```bash
 cat > /tmp/sample-access.log << 'EOF'
 203.0.113.42 - - [12/Mar/2026:08:14:23 +0000] "GET /index.html HTTP/1.1" 200 4523 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -186,29 +197,31 @@ cat > /tmp/sample-access.log << 'EOF'
 203.0.113.7 - - [12/Mar/2026:08:15:02 +0000] "GET /products?category=shoes HTTP/1.1" 200 8877 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)"
 EOF
 ```
+> **INFORMATION:** formatnya adalah format standar yang sama seperti yang
+> Anda temukan pada dokumentasi resmi Apache/Nginx atau tutorial mana pun
+> di internet mengenai Combined Log Format.
 
-**6. Jalankan Logstash** (di background, sebagai non-root user `logstash`
-— pada server sungguhan ini biasanya dijalankan lewat `systemctl enable
---now logstash`, tetapi container percobaan ini tidak memiliki systemd,
-sehingga dijalankan secara manual). User `logstash` yang dibuat oleh
-package APT memiliki login shell `/usr/sbin/nologin` (memang disengaja —
-best practice service account tidak boleh login interaktif) — karena itu
-diperlukan `su -s /bin/bash` (memaksa penggunaan bash untuk command ini
-saja), `su logstash` biasa akan ditolak dengan error
-`This account is currently not available`:
+**6. Jalankan Logstash** (di background, sebagai non-root user `logstash`):
 ```bash
 mkdir -p /tmp/ls-data /tmp/ls-logs && chown logstash:logstash /tmp/ls-data /tmp/ls-logs
 su -s /bin/bash logstash -c "/usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/native-demo.conf --path.settings /etc/logstash --path.data /tmp/ls-data --path.logs /tmp/ls-logs &"
 ```
-`--path.settings /etc/logstash` WAJIB disebutkan secara eksplisit di
-sini — berbeda dari apabila Anda menjalankannya lewat `systemctl` (yang
-otomatis mengetahui lokasi config), invocation manual seperti ini tidak
-otomatis menemukan `log4j2.properties`/`jvm.options` milik paket APT
-(lokasinya di `/etc/logstash`, bukan `/usr/share/logstash/config` yang
-justru tidak ada) — tanpa flag ini Logstash tetap berjalan, tetapi
-fallback ke logging konsol saja, dan
-`/tmp/ls-logs/logstash-plain.log` pada langkah verifikasi berikut tidak
-akan pernah terbentuk.
+> **INFORMATION:** pada server sungguhan, Logstash biasanya dijalankan
+> lewat `systemctl enable --now logstash`, tetapi container percobaan ini
+> tidak memiliki systemd, sehingga dijalankan secara manual di sini. User
+> `logstash` yang dibuat oleh package APT memiliki login shell
+> `/usr/sbin/nologin` (memang disengaja — best practice service account
+> tidak boleh login interaktif), karena itu diperlukan `su -s /bin/bash`
+> (memaksa penggunaan bash untuk command ini saja) — `su logstash` biasa
+> akan ditolak dengan error `This account is currently not available`.
+> `--path.settings /etc/logstash` WAJIB disebutkan secara eksplisit pada
+> command di atas — berbeda dari apabila dijalankan lewat `systemctl`
+> (yang otomatis mengetahui lokasi config), invocation manual seperti ini
+> tidak otomatis menemukan `log4j2.properties`/`jvm.options` milik paket
+> APT (lokasinya di `/etc/logstash`, bukan `/usr/share/logstash/config`
+> yang justru tidak ada) — tanpa flag ini Logstash tetap berjalan, tetapi
+> fallback ke logging konsol saja, dan `/tmp/ls-logs/logstash-plain.log`
+> pada langkah verifikasi berikut tidak akan pernah terbentuk.
 
 Tunggu sampai muncul log `Pipelines running` (sekitar 30-40 detik, JVM
 startup) sebelum melanjutkan ke langkah 7 — periksa dengan
@@ -222,10 +235,7 @@ startup) sebelum melanjutkan ke langkah 7 — periksa dengan
 ```
 Expected Output — pada terminal Logstash (langkah 6), 5 dokumen
 ter-parse, tiap dokumen berisi `response.status_code`, `url.original`,
-`source.address`, `user_agent.original` — PERSIS field yang sama seperti
-hasil parsing `web-service.conf` terhadap log Robot Shop, membuktikan
-instalasi manual ini menghasilkan pipeline yang fungsinya identik dengan
-versi Docker:
+`source.address`, `user_agent.original`:
 ```
 {
     "url" => { "original" => "/products?category=shoes" },
@@ -236,13 +246,17 @@ versi Docker:
     "user_agent" => { "original" => "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)" }
 }
 ```
+> **INFORMATION:** field yang ter-extract ini PERSIS sama seperti hasil
+> parsing `web-service.conf` terhadap log Robot Shop — instalasi manual
+> ini menghasilkan pipeline yang fungsinya identik dengan versi Docker.
 
-**Bersihkan** container percobaan setelah selesai (bukan bagian dari lab
-utama, hanya latihan keterampilan instalasi):
+**Bersihkan** container percobaan setelah selesai:
 ```bash
 exit                    # keluar dari native-vm
 docker rm -f native-vm
 ```
+> **INFORMATION:** langkah pembersihan ini bukan bagian dari lab utama,
+> hanya latihan keterampilan instalasi.
 
 ## e. Contoh Implementasi
 
@@ -270,12 +284,15 @@ SATU pola yang MUNGKIN ada tergantung performa host Anda (429, kapasitas):
 GET payment-service-parsed-*/_search
 { "size": 0, "aggs": { "by_status": { "terms": { "field": "http_status" } } } }
 ```
-Expected Output (dari salah satu pengukuran nyata — angka Anda bisa
-berbeda totalnya): `429: 133`, `200: 14`, `500: 13`. **Apabila pada
-layar Anda tidak terdapat `429` sama sekali dan hampir seluruhnya
-`200`**, hal tersebut normal juga, yang berarti host Anda cukup kuat
-menangani `NUM_CLIENTS: 6` tanpa `payment` kewalahan (lihat catatan Sesi
-6). Yang PASTI selalu ada (tidak tergantung performa host): field `500`.
+Expected Output (dari salah satu pengukuran nyata): `429: 133`,
+`200: 14`, `500: 13`.
+
+> **INFORMATION:** angka Anda bisa berbeda totalnya. Apabila pada layar
+> Anda tidak terdapat `429` sama sekali dan hampir seluruhnya `200`, hal
+> tersebut normal juga, yang berarti host Anda cukup kuat menangani
+> `NUM_CLIENTS: 6` tanpa `payment` kewalahan (lihat catatan Sesi 6).
+
+Field `500` PASTI selalu ada, tidak tergantung performa host.
 
 Breakdown per `payment_user` untuk status `500` menunjukkan pola yang jelas:
 ```

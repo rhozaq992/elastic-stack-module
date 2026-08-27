@@ -133,17 +133,24 @@ cd lab/day-1-fundamentals/sesi-1-intro-elk
 docker compose up -d
 ```
 
-Kibana baru mulai setelah Elasticsearch berstatus `healthy` (diatur lewat
-`depends_on: condition: service_healthy` pada `docker-compose.yml`) —
-tunggu hingga ketiga container berstatus `healthy`/`running`.
+Tunggu hingga ketiga container berstatus `healthy`/`running` sebelum
+melanjutkan.
+
+> **INFORMATION:** Kibana baru mulai setelah Elasticsearch berstatus
+> `healthy` (diatur lewat `depends_on: condition: service_healthy` pada
+> `docker-compose.yml`) — jeda beberapa saat sebelum ketiganya `Up` adalah
+> normal.
 
 **Periksa status container:**
 ```bash
 docker compose ps
 ```
-Expected Output (ringkasan kolom yang penting — output pada layar Anda
-juga akan memiliki kolom `COMMAND`/`SERVICE`/`CREATED`/`PORTS`, hal
-tersebut normal, fokus pada kolom `STATUS`):
+> **INFORMATION:** output pada layar Anda juga akan memiliki kolom
+> `COMMAND`/`SERVICE`/`CREATED`/`PORTS` selain yang ditampilkan pada
+> ringkasan Expected Output di bawah — hal tersebut normal, fokus pada
+> kolom `STATUS`.
+
+Expected Output (ringkasan kolom yang penting):
 ```
 NAME                    IMAGE                                                 STATUS
 elk-lab-elasticsearch   docker.elastic.co/elasticsearch/elasticsearch:9.5.2  Up (healthy)
@@ -165,8 +172,8 @@ Expected Output:
   "tagline" : "You Know, for Search"
 }
 ```
-(`name` dan `cluster_uuid` pada layar Anda akan berbeda — nilai
-tersebut adalah identifier acak per instance, hal ini normal.)
+> **INFORMATION:** `name` dan `cluster_uuid` pada layar Anda akan berbeda
+> — nilai tersebut adalah identifier acak per instance, hal ini normal.
 
 **Verifikasi Kibana (port 5601):**
 ```bash
@@ -192,13 +199,16 @@ Expected Output:
   "active_shards_percent_as_number" : 96.07843137254902
 }
 ```
-Angka `active_primary_shards` dan `active_shards_percent_as_number` pada
-tampilan Anda **boleh berbeda** — jumlahnya tergantung index sistem
-internal Kibana yang dibuat otomatis (dapat sedikit berbeda tiap versi).
-Status **`yellow`** adalah **normal** untuk single-node (lihat penjelasan
-Replikasi di atas) — bukan berarti ada yang rusak. Yang harus SAMA dan
-WAJIB diperhatikan: **`unassigned_primary_shards` harus 0**. Apabila
-bukan nol, barulah itu menjadi tanda adanya masalah nyata.
+> **INFORMATION:** angka `active_primary_shards` dan
+> `active_shards_percent_as_number` pada tampilan Anda **boleh berbeda**
+> — jumlahnya tergantung index sistem internal Kibana yang dibuat
+> otomatis (dapat sedikit berbeda tiap versi). Status **`yellow`** adalah
+> **normal** untuk single-node (lihat penjelasan Replikasi di atas) —
+> bukan berarti ada yang rusak.
+
+Periksa **`unassigned_primary_shards`** — nilainya **WAJIB 0**. Apabila
+bukan nol, itu menjadi tanda adanya masalah nyata yang perlu ditelusuri
+sebelum melanjutkan.
 
 ## e. Contoh Implementasi
 

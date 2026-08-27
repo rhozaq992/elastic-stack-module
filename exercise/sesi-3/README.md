@@ -11,11 +11,13 @@ toko online yang dipakai di lab) untuk latihan Query DSL.
 Disarankan: eksplorasi dahulu lewat **Kibana Discover** (pilih data view
 "Kibana Sample Data Flights", gunakan filter KQL — sama seperti yang
 dipelajari pada lab Sesi 3 bagian d) untuk melihat sendiri polanya
-sebelum menuliskan query Query DSL yang setara di bawah. Jawaban akhir
-tetap perlu dalam bentuk Query DSL (bukan hanya filter KQL di Discover),
-karena `validate_sesi3.sh` memeriksa hasilnya secara terprogram lewat
-API — namun proses eksplorasi lewat UI akan mempermudah Anda memastikan
-polanya benar sebelum menuliskan query-nya.
+sebelum menuliskan query Query DSL yang setara di bawah.
+
+> **INFORMATION:** jawaban akhir tetap perlu dalam bentuk Query DSL
+> (bukan hanya filter KQL di Discover), karena `validate_sesi3.sh`
+> memeriksa hasilnya secara terprogram lewat API — proses eksplorasi
+> lewat UI hanya mempermudah Anda memastikan polanya benar sebelum
+> menuliskan query-nya.
 
 1. Load sample data flights.
 2. Cari total penerbangan yang DIBATALKAN (`Cancelled: true`).
@@ -32,10 +34,12 @@ polanya benar sebelum menuliskan query-nya.
    seluruh dataset seperti langkah 2) — gunakan `range` query pada field
    `timestamp` dikombinasikan dengan `Cancelled: true`. Field `timestamp`
    bertipe `date`, sehingga Anda dapat menggunakan **relative date math**
-   Elasticsearch (`now-7d`) alih-alih tanggal tetap — hal ini penting
-   karena data sample selalu ter-generate ulang relatif terhadap waktu
-   sekarang setiap kali dimuat, sehingga tanggal tetap (hardcoded) akan
-   keliru di lain waktu.
+   Elasticsearch (`now-7d`) alih-alih tanggal tetap.
+
+> **INFORMATION:** penggunaan relative date math (`now-7d`) pada langkah 5
+> penting karena data sample selalu ter-generate ulang relatif terhadap
+> waktu sekarang setiap kali dimuat, sehingga tanggal tetap (hardcoded)
+> akan keliru di lain waktu.
 
 ## Kriteria Selesai
 

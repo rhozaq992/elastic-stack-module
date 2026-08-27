@@ -25,12 +25,14 @@ uname -m
 - Hasil `x86_64` / `amd64` → perangkat Anda **x86/amd64** (mayoritas
   laptop Windows/Intel/AMD).
 
-Catat hasilnya. Seluruh image yang digunakan pada lab ini telah disiapkan
-untuk **kedua** arsitektur — `docker pull`/`docker compose up` akan
-otomatis mengunduh varian yang sesuai dengan arsitektur perangkat Anda
-tanpa perlu pengaturan tambahan. Apabila terdapat pengecualian untuk
-service tertentu, hal tersebut akan disebutkan secara eksplisit pada
-README sesi terkait.
+Catat hasilnya.
+
+> **INFORMATION:** seluruh image yang digunakan pada lab ini telah
+> disiapkan untuk **kedua** arsitektur — `docker pull`/`docker compose up`
+> akan otomatis mengunduh varian yang sesuai dengan arsitektur perangkat
+> Anda tanpa perlu pengaturan tambahan. Apabila terdapat pengecualian
+> untuk service tertentu, hal tersebut akan disebutkan secara eksplisit
+> pada README sesi terkait.
 
 ## 2. Instalasi Perangkat Lunak yang Diperlukan
 
@@ -66,23 +68,28 @@ menemukan kendala): [learn.microsoft.com/windows/wsl/install](https://learn.micr
 Setelah instalasi selesai, **seluruh perintah pada lab ini dijalankan DI
 DALAM terminal WSL2** (buka lewat aplikasi "Ubuntu" pada Start Menu, atau
 ketik `wsl` pada Windows Terminal) — **bukan** pada Command Prompt atau
-PowerShell biasa, karena seluruh perintah pada lab ini ditulis dalam
-sintaks bash dan membutuhkan akses langsung ke Docker socket gaya Linux.
-Docker Desktop for Windows sendiri sudah membutuhkan WSL2 sebagai
-backend, tetapi hal tersebut tidak otomatis berarti terminal Anda bash
-— WSL2 tetap harus dibuka secara eksplisit sebagaimana dijelaskan di atas.
+PowerShell biasa.
+
+> **INFORMATION:** hal ini diperlukan karena seluruh perintah pada lab
+> ini ditulis dalam sintaks bash dan membutuhkan akses langsung ke Docker
+> socket gaya Linux. Docker Desktop for Windows sendiri sudah membutuhkan
+> WSL2 sebagai backend, tetapi hal tersebut tidak otomatis berarti
+> terminal Anda bash — WSL2 tetap harus dibuka secara eksplisit
+> sebagaimana dijelaskan di atas.
 
 **Alternatif**: **Git Bash** (ikut terpasang bersama Git for Windows,
 lihat bagian 2.3) cukup untuk perintah yang tidak membutuhkan akses
-langsung ke Docker socket gaya Linux, namun WSL2 tetap lebih disarankan
-untuk konsistensi penuh di seluruh sesi lab ini. Apabila perintah bash
-dijalankan pada PowerShell/Command Prompt biasa (bukan WSL2/Git Bash),
-sebagian besar akan **gagal** (`bash: command not found`, error sintaks
-`$(...)`, dan sejenisnya) — ini bukan galat pada modul, melainkan karena
-perintah tersebut memang tidak ditulis untuk shell tersebut.
+langsung ke Docker socket gaya Linux.
 
-macOS dan Linux tidak memerlukan langkah tambahan — terminal bawaan
-sudah kompatibel dengan bash.
+> **INFORMATION:** WSL2 tetap lebih disarankan untuk konsistensi penuh di
+> seluruh sesi lab ini. Apabila perintah bash dijalankan pada
+> PowerShell/Command Prompt biasa (bukan WSL2/Git Bash), sebagian besar
+> akan **gagal** (`bash: command not found`, error sintaks `$(...)`, dan
+> sejenisnya) — ini bukan galat pada modul, melainkan karena perintah
+> tersebut memang tidak ditulis untuk shell tersebut.
+>
+> macOS dan Linux tidak memerlukan langkah tambahan — terminal bawaan
+> sudah kompatibel dengan bash.
 
 ### 2.3 Git (Wajib — semua peserta)
 
@@ -102,8 +109,10 @@ git --version
 ### 2.4 Python 3 (Wajib mulai Hari 2 — Sesi 4)
 
 Sesi 4 menjalankan script Python untuk memindahkan data Robot Shop ke
-Elasticsearch — **bukan opsional**, dibutuhkan pada langkah praktik inti
-sesi tersebut (bukan hanya exercise).
+Elasticsearch.
+
+> **INFORMATION:** instalasi ini **bukan opsional** — Python dibutuhkan
+> pada langkah praktik inti Sesi 4, bukan hanya pada exercise-nya.
 
 | Platform | Unduh |
 |---|---|
@@ -123,19 +132,23 @@ python3 --version
   **Settings → Resources → Memory** (geser slider, klik **Apply &
   Restart**). Pada Linux, Docker Engine memakai RAM host secara langsung
   — pastikan tersedia minimal 8GB RAM bebas pada host.
-- **Sesi 7 (Hari 4, cluster 3-node) membutuhkan minimal 12GB** — hasil
-  pengujian menunjukkan tiap node Elasticsearch memakai ±1,4GB RAM
-  (±4,2GB total hanya untuk Elasticsearch, di luar overhead Docker
-  Desktop dan aplikasi lain yang mungkin masih berjalan dari sesi
-  sebelumnya). Naikkan alokasi memori SEBELUM memulai Sesi 7 lewat
-  langkah Docker Desktop di atas.
+- **Sesi 7 (Hari 4, cluster 3-node) membutuhkan minimal 12GB.** Naikkan
+  alokasi memori SEBELUM memulai Sesi 7 lewat langkah Docker Desktop di
+  atas.
+
+> **INFORMATION:** kebutuhan 12GB pada Sesi 7 berdasarkan pemakaian tiap
+> node Elasticsearch sebesar ±1,4GB RAM (±4,2GB total hanya untuk
+> Elasticsearch, di luar overhead Docker Desktop dan aplikasi lain yang
+> mungkin masih berjalan dari sesi sebelumnya).
 
 ## 4. Koneksi Internet
 
-Diperlukan untuk mengunduh image Docker pada setiap sesi. Ukuran
-unduhan bervariasi per sesi (image Elasticsearch/Kibana/Logstash resmi
-berukuran ±1-2GB masing-masing) — disarankan mengunduh lebih awal pada
-koneksi yang stabil apabila memungkinkan.
+Diperlukan untuk mengunduh image Docker pada setiap sesi.
+
+> **INFORMATION:** ukuran unduhan bervariasi per sesi (image
+> Elasticsearch/Kibana/Logstash resmi berukuran ±1-2GB masing-masing) —
+> disarankan mengunduh lebih awal pada koneksi yang stabil apabila
+> memungkinkan.
 
 ## 5. Pemeriksaan Cepat
 
