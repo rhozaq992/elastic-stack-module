@@ -8,32 +8,14 @@ apa yang sedang Anda observasi lewat Elasticsearch/Kibana.
 
 ## Topologi
 
-```
-                                 ┌─────────┐
-                                 │   web   │  (nginx, port 8080 — pintu masuk semua request)
-                                 └─────────┘
-                                      │
-     ┌────────────┬────────────┬──────┼─────┬────────────┬────────────┐
-     ▼            ▼            ▼            ▼            ▼            ▼
-┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
-│catalogue│  │   user  │  │   cart  │  │ shipping│  │ ratings │  │ payment │
-└─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘
-     ▼            ▼            ▼            ▼            ▼            ▼
-┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
-│ mongodb │  │mongodb +│  │  redis  │  │  mysql  │  │  mysql  │  │ rabbitmq│
-│         │  │  redis  │  │         │  │         │  │         │  │         │
-└─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘
-                                                                      ▼
-                                                                 ┌─────────┐
-                                                                 │ dispatch│
-                                                                 └─────────┘
-```
+![Diagram topologi Robot Shop: web sebagai entry point ke enam servis, masing-masing dengan backing store-nya, dan dispatch sebagai consumer asinkron dari RabbitMQ](../../../docs/diagrams/sesi4-robot-shop-topology.svg)
 
-Semua servis di baris atas (`catalogue`, `user`, `cart`, `shipping`,
-`ratings`, `payment`) diakses lewat `web` — konsisten dengan "pintu masuk
-semua request" di atas. `dispatch` beda: dia bukan API yang diakses lewat
-`web`, tapi consumer asinkron yang mengambil pesan dari `rabbitmq` setelah
-`payment` selesai memproses transaksi.
+*Semua servis pada baris tengah (`catalogue`, `user`, `cart`, `shipping`,
+`ratings`, `payment`) diakses lewat `web` — satu pintu masuk untuk semua
+request. `dispatch` berbeda: ia bukan API yang diakses lewat `web`,
+melainkan consumer asinkron yang mengambil pesan dari `rabbitmq` setelah
+`payment` selesai memproses transaksi (lihat legenda pada diagram untuk
+perbedaan panggilan sinkron vs asinkron).*
 
 ## Daftar Service
 

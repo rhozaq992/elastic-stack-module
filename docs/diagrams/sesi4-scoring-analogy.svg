@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 460" font-family="Helvetica, Arial, sans-serif">
   <rect x="0" y="0" width="1000" height="460" fill="#ffffff" rx="12" />
-  <text x="500" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#1a1a1a">Analogi Scoring: Nilai Dasar + Bonus, Bukan AI</text>
+  <text x="500" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#1a1a1a">Analogi Scoring: Nilai Dasar + Bonus</text>
 
   <rect x="60" y="55" width="880" height="46" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5" />
   <text x="500" y="84" text-anchor="middle" font-size="15" font-weight="700" fill="#1e3a8a">Skor Akhir  =  Skor Dasar (relevansi teks, BM25)  +  Bonus (function_score / boost)</text>
@@ -48,9 +48,9 @@
   <text x="820" y="305" text-anchor="middle" font-size="10.5" fill="#052e16">HPTD (rating 4.3)</text>
 
   <text x="750" y="335" text-anchor="middle" font-size="11.5" fill="#3f3f46">Urutan berubah SESUAI besar bonus —</text>
-  <text x="750" y="352" text-anchor="middle" font-size="11.5" fill="#3f3f46">rumus aritmetika biasa, bukan "AI memahami produk".</text>
+  <text x="750" y="352" text-anchor="middle" font-size="11.5" fill="#3f3f46">produk dengan bonus lebih besar naik ke atas.</text>
 
   <rect x="60" y="380" width="880" height="60" rx="10" fill="#f4f4f5" stroke="#d4d4d8" stroke-width="1.5" />
-  <text x="80" y="404" font-size="12.5" fill="#27272a">Tidak ada model yang "belajar" dari data, tidak ada training, tidak ada komponen machine learning.</text>
-  <text x="80" y="424" font-size="12.5" fill="#27272a">function_score/boost hanyalah penjumlahan/perkalian angka bawaan Elasticsearch — dapat dihitung manual di kertas.</text>
+  <text x="80" y="404" font-size="12.5" fill="#27272a">function_score/boost menghitung skor akhir lewat penjumlahan/perkalian angka berdasarkan nilai field bisnis</text>
+  <text x="80" y="424" font-size="12.5" fill="#27272a">(mis. avg_rating) — rumusnya dapat dihitung manual di kertas, dan hasilnya dapat diprediksi sepenuhnya.</text>
 </svg>

@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="1000" height="560" fill="#ffffff" rx="12" />
+  <text x="500" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#1a1a1a">Topologi Robot Shop</text>
+
+  <defs>
+    <marker id="arrowSync" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#1d4ed8" />
+    </marker>
+    <marker id="arrowAsync" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#b45309" />
+    </marker>
+  </defs>
+
+  <!-- web entry point: centered over the 6-column row (30..900, midpoint 465) -->
+  <rect x="405" y="55" width="120" height="50" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
+  <text x="465" y="76" text-anchor="middle" font-size="13" font-weight="700" fill="#1e3a8a">web</text>
+  <text x="465" y="93" text-anchor="middle" font-size="10" fill="#1e3a8a">nginx : 8080</text>
+
+  <!-- lines from web down to each service (columns centered at 90/240/390/540/690/840) -->
+  <path d="M 465 105 L 465 130 L 90 130 L 90 150"  stroke="#1d4ed8" stroke-width="1.5" fill="none" marker-end="url(#arrowSync)" />
+  <path d="M 465 105 L 465 130 L 240 130 L 240 150" stroke="#1d4ed8" stroke-width="1.5" fill="none" marker-end="url(#arrowSync)" />
+  <path d="M 465 105 L 465 130 L 390 130 L 390 150" stroke="#1d4ed8" stroke-width="1.5" fill="none" marker-end="url(#arrowSync)" />
+  <path d="M 465 105 L 465 130 L 540 130 L 540 150" stroke="#1d4ed8" stroke-width="1.5" fill="none" marker-end="url(#arrowSync)" />
+  <path d="M 465 105 L 465 130 L 690 130 L 690 150" stroke="#1d4ed8" stroke-width="1.5" fill="none" marker-end="url(#arrowSync)" />
+  <path d="M 465 105 L 465 130 L 840 130 L 840 150" stroke="#1d4ed8" stroke-width="1.5" fill="none" marker-end="url(#arrowSync)" />
+
+  <!-- service row: 6 columns, 120 wide, 30 gap, starting x=30 -->
+  <g font-size="12" font-weight="700" fill="#1e3a8a">
+    <rect x="30"  y="150" width="120" height="46" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5" />
+    <text x="90"  y="178" text-anchor="middle">catalogue</text>
+
+    <rect x="180" y="150" width="120" height="46" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5" />
+    <text x="240" y="178" text-anchor="middle">user</text>
+
+    <rect x="330" y="150" width="120" height="46" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5" />
+    <text x="390" y="178" text-anchor="middle">cart</text>
+
+    <rect x="480" y="150" width="120" height="46" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5" />
+    <text x="540" y="178" text-anchor="middle">shipping</text>
+
+    <rect x="630" y="150" width="120" height="46" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5" />
+    <text x="690" y="178" text-anchor="middle">ratings</text>
+
+    <rect x="780" y="150" width="120" height="46" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5" />
+    <text x="840" y="178" text-anchor="middle">payment</text>
+  </g>
+
+  <!-- lines from services down to backing stores -->
+  <path d="M 90  196 L 90  216" stroke="#71717a" stroke-width="1.5" fill="none" marker-end="url(#arrowSync)" />
+  <path d="M 240 196 L 240 216" stroke="#71717a" stroke-width="1.5" fill="none" marker-end="url(#arrowSync)" />
+  <path d="M 390 196 L 390 216" stroke="#71717a" stroke-width="1.5" fill="none" marker-end="url(#arrowSync)" />
+  <path d="M 540 196 L 540 216" stroke="#71717a" stroke-width="1.5" fill="none" marker-end="url(#arrowSync)" />
+  <path d="M 690 196 L 690 216" stroke="#71717a" stroke-width="1.5" fill="none" marker-end="url(#arrowSync)" />
+  <path d="M 840 196 L 840 216" stroke="#b45309" stroke-width="1.5" fill="none" marker-end="url(#arrowAsync)" />
+
+  <!-- backing stores row -->
+  <g font-size="11" font-weight="700" fill="#3f3f46">
+    <rect x="30"  y="216" width="120" height="46" rx="8" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5" />
+    <text x="90"  y="243" text-anchor="middle">MongoDB</text>
+
+    <rect x="180" y="216" width="120" height="46" rx="8" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5" />
+    <text x="240" y="238" text-anchor="middle">MongoDB +</text>
+    <text x="240" y="252" text-anchor="middle">Redis</text>
+
+    <rect x="330" y="216" width="120" height="46" rx="8" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5" />
+    <text x="390" y="243" text-anchor="middle">Redis</text>
+
+    <rect x="480" y="216" width="120" height="46" rx="8" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5" />
+    <text x="540" y="243" text-anchor="middle">MySQL</text>
+
+    <rect x="630" y="216" width="120" height="46" rx="8" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5" />
+    <text x="690" y="243" text-anchor="middle">MySQL</text>
+
+    <rect x="780" y="216" width="120" height="46" rx="8" fill="#fffbeb" stroke="#b45309" stroke-width="1.5" />
+    <text x="840" y="243" text-anchor="middle" fill="#78350f">RabbitMQ</text>
+  </g>
+
+  <!-- dispatch consumer, async off rabbitmq -->
+  <path d="M 840 262 L 840 300" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5 4" fill="none" marker-end="url(#arrowAsync)" />
+  <rect x="780" y="300" width="120" height="46" rx="8" fill="#fffbeb" stroke="#b45309" stroke-width="1.5" />
+  <text x="840" y="328" text-anchor="middle" font-size="12" font-weight="700" fill="#78350f">dispatch</text>
+
+  <!-- legend -->
+  <rect x="30" y="390" width="920" height="130" rx="10" fill="#f4f4f5" stroke="#d4d4d8" stroke-width="1.5" />
+  <text x="50" y="416" font-size="13" font-weight="700" fill="#27272a">Cara Membaca Diagram</text>
+
+  <line x1="50" y1="436" x2="90" y2="436" stroke="#1d4ed8" stroke-width="2" marker-end="url(#arrowSync)" />
+  <text x="100" y="440" font-size="12" fill="#3f3f46">Panggilan API sinkron (request/response langsung) — dari <tspan font-weight="700">web</tspan> ke tiap servis, dan dari servis ke backing store-nya.</text>
+
+  <line x1="50" y1="460" x2="90" y2="460" stroke="#b45309" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrowAsync)" />
+  <text x="100" y="464" font-size="12" fill="#3f3f46"><tspan font-weight="700">dispatch</tspan> BUKAN diakses lewat <tspan font-weight="700">web</tspan> — ia consumer asinkron yang mengambil pesan dari <tspan font-weight="700">RabbitMQ</tspan> setelah <tspan font-weight="700">payment</tspan> selesai memproses transaksi.</text>
+
+  <text x="50" y="490" font-size="12" fill="#3f3f46">Servis pendukung (MongoDB, Redis, MySQL, RabbitMQ) adalah database/message-queue standar, bukan bagian dari aplikasi Robot Shop itu sendiri.</text>
+  <text x="50" y="508" font-size="12" fill="#3f3f46">Semua traffic peserta pada lab ini masuk lewat satu pintu: <tspan font-family="monospace" font-weight="700">http://localhost:8080</tspan> (service <tspan font-weight="700">web</tspan>).</text>
+</svg>
