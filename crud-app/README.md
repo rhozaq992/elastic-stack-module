@@ -36,7 +36,7 @@ ts=2026-08-26T18:40:44.770Z|method=POST|path=/tasks|status=201|duration_ms=8|id=
 ```
 Lihat log-nya: `docker compose logs -f task-tracker`.
 
-Format ini sengaja dibuat berbeda dari yang sudah Anda jumpai di lab
-(JSON `cart`, plain-text `payment`, Combined Log Format `web`) — dipakai
-untuk latihan menyusun grok pattern dari NOL di
-[`exercise/sesi-8/README.md`](../exercise/sesi-8/README.md) Bagian 2.
+> **INFORMATION:** format ini sengaja dibuat berbeda dari yang sudah
+> Anda jumpai di lab (JSON `cart`, plain-text `payment`, Combined Log
+> Format `web`) — dipakai untuk latihan menyusun grok pattern dari NOL
+> di [`exercise/sesi-8/README.md`](../exercise/sesi-8/README.md) Bagian 2.

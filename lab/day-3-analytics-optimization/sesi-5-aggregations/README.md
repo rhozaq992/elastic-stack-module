@@ -70,9 +70,9 @@ Expected Output:
 404: count=801,   avg_bytes=5049.2
 503: count=441,   avg_bytes=0.0
 ```
-`avg_bytes` untuk response `503` wajar bernilai `0.0` — response error
-biasanya tidak mengirim body, sehingga `bytes`-nya memang bernilai nol,
-bukan bug.
+> **INFORMATION:** `avg_bytes` untuk response `503` wajar bernilai `0.0`
+> — response error biasanya tidak mengirim body, sehingga `bytes`-nya
+> memang bernilai nol, bukan bug.
 
 ## e. Contoh Implementasi
 
@@ -104,11 +104,11 @@ mentah lagi — perhatikan `buckets_path: "requests_per_day>total_bytes"`,
 sintaks tersebut berarti "ambil hasil agregasi `total_bytes` di dalam tiap
 bucket `requests_per_day`".
 
-**Tanggal dan angka persis pada layar Anda dapat berbeda** —
-`kibana_sample_data_logs` merupakan data time-relative; Kibana
-men-generate ulang rentang tanggalnya relatif terhadap kapan Anda memuat
-datanya, bukan tanggal tetap. Jumlah bucket ~61 dan pola angkanya akan
-tetap konsisten, hanya tanggal dan totalnya yang bergeser.
+> **INFORMATION:** tanggal dan angka persis pada layar Anda **dapat
+> berbeda** — `kibana_sample_data_logs` merupakan data time-relative;
+> Kibana men-generate ulang rentang tanggalnya relatif terhadap kapan Anda
+> memuat datanya, bukan tanggal tetap. Jumlah bucket ~61 dan pola angkanya
+> akan tetap konsisten, hanya tanggal dan totalnya yang bergeser.
 
 **Geo aggregation** — mengelompokkan traffic berdasarkan lokasi (grid geografis):
 ```

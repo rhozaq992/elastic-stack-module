@@ -119,28 +119,34 @@ belanja > 100.
 
 *Data view eCommerce aktif — tabel dokumen terupdate sesuai pilihan.*
 
-**Atur rentang waktu (time range) terlebih dahulu.** Kibana Sample Data
-menempatkan timestamp dokumennya relatif terhadap tanggal saat data
-tersebut dimuat, sehingga tabel dapat tampil kosong apabila rentang waktu
-default di pojok kanan atas ("Last 15 minutes") terlalu sempit. Klik
-rentang waktu tersebut dan pilih **"Last 90 days"** sebelum melanjutkan ke
+**Atur rentang waktu (time range) terlebih dahulu.** Klik rentang waktu
+di pojok kanan atas dan pilih **"Last 90 days"** sebelum melanjutkan ke
 langkah berikutnya — seluruh screenshot pada bagian ini menggunakan
 rentang waktu tersebut.
+
+> **INFORMATION:** Kibana Sample Data menempatkan timestamp dokumennya
+> relatif terhadap tanggal saat data tersebut dimuat, sehingga tabel
+> dapat tampil kosong apabila rentang waktu default ("Last 15 minutes")
+> terlalu sempit — inilah sebabnya rentang waktu perlu diperlebar ke
+> "Last 90 days" di atas.
 
 ![Kibana Discover dengan filter KQL customer_gender MALE dan taxful_total_price di atas 200, menampilkan hasil dan histogram](../../../docs/screenshots/sesi-3/04-discover-kql-filter.png)
 
 *3. Ketik filter KQL `customer_gender: "MALE" and taxful_total_price > 200`
 di search bar, tekan Enter — histogram & daftar dokumen ter-update
-otomatis. (Jumlah dokumen di layar bisa berbeda dari hasil query DSL
-langsung ke ES — Discover membatasi hasil sesuai rentang waktu yang
-dipilih di kanan atas, sedangkan query lewat Dev Tools Console di atas
-tidak dibatasi waktu.)*
+otomatis.*
+
+> **INFORMATION:** jumlah dokumen di layar bisa berbeda dari hasil query
+> DSL langsung ke ES — Discover membatasi hasil sesuai rentang waktu yang
+> dipilih di kanan atas, sedangkan query lewat Dev Tools Console di atas
+> tidak dibatasi waktu.
 
 **Filter menggunakan UI.** Selain mengetik KQL manual, Discover
-memiliki beberapa cara untuk memfilter/mengatur tampilan data. (Catatan:
-jumlah dokumen pada seluruh screenshot di bawah bersifat **time-relative**
-— "Last 90 days" bergeser tiap hari, sehingga angka pada layar Anda pasti
-berbeda, hal ini normal.)
+memiliki beberapa cara untuk memfilter/mengatur tampilan data.
+
+> **INFORMATION:** jumlah dokumen pada seluruh screenshot di bawah
+> bersifat **time-relative** — "Last 90 days" bergeser tiap hari,
+> sehingga angka pada layar Anda pasti berbeda, hal ini normal.
 
 **a) Tambah filter lewat form :** klik **"+ Add filter"**
 di sebelah kiri search bar:

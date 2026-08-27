@@ -81,38 +81,47 @@ docker compose up -d
 **Apabila perangkat Anda ARM (Apple Silicon)** — periksa terlebih dahulu
 lewat `docker info --format '{{.Architecture}}'` (lihat
 `prerequisites.md`). Apabila hasilnya `arm64`, gunakan perintah berikut
-sebagai pengganti perintah di atas — tanpa ini, `mysql` akan berjalan
-lewat emulasi dengan warning platform-mismatch (tetap berjalan, tetapi
-lebih lambat & membingungkan apabila tidak diberi tahu terlebih dahulu):
+sebagai pengganti perintah di atas:
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml up -d
 ```
-Tunggu servis yang punya healthcheck jadi `healthy` (`docker compose ps`)
-— `catalogue`/`user`/`cart`/`payment`/`web` biasanya cepat, sementara
-`shipping`/`ratings` butuh waktu lebih lama saat MySQL inisialisasi
-pertama kali. (`mongodb`/`redis`/`rabbitmq`/`mysql`/`dispatch` tidak
-punya healthcheck sendiri dan akan selalu tampil tanpa status `healthy`
-di `docker compose ps` — itu normal, cukup pastikan statusnya `Up`.)
 
-> **[Terminal] Lakukan hal ini terlebih dahulu untuk isi rating awal.** Robot Shop yang BARU pertama
-> kali dijalankan punya `avg_rating: 0` untuk semua produk apabila
-> langsung lanjut ke contoh `function_score` di bawah tanpa langkah ini, query-nya akan jalan tanpa error,
-> namun urutan hasilnya tidak berubah (boost dari rating 0 selalu 0),
-> bertentangan dengan Expected Output yang diharapkan dalam modul ini. jalankan perintah berikut:
-> ```bash
-> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/Watson/5" -o /dev/null
-> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/Watson/4" -o /dev/null
-> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/HPTD/5" -o /dev/null
-> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/HPTD/5" -o /dev/null
-> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/HPTD/3" -o /dev/null
-> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/UHJ/2" -o /dev/null
-> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/RMC/5" -o /dev/null
-> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/RMC/5" -o /dev/null
-> curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/STAN-1/5" -o /dev/null
-> ```
-> (SKU: `Watson`, `HPTD`=High-Powered Travel Droid, `UHJ`=Ultimate
-> Harvesting Juggernaut, `RMC`=Robotic Mining Cyborg, `STAN-1`=Stan — lihat
-> daftar lengkap lewat `GET /api/catalogue/products`.)
+> **INFORMATION:** tanpa override di atas, `mysql` akan berjalan lewat
+> emulasi dengan warning platform-mismatch — tetap berjalan, tetapi lebih
+> lambat & membingungkan apabila tidak diberi tahu terlebih dahulu.
+
+Tunggu servis yang punya healthcheck jadi `healthy` (`docker compose ps`).
+
+> **INFORMATION:** `catalogue`/`user`/`cart`/`payment`/`web` biasanya
+> cepat, sementara `shipping`/`ratings` butuh waktu lebih lama saat MySQL
+> inisialisasi pertama kali. `mongodb`/`redis`/`rabbitmq`/`mysql`/`dispatch`
+> tidak punya healthcheck sendiri dan akan selalu tampil tanpa status
+> `healthy` di `docker compose ps` — itu normal, cukup pastikan statusnya
+> `Up`.
+
+**[Terminal] Lakukan hal ini terlebih dahulu untuk isi rating awal** —
+jalankan perintah berikut:
+```bash
+curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/Watson/5" -o /dev/null
+curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/Watson/4" -o /dev/null
+curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/HPTD/5" -o /dev/null
+curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/HPTD/5" -o /dev/null
+curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/HPTD/3" -o /dev/null
+curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/UHJ/2" -o /dev/null
+curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/RMC/5" -o /dev/null
+curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/RMC/5" -o /dev/null
+curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/STAN-1/5" -o /dev/null
+```
+(SKU: `Watson`, `HPTD`=High-Powered Travel Droid, `UHJ`=Ultimate
+Harvesting Juggernaut, `RMC`=Robotic Mining Cyborg, `STAN-1`=Stan — lihat
+daftar lengkap lewat `GET /api/catalogue/products`.)
+
+> **INFORMATION:** Robot Shop yang BARU pertama kali dijalankan punya
+> `avg_rating: 0` untuk semua produk. Apabila langsung lanjut ke contoh
+> `function_score` di bawah tanpa langkah ini, query-nya akan tetap
+> berjalan tanpa error, namun urutan hasilnya tidak berubah (boost dari
+> rating 0 selalu 0), bertentangan dengan Expected Output yang diharapkan
+> dalam modul ini.
 
 **[Terminal] Ambil data produk asli dari Robot Shop, gabung dengan data rating, index ke Elasticsearch:**
 ```bash
@@ -144,11 +153,11 @@ Expected Output: `"errors":false`, 11 item
 Robot Shop (nama, deskripsi, harga, stok, kategori, rating) sekarang ada di
 index `robot-shop-catalogue`.
 
-> **Kenapa harus ambil data ini secara manual?** Robot Shop sendiri
-> menyimpan produknya di MongoDB (dipakai oleh service `catalogue`), bukan
-> di Elasticsearch. Langkah di atas menyalin data itu ke Elasticsearch
-> supaya bisa dapat digunakan untuk Query DSL/relevance — pola ini
-> mirip proses **ETL (Extract-Transform-Load)** sederhana.
+> **INFORMATION:** Robot Shop sendiri menyimpan produknya di MongoDB
+> (dipakai oleh service `catalogue`), bukan di Elasticsearch. Langkah di
+> atas menyalin data itu ke Elasticsearch supaya dapat digunakan untuk
+> Query DSL/relevance — pola ini mirip proses **ETL
+> (Extract-Transform-Load)** sederhana.
 
 **[Dev Tools Console] Coba search dulu tanpa scoring khusus** — buka
 `http://localhost:5601/app/dev_tools#/console`, cari produk kategori "Robot":
@@ -189,10 +198,11 @@ tinggi naik ke atas:
 1.361  Ultimate Harvesting Juggernaut (rating 2)
 0.262  ... (sisanya, rating 0 — skor tidak berubah dari baseline)
 ```
-(Angka desimal ke-2/3 di belakang koma bisa sedikit beda tiap kali index
-dibangun ulang — bagian `match` dari skor ikut bergantung pada statistik
-korpus (jumlah dokumen, panjang field rata-rata), bukan cuma
-`avg_rating`. Urutan dan pola naik/turunnya tetap konsisten.)
+> **INFORMATION:** angka desimal ke-2/3 di belakang koma bisa sedikit
+> berbeda tiap kali index dibangun ulang — bagian `match` dari skor ikut
+> bergantung pada statistik korpus (jumlah dokumen, panjang field
+> rata-rata), bukan cuma `avg_rating`. Urutan dan pola naik/turunnya tetap
+> konsisten.
 
 `modifier: "ln1p"` (log(1+x)) dipakai supaya rating 5 tidak melebihi batasnya
 dibanding rating 4 pola umum untuk field yang skalanya kecil (1-5).
@@ -241,13 +251,14 @@ sidebar kiri, klik ikon **+**).
 
 **3. "Boost" rating lewat UI — urutkan kolom `avg_rating` menurun**:
 klik nama kolom `avg_rating` pada header tabel, klik ikon panah untuk
-mengurutkan dari besar ke kecil. Perhatikan urutannya: produk dengan
-rating tertinggi kini tampil paling atas — **efek yang sama persis**
-dengan hasil `function_score` pada Dev Tools Console di atas, dicapai
-tanpa menulis satu baris query pun. Ini yang secara visual paling
-menjelaskan analogi "skor dasar + bonus": Discover tidak menghitung
-bonus dalam bentuk angka `_score`, tetapi hasil akhirnya (urutan produk)
-identik.
+mengurutkan dari besar ke kecil.
+
+> **INFORMATION:** perhatikan urutannya — produk dengan rating tertinggi
+> kini tampil paling atas, **efek yang sama persis** dengan hasil
+> `function_score` pada Dev Tools Console di atas, dicapai tanpa menulis
+> satu baris query pun. Ini yang secara visual paling menjelaskan analogi
+> "skor dasar + bonus": Discover tidak menghitung bonus dalam bentuk angka
+> `_score`, tetapi hasil akhirnya (urutan produk) identik.
 
 ![Discover diurutkan menurun berdasarkan kolom avg_rating, produk rating tertinggi tampil paling atas](../../../docs/screenshots/sesi-4/03-discover-sort-avg-rating.png)
 
@@ -265,14 +276,15 @@ dengan query `bool.should` di atas pada search bar:
 persis sama dengan yang lolos filter pada query Dev Tools Console di
 atas.*
 
-**Kapan tetap perlu Query DSL, bukan cukup Discover?** Discover sangat
-cocok untuk eksplorasi cepat dan kasus sort-by-satu-field seperti di
-atas — namun untuk RANKING yang menggabungkan BEBERAPA sinyal sekaligus
-dengan bobot berbeda (mis. 70% relevansi teks + 30% rating + bonus
-kategori promosi dalam satu skor gabungan, seperti mesin pencari
-e-commerce sungguhan), KQL tidak memiliki konsep `_score`/`boost`
-numerik gabungan — kombinasi semacam itu tetap memerlukan Query DSL
-lewat Dev Tools Console atau lewat API dari aplikasi.
+> **INFORMATION:** kapan tetap perlu Query DSL, bukan cukup Discover?
+> Discover sangat cocok untuk eksplorasi cepat dan kasus
+> sort-by-satu-field seperti di atas — namun untuk RANKING yang
+> menggabungkan BEBERAPA sinyal sekaligus dengan bobot berbeda (mis. 70%
+> relevansi teks + 30% rating + bonus kategori promosi dalam satu skor
+> gabungan, seperti mesin pencari e-commerce sungguhan), KQL tidak
+> memiliki konsep `_score`/`boost` numerik gabungan — kombinasi semacam
+> itu tetap memerlukan Query DSL lewat Dev Tools Console atau lewat API
+> dari aplikasi.
 
 ## f. Referensi Exercise
 

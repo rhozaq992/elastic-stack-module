@@ -23,13 +23,14 @@ dan apakah request cache benar-benar bekerja?
    berapa milidetik?
 3. Jalankan query YANG SAMA PERSIS sebanyak 2 kali. Periksa
    `_stats/request_cache` sebelum dan sesudahnya — apakah `hit_count` naik?
-4. **Catatan penting:** pada dataset sekecil ini (4675 dokumen), perbedaan
-   `took` sebelum/sesudah cache mungkin TIDAK terlihat jelas (sama-sama
-   sudah sangat cepat) — berbeda dengan `kibana_sample_data_logs` (14074
-   dokumen) yang dipakai pada lab. Ini justru pelajaran penting: **cache
-   paling terasa manfaatnya pada dataset besar/query berat**, bukan
-   selalu terlihat pada data kecil. Buktikan dengan `_stats/request_cache`
-   (hit_count), bukan sekadar `took`.
+
+> **INFORMATION:** pada dataset sekecil ini (4675 dokumen), perbedaan
+> `took` sebelum/sesudah cache mungkin TIDAK terlihat jelas (sama-sama
+> sudah sangat cepat) — berbeda dengan `kibana_sample_data_logs` (14074
+> dokumen) yang dipakai pada lab. Ini justru pelajaran penting: **cache
+> paling terasa manfaatnya pada dataset besar/query berat**, bukan selalu
+> terlihat pada data kecil — buktikan lewat `_stats/request_cache`
+> (hit_count), bukan sekadar `took`.
 
 ## Kriteria Bagian 1
 

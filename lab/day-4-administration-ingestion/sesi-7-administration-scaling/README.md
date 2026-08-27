@@ -27,11 +27,13 @@ yang tidak dapat didemonstrasikan pada single-node:
 - **`cluster.initial_master_nodes`** — daftar node yang menjadi kandidat
   master saat cluster PERTAMA KALI dibentuk (hanya dipakai sekali di
   awal, bukan konfigurasi permanen).
-- **Kenapa sekarang bisa `green`, bukan `yellow` terus?** — pada Sesi 1
-  dijelaskan bahwa replica shard membutuhkan node LAIN untuk ditempati.
-  Dengan 3 node, replica akhirnya memiliki tempat, sehingga status dapat
-  menjadi `green` (seluruh primary DAN replica ter-assign) — kontras
-  langsung dengan single-node yang selalu bertahan pada status `yellow`.
+- **Kenapa sekarang bisa `green`, bukan `yellow` terus?**
+
+  > **INFORMATION:** pada Sesi 1 dijelaskan bahwa replica shard
+  > membutuhkan node LAIN untuk ditempati. Dengan 3 node, replica
+  > akhirnya memiliki tempat, sehingga status dapat menjadi `green`
+  > (seluruh primary DAN replica ter-assign) — kontras langsung dengan
+  > single-node yang selalu bertahan pada status `yellow`.
 - **High Availability (HA)** — apabila 1 node mati, cluster (dengan
   replica yang tersebar di node lain) tetap dapat melayani baca/tulis
   data, meski statusnya turun ke `yellow` sampai node tersebut kembali
@@ -78,22 +80,26 @@ aktif kembali pada Sesi 8.
 
 ## d. Praktik: Instalasi & Konfigurasi
 
-**[Terminal] Matikan dahulu stack single-node Sesi 1** — cluster 3-node
-pada sesi ini menggunakan port yang SAMA (`9200`) dengan Elasticsearch
-single-node, sehingga keduanya tidak dapat berjalan bersamaan:
+**[Terminal] Matikan dahulu stack single-node Sesi 1:**
 ```bash
 cd lab/day-1-fundamentals/sesi-1-intro-elk
 docker compose down
 ```
 
-**[Terminal] Sebelum memulai — periksa kapasitas host** (dilakukan
-PROAKTIF, sebelum `docker compose up`, agar tidak menemukan masalah
-storage/memori di tengah sesi seperti catatan `disk_threshold` di
-bawah):
+> **INFORMATION:** cluster 3-node pada sesi ini menggunakan port yang
+> SAMA (`9200`) dengan Elasticsearch single-node, sehingga keduanya
+> tidak dapat berjalan bersamaan.
+
+**[Terminal] Sebelum memulai — periksa kapasitas host:**
 ```bash
 docker system df                                     # periksa disk terpakai Docker
 docker info --format '{{.MemTotal}}'                  # periksa RAM total yang dialokasikan ke Docker Desktop
 ```
+
+> **INFORMATION:** pemeriksaan ini dilakukan PROAKTIF, sebelum `docker
+> compose up`, agar tidak menemukan masalah storage/memori di tengah
+> sesi seperti catatan `disk_threshold` di bawah.
+
 Apabila `docker system df` menunjukkan banyak image/build cache
 menumpuk dari sesi-sesi sebelumnya, bersihkan TERLEBIH DAHULU:
 `docker builder prune -f` (aman, hanya build cache). Apabila RAM Docker
@@ -122,8 +128,9 @@ Expected Output:
   "active_shards_percent_as_number" : 100.0
 }
 ```
-**`green`** — berbeda dari single-node yang selalu `yellow` (lihat
-penjelasan di atas).
+
+> **INFORMATION:** status **`green`** ini berbeda dari single-node yang
+> selalu `yellow` (lihat penjelasan pada bagian c).
 
 > **Apabila cluster tetap `yellow` lebih dari ±1 menit** (tidak langsung
 > `green`), periksa dahulu penyebabnya sebelum menduga ada yang rusak:
@@ -157,14 +164,18 @@ sesi ini.
 
 ### Snapshot & Restore
 
-**Setup repository** (`path.repo` sudah diatur saat startup container
-pada `docker-compose.yml`, volume snapshot juga sudah disiapkan otomatis
-saat `docker compose up` — tidak ada langkah manual tambahan):
+**Setup repository:**
 ```bash
 curl -X PUT "http://localhost:9200/_snapshot/lab-fs-repo" \
   -H 'Content-Type: application/json' \
   -d '{ "type": "fs", "settings": { "location": "/usr/share/elasticsearch/snapshots/lab-fs-repo" } }'
 ```
+
+> **INFORMATION:** `path.repo` sudah diatur saat startup container pada
+> `docker-compose.yml`, dan volume snapshot juga sudah disiapkan
+> otomatis saat `docker compose up` — tidak ada langkah manual tambahan
+> yang perlu Anda lakukan untuk repository ini.
+
 Expected Output: `{"acknowledged":true}`. Verifikasi:
 ```bash
 curl -X POST "http://localhost:9200/_snapshot/lab-fs-repo/_verify"
@@ -218,13 +229,18 @@ Expected Output: dokumen tetap muncul normal, walau 1 dari 3 node mati.
 ```bash
 docker start elk-lab-es-node3
 ```
-Tunggu beberapa detik, cluster otomatis kembali `green` setelah node
-bergabung kembali dan shard terealokasi.
+Tunggu beberapa detik hingga cluster kembali berstatus `green`.
+
+> **INFORMATION:** proses ini berjalan otomatis — cluster kembali
+> `green` setelah node bergabung kembali dan shard terealokasi, tanpa
+> memerlukan perintah tambahan dari Anda.
 
 ### ILM (Index Lifecycle Management)
 
-Sama seperti prinsip yang berlaku pada single-node — ILM tidak
-bergantung pada jumlah node. Buat policy contoh:
+> **INFORMATION:** prinsip ILM sama seperti pada single-node — ILM
+> tidak bergantung pada jumlah node.
+
+Buat policy contoh:
 ```bash
 curl -X PUT "http://localhost:9200/_ilm/policy/lab-cluster-policy" \
   -H 'Content-Type: application/json' \

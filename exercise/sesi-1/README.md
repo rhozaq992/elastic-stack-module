@@ -45,10 +45,12 @@ curl -X POST "http://localhost:9200/exercise-server-monitoring/_bulk?refresh=tru
    susun sendiri query-nya menggunakan `bool`/`filter`/`range` pada
    endpoint `GET <index>/_search`, dijalankan lewat `curl` (lihat tabel
    endpoint pada lab Sesi 1 bagian c untuk pola `<METHOD>
-   host/index/_endpoint`-nya; sintaks `bool`/`filter`/`range` sendiri
-   belum pernah diajarkan sebelumnya — hal ini normal, coba dahulu, dan
-   buka petunjuk di bawah apabila mengalami kendala).
+   host/index/_endpoint`-nya).
 3. Pastikan cluster tetap `yellow`/`green` (bukan `red`) setelah bulk index.
+
+> **INFORMATION:** sintaks `bool`/`filter`/`range` pada langkah 2 belum
+> pernah diajarkan sebelumnya — hal ini normal, coba dahulu, dan buka
+> petunjuk di bawah apabila mengalami kendala.
 
 ### Kriteria Selesai
 

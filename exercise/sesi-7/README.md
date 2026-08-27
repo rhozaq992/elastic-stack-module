@@ -16,11 +16,8 @@ Sesi 7 bagian c).
 
 ## Tugas
 
-1. Bulk-index minimal 10 dokumen baru ke index `exercise-cluster-backup`
-   (bebas isinya — dapat menggunakan kembali pola data dari exercise Sesi 1).
-2. Snapshot index tersebut ke repository `lab-fs-repo` (nama snapshot
-   BEBAS, asalkan tidak bentrok dengan `snapshot-1` yang sudah dipakai
-   pada lab).
+1. Bulk-index minimal 10 dokumen baru ke index `exercise-cluster-backup`.
+2. Snapshot index tersebut ke repository `lab-fs-repo`.
 3. Hapus index-nya.
 4. Restore dari snapshot, buktikan jumlah dokumen identik sebelum dan
    sesudah.
@@ -36,6 +33,11 @@ Sesi 7 bagian c).
    Recovery API (`GET exercise-cluster-backup/_recovery?human`, bukan
    API status snapshot — API tersebut untuk memantau proses PEMBUATAN
    snapshot, bukan restore).
+
+> **INFORMATION:** isi dokumen pada langkah 1 bebas — dapat
+> menggunakan kembali pola data dari exercise Sesi 1. Nama snapshot
+> pada langkah 2 juga bebas, asalkan tidak bentrok dengan `snapshot-1`
+> yang sudah dipakai pada lab.
 
 ## Kriteria Selesai
 

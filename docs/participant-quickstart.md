@@ -43,22 +43,30 @@ Tiap `README.md` sesi memiliki struktur yang sama:
 | f. Referensi Exercise | pointer ke latihan mandiri di folder `exercise/` |
 
 Ikuti urutan (a) sampai (f) — jangan langsung ke praktik sebelum membaca
-teorinya, supaya perintah yang Anda jalankan benar-benar Anda pahami maksudnya.
+teorinya.
+
+> **INFORMATION:** urutan ini penting supaya perintah yang Anda jalankan
+> pada bagian praktik benar-benar Anda pahami maksudnya, bukan sekadar
+> disalin.
 
 ## 4. Kerjakan Exercise Setelah Tiap Sesi
 
 Setelah selesai satu sesi di `lab/`, lanjutkan ke
 `exercise/sesi-N/README.md` — latihan mandiri dengan use case yang
-berbeda dari yang dipakai di lab (supaya Anda tidak sekadar
-copy-paste), dengan kriteria selesai yang jelas.
+berbeda dari yang dipakai di lab, dengan kriteria selesai yang jelas.
+
+> **INFORMATION:** use case exercise sengaja dibuat berbeda dari lab
+> supaya Anda tidak sekadar copy-paste jawaban lab ke exercise.
 
 Jalankan validasi di akhir tiap exercise:
 ```bash
 bash exercise/scripts/validate_sesiN.sh
 ```
-Perintah ini mencetak hasil PASS/FAIL langsung ke terminal — cara
-melaporkan progres Anda ke instruktur (screenshot, chat, dsb.) akan
-dijelaskan instruktur saat sesi berlangsung.
+Perintah ini mencetak hasil PASS/FAIL langsung ke terminal.
+
+> **INFORMATION:** cara melaporkan progres Anda ke instruktur
+> (screenshot, chat, dsb.) akan dijelaskan instruktur saat sesi
+> berlangsung.
 
 ## 5. Kalau Ada Kendala
 
