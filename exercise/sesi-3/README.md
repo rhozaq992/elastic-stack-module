@@ -2,8 +2,9 @@
 
 ## Use Case
 
-Tim operasional maskapai butuh laporan cepat soal penerbangan bermasalah
-gunakan dataset penerbangan untuk latihan Query DSL.
+Tim operasional maskapai membutuhkan laporan cepat soal penerbangan
+bermasalah — gunakan dataset penerbangan (berbeda use case dari data
+toko online yang dipakai di lab) untuk latihan Query DSL.
 
 ## Tugas
 
@@ -11,37 +12,39 @@ gunakan dataset penerbangan untuk latihan Query DSL.
 2. Cari total penerbangan yang DIBATALKAN (`Cancelled: true`).
 3. Cari penerbangan maskapai tertentu (pilih salah satu `Carrier` yang ada
    di data) yang delay-nya di atas 60 menit.
-4. Cek mapping field `OriginCityName` (`GET
+4. Periksa mapping field `OriginCityName` (`GET
    kibana_sample_data_flights/_mapping/field/OriginCityName`), lalu coba
-   `match` dan `match_phrase` di field itu dengan nama kota yang sama 
-   **bandingkan hasilnya**. Ternyata jumlah hits-nya SELALU SAMA PERSIS,
-   berapa pun kota yang kamu coba kenapa? (Petunjuk: cek tipe field-nya,
-   lalu bandingkan dengan field `category` yang dipakai di lab Sesi 3
-   tipe field-nya apa?)
+   `match` dan `match_phrase` pada field tersebut dengan nama kota yang
+   sama — **bandingkan hasilnya**. Ternyata jumlah hits-nya SELALU SAMA
+   PERSIS, kota apa pun yang Anda coba — kenapa? (Petunjuk: periksa tipe
+   field-nya, lalu bandingkan dengan field `category` yang dipakai di lab
+   Sesi 3 — tipe field-nya apa?)
 5. Cari penerbangan yang DIBATALKAN **HANYA dalam 7 hari terakhir** (bukan
-   seluruh dataset seperti langkah 2) — pakai `range` query pada field
+   seluruh dataset seperti langkah 2) — gunakan `range` query pada field
    `timestamp` dikombinasikan dengan `Cancelled: true`. Field `timestamp`
-   bertipe `date`, jadi kamu bisa pakai **relative date math**
-   Elasticsearch (`now-7d`) alih-alih tanggal tetap ini penting karena
-   data sample selalu ter-generate ulang relatif ke waktu sekarang setiap
-   kali di-load, jadi tanggal tetap (hardcoded) akan salah di lain waktu.
+   bertipe `date`, sehingga Anda dapat menggunakan **relative date math**
+   Elasticsearch (`now-7d`) alih-alih tanggal tetap — hal ini penting
+   karena data sample selalu ter-generate ulang relatif terhadap waktu
+   sekarang setiap kali dimuat, sehingga tanggal tetap (hardcoded) akan
+   keliru di lain waktu.
 
 ## Kriteria Selesai
 
-- Kamu punya angka pasti untuk jumlah penerbangan dibatalkan.
-- Kamu punya angka pasti untuk delay >60 menit per carrier pilihanmu.
-- Kamu bisa jelaskan KENAPA `match` dan `match_phrase` di `OriginCityName`
-  SELALU menghasilkan angka yang identik (bukan mencari kota yang "pas"
-  supaya beda, field ini memang tidak akan pernah menunjukkan
-  perbedaan, dan itu sendiri poin pembelajarannya) — sebutkan tipe field
-  `OriginCityName` vs tipe field `category` di lab sebagai alasannya.
-- Kamu punya angka pasti untuk penerbangan dibatalkan dalam 7 hari
-  terakhir (query-nya pakai `now-7d`, bukan tanggal hardcoded).
+- Anda memiliki angka pasti untuk jumlah penerbangan yang dibatalkan.
+- Anda memiliki angka pasti untuk delay >60 menit per carrier pilihan Anda.
+- Anda dapat menjelaskan KENAPA `match` dan `match_phrase` pada
+  `OriginCityName` SELALU menghasilkan angka yang identik (bukan karena
+  kebetulan menemukan kota yang "pas" supaya sama — field ini memang
+  tidak akan pernah menunjukkan perbedaan, dan hal itu sendiri adalah
+  poin pembelajarannya) — sebutkan tipe field `OriginCityName` vs tipe
+  field `category` di lab sebagai alasannya.
+- Anda memiliki angka pasti untuk penerbangan yang dibatalkan dalam 7 hari
+  terakhir (query menggunakan `now-7d`, bukan tanggal hardcoded).
 
-## Petunjuk (buka kalau stuck)
+## Petunjuk (buka apabila mengalami kendala)
 
 <details>
-<summary>Klik untuk lihat command</summary>
+<summary>Klik untuk melihat perintah</summary>
 
 ```bash
 curl -X POST "http://localhost:5601/api/sample_data/flights" \
@@ -74,13 +77,13 @@ GET kibana_sample_data_flights/_search
   }
 }
 ```
-**Catatan:** kalau query barusan setelah load data menunjukkan 0 hasil,
-tunggu 1-2 detik dan coba lagi Elasticsearch butuh waktu singkat
-("refresh", default ~1 detik) sebelum dokumen yang baru masuk bisa
+**Catatan:** apabila query barusan setelah load data menunjukkan 0 hasil,
+tunggu 1-2 detik dan coba lagi — Elasticsearch membutuhkan waktu singkat
+("refresh", default ±1 detik) sebelum dokumen yang baru masuk dapat
 langsung dicari (lihat penjelasan lengkap soal `_bulk`+refresh di Sesi 1).
 </details>
 
-Validasi hasil kerjamu:
+Validasi hasil pekerjaan Anda:
 ```bash
 bash exercise/scripts/validate_sesi3.sh
 ```

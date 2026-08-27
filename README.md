@@ -1,6 +1,6 @@
 # ELK Stack Training Lab
 
-Lab training ELK Stack (Elasticsearch, Logstash, Kibana) 4 hari, 8 sesi,
+Lab training ELK Stack (Elasticsearch, Logstash, Kibana) — 4 hari, 8 sesi,
 berbasis Docker.
 
 ## Mulai di Sini
