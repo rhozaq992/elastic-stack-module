@@ -6,18 +6,17 @@ Kamu sudah belajar snapshot/restore pakai index demo kosong di lab. Kali
 ini praktikkan ke data yang benar-benar berisi (bukan cuma 1 dokumen
 kosong) — simulasi backup rutin yang beneran dilakukan di produksi.
 
-**Kerjakan exercise ini SELAGI cluster Sesi 7 masih jalan** (sebelum kamu
-matikan untuk lanjut ke Sesi 8).
+**Kerjakan exercise ini SELAGI cluster Sesi 7 masih jalan**.
 
 ## Tugas
 
 1. Bulk-index minimal 10 dokumen baru ke index `exercise-cluster-backup`
-   (bebas isinya — bisa reuse pola data dari exercise Sesi 1).
+   (bebas isinya bisa gunakan lagi pola data dari exercise Sesi 1).
 2. Snapshot index itu ke repository `lab-fs-repo` (nama snapshot BEBAS,
    asal tidak bentrok dengan `snapshot-1` yang sudah dipakai di lab).
 3. Hapus index-nya.
 4. Restore dari snapshot, buktikan jumlah dokumen identik sebelum & sesudah.
-5. Matikan 1 node (simulasi failure) SELAMA proses restore berlangsung —
+5. Matikan 1 node (simulasi failure) SELAMA proses restore berlangsung dan lihat
    apa yang terjadi? Restore tetap selesai, atau gagal?
 
 ## Kriteria Selesai
