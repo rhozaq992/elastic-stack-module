@@ -3,7 +3,7 @@
 ## Use Case
 
 Tim gudang **ATK (Alat Tulis Kantor)** mau mulai catat data inventory
-barang di Elasticsearch — butuh index dengan mapping yang benar (nama
+barang di Elasticsearch butuh index dengan mapping yang benar (nama
 barang bisa dicari sebagian kata, tapi juga bisa dicari persis untuk
 laporan), dan kemampuan update stok saat barang keluar/masuk.
 
@@ -11,11 +11,11 @@ laporan), dan kemampuan update stok saat barang keluar/masuk.
 
 1. Buat index `exercise-inventory` dengan mapping eksplisit, **minimal 4
    field**:
-   - `item_name_text` (`text`) — nama barang, bisa dicari sebagian kata.
-   - `item_name_keyword` (`keyword`) — nama barang sama persis, dipakai
+   - `item_name_text` (`text`) nama barang, bisa dicari sebagian kata.
+   - `item_name_keyword` (`keyword`) nama barang sama persis, dipakai
      untuk laporan/agregasi.
-   - `stock` (`integer`) — jumlah stok.
-   - `kategori` (`keyword`) — mis. `"kertas"`, `"tulis"`, `"printer"`.
+   - `stock` (`integer`) jumlah stok.
+   - `kategori` (`keyword`) mis. `"kertas"`, `"tulis"`, `"printer"`.
 2. INDEX **3 dokumen barang ATK** (contoh: pulpen, kertas A4, tinta
    printer — atau barang ATK lain, bebas asal jelas jenisnya), nama
    beda-beda, stock awal beda-beda, kategori diisi sesuai jenis barangnya.
