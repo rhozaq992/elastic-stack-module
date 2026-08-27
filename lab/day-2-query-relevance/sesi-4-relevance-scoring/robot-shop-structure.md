@@ -1,10 +1,10 @@
 # Robot Shop — Struktur Sistem
 
-Mulai sesi ini, kamu akan pakai **Robot Shop**, aplikasi e-commerce
+Mulai sesi ini, Anda akan menggunakan **Robot Shop**, aplikasi e-commerce
 berbasis microservice, sebagai studi kasus data nyata untuk sesi-sesi
-berikutnya (Sesi 4, 6, dan 8). Kamu tidak perlu tahu bagaimana sistem ini
-dibangun — cukup pahami strukturnya, supaya tahu sistem apa yang sedang
-kamu observasi lewat Elasticsearch/Kibana.
+berikutnya (Sesi 4, 6, dan 8). Anda tidak perlu mengetahui bagaimana
+sistem ini dibangun — cukup pahami strukturnya, supaya mengetahui sistem
+apa yang sedang Anda observasi lewat Elasticsearch/Kibana.
 
 ## Topologi
 
@@ -67,15 +67,15 @@ cd lab/day-2-query-relevance/sesi-4-relevance-scoring
 docker compose up -d
 ```
 
-**Kalau laptopmu ARM (Apple Silicon)** — tambahkan file override (lihat
-[`docker-compose.arm64-override.yml`](docker-compose.arm64-override.yml)
-untuk penjelasan kenapa):
+**Apabila perangkat Anda ARM (Apple Silicon)** — tambahkan file override
+(lihat [`docker-compose.arm64-override.yml`](docker-compose.arm64-override.yml)
+untuk penjelasannya):
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml up -d
 ```
 
-Semua image sudah pre-built (multi-arch untuk 10 dari 11 service) — kamu
-cuma pull & jalankan, tidak ada proses build/compile.
+Semua image sudah pre-built (multi-arch untuk 10 dari 11 service) — Anda
+cukup pull & jalankan, tidak ada proses build/compile.
 
 > **Catatan startup:** `shipping` dan `ratings` connect ke MySQL saat
 > startup. MySQL butuh waktu (~1-2 menit di volume baru) untuk selesai

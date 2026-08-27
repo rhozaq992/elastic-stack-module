@@ -28,8 +28,8 @@ fi
 
 echo ""
 echo "Ringkasan: $PASS pass, $FAIL fail"
-echo "(Script ini cuma cek data tersedia -- perbandingan urutan hasil"
-echo "boost kamu tunjukkan sendiri sesuai kriteria selesai di README.)"
+echo "(Script ini hanya memeriksa ketersediaan data -- perbandingan urutan hasil"
+echo "boost Anda tunjukkan sendiri sesuai kriteria selesai di README.)"
 
 if [ "$FAIL" -eq 0 ]; then
   exit 0

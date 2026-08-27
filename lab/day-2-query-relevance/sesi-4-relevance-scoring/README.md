@@ -40,6 +40,27 @@ dst. Dua cara utama:
   `bool.should`), membuat dokumen yang match bagian itu naik skornya
   lebih tinggi dibanding yang cuma match bagian lain.
 
+**Bukan algoritma AI/machine learning — hanya rumus matematis bawaan.**
+`function_score` dan `boost` sering terdengar seperti sesuatu yang
+canggih ("sistem merekomendasikan produk terbaik"), padahal keduanya
+hanyalah **rumus aritmetika sederhana** yang sudah tersedia bawaan di
+Elasticsearch (penjumlahan/perkalian angka) — tidak ada model yang
+"belajar" dari data, tidak ada training, dan tidak ada komponen AI sama
+sekali. Analoginya seperti nilai ujian sekolah yang diberi **poin
+tambahan (bonus)**: nilai dasar tetap berasal dari jawaban (skor
+relevansi teks BM25), lalu guru menambahkan bonus tetap untuk faktor
+lain (mis. keaktifan di kelas = rating produk). Semakin besar bonusnya,
+semakin tinggi posisi akhirnya — tanpa mengubah cara jawaban ujian itu
+sendiri dinilai.
+
+![Diagram analogi function_score sebagai skor dasar ditambah bonus](../../../docs/diagrams/sesi4-scoring-analogy.svg)
+
+*Skor akhir = skor dasar (relevansi teks BM25, dari query `match`) +
+bonus (dari `function_score`/`boost` berdasarkan field bisnis seperti
+`avg_rating`). Urutan hasil berubah karena bonusnya berbeda tiap
+dokumen — bukan karena Elasticsearch "memahami" produk mana yang lebih
+baik.*
+
 ## d. Praktik: Instalasi & Konfigurasi
 
 *(Prasyarat: stack Sesi 1 masih jalan untuk Elasticsearch/Kibana.)*
@@ -202,8 +223,8 @@ tapi yang kategorinya "Artificial Intelligence" melonjak ke atas:
 Ini pola umum e-commerce nyata: "tampilkan semua produk, tapi utamakan
 kategori promosi/prioritas di atas."
 
-**[Kibana UI] Query yang sama, lewat Discover** (tanpa nulis Query DSL
-sama sekali):
+**[Kibana UI] Eksplorasi yang sama, lewat Discover** (tanpa menulis
+Query DSL sama sekali):
 
 **1. Buat Data View** untuk `robot-shop-catalogue` (index custom, sama
 seperti langkah di Sesi 2 untuk `lab-mapping-demo`): buka menu ☰ →
@@ -212,24 +233,46 @@ pattern isi `robot-shop-catalogue` → **Save data view to Kibana**.
 
 ![Discover menampilkan 11 dokumen robot-shop-catalogue setelah data view dibuat](../../../docs/screenshots/sesi-4/01-discover-data-view-dibuat.png)
 
-*Data view `robot-shop-catalogue` aktif 11 produk Robot Shop yang
-di-index di bagian (d) muncul di tabel.*
+*Data view `robot-shop-catalogue` aktif — 11 produk Robot Shop yang
+di-index pada bagian (d) muncul di tabel.*
 
-**2. Tambah kolom `name`, `avg_rating`, `price`** (hover field di
-sidebar kiri → klik ikon **+**), lalu
-ketik filter KQL yang setara dengan query `bool.should` di atas:
+**2. Tambahkan kolom `name`, `avg_rating`, `price`** (hover field di
+sidebar kiri, klik ikon **+**).
+
+**3. "Boost" rating lewat UI — urutkan kolom `avg_rating` menurun**:
+klik nama kolom `avg_rating` pada header tabel, klik ikon panah untuk
+mengurutkan dari besar ke kecil. Perhatikan urutannya: produk dengan
+rating tertinggi kini tampil paling atas — **efek yang sama persis**
+dengan hasil `function_score` pada Dev Tools Console di atas, dicapai
+tanpa menulis satu baris query pun. Ini yang secara visual paling
+menjelaskan analogi "skor dasar + bonus": Discover tidak menghitung
+bonus dalam bentuk angka `_score`, tetapi hasil akhirnya (urutan produk)
+identik.
+
+![Discover diurutkan menurun berdasarkan kolom avg_rating, produk rating tertinggi tampil paling atas](../../../docs/screenshots/sesi-4/03-discover-sort-avg-rating.png)
+
+*Urutan menurun berdasarkan `avg_rating` — Robotic Mining Cyborg dan
+Stan (rating 5) tampil di atas, sama seperti hasil `function_score`
+pada Dev Tools Console.*
+
+**4. Filter kategori promosi lewat KQL**: ketik filter yang setara
+dengan query `bool.should` di atas pada search bar:
 `categories: "Artificial Intelligence"`
 
 ![Discover dengan filter kategori Artificial Intelligence, kolom name avg_rating price](../../../docs/screenshots/sesi-4/02-discover-search-ai-category.png)
 
 *3 produk kategori "Artificial Intelligence" — Watson, Ewooid, Stan —
 persis sama dengan yang lolos filter pada query Dev Tools Console di
-atas. Bedanya: di sini `_score`/`boost` numerik tidak dapat dikontrol
-seperti pada Query DSL (KQL hanya filter ya/tidak) — untuk kebutuhan
-RANKING numerik seperti boost rating, tetap diperlukan Query DSL lewat
-Dev Tools Console atau lewat API dari aplikasi. Discover paling sesuai
-untuk eksplorasi cepat, bukan pengganti Query DSL untuk relevance
-tuning.*
+atas.*
+
+**Kapan tetap perlu Query DSL, bukan cukup Discover?** Discover sangat
+cocok untuk eksplorasi cepat dan kasus sort-by-satu-field seperti di
+atas — namun untuk RANKING yang menggabungkan BEBERAPA sinyal sekaligus
+dengan bobot berbeda (mis. 70% relevansi teks + 30% rating + bonus
+kategori promosi dalam satu skor gabungan, seperti mesin pencari
+e-commerce sungguhan), KQL tidak memiliki konsep `_score`/`boost`
+numerik gabungan — kombinasi semacam itu tetap memerlukan Query DSL
+lewat Dev Tools Console atau lewat API dari aplikasi.
 
 ## f. Referensi Exercise
 

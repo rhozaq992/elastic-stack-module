@@ -2,10 +2,11 @@
 
 ## Use Case
 
-Tim gudang **ATK (Alat Tulis Kantor)** mau mulai catat data inventory
-barang di Elasticsearch butuh index dengan mapping yang benar (nama
-barang bisa dicari sebagian kata, tapi juga bisa dicari persis untuk
-laporan), dan kemampuan update stok saat barang keluar/masuk.
+Tim gudang **ATK (Alat Tulis Kantor)** hendak mulai mencatat data
+inventaris barang di Elasticsearch. Untuk itu, diperlukan index dengan
+mapping yang benar (nama barang dapat dicari berdasarkan sebagian kata,
+tetapi juga dapat dicari secara persis untuk keperluan laporan), serta
+kemampuan memperbarui stok saat barang keluar/masuk.
 
 ## Tugas
 

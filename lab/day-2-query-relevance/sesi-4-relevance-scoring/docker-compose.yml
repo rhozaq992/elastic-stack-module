@@ -1,6 +1,6 @@
 # Robot Shop -- aplikasi microservice e-commerce contoh, dipakai sebagai
 # studi kasus Sesi 4, 6, dan 8. Semua image di bawah sudah PRE-BUILT
-# (multi-arch: amd64 + arm64) -- kamu HANYA menjalankan `docker compose up`,
+# (multi-arch: amd64 + arm64) -- Anda HANYA menjalankan `docker compose up`,
 # tidak perlu build/compile apa pun. Lihat robot-shop-structure.md untuk
 # penjelasan arsitekturnya.
 services:

@@ -45,8 +45,8 @@ fi
 
 echo ""
 echo "Ringkasan: $PASS pass, $FAIL fail"
-echo "(Script ini cuma cek state akhir -- bukti update/_version naik dan"
-echo "404 setelah delete kamu tunjukkan sendiri dari histori command-mu.)"
+echo "(Script ini hanya memeriksa state akhir -- bukti update/_version naik dan"
+echo "404 setelah delete Anda tunjukkan sendiri dari histori perintah Anda.)"
 
 if [ "$FAIL" -eq 0 ]; then
   exit 0
