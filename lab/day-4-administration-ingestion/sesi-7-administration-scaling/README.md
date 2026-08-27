@@ -17,21 +17,20 @@ berhasil mensimulasikan 1 node mati lalu melihat cluster tetap available
 
 ## c. Teori & Struktur Sistem
 
-Sesi 1-6 kamu pakai Elasticsearch **single-node** — sekarang kita pindah
+Pada sesi sebelumnya anda memakai Elasticsearch **single-node** dan sekarang kita pindah
 ke **cluster 3-node** untuk melihat konsep yang tidak bisa didemonstrasikan
 di single-node:
 
-- **Scaling** — menambah node ke cluster untuk menampung lebih banyak
+- **Scaling** menambah node ke cluster untuk menampung lebih banyak
   data/traffic. Tiap node menjalankan instance Elasticsearch sendiri,
   saling terhubung lewat `discovery.seed_hosts`.
-- **`cluster.initial_master_nodes`** — daftar node yang jadi kandidat
-  master saat cluster PERTAMA KALI dibentuk (cuma dipakai sekali di awal,
-  bukan konfigurasi permanen).
-- **Kenapa sekarang bisa `green`, bukan `yellow` terus** — ingat dari Sesi
+- **`cluster.initial_master_nodes`** daftar node yang jadi kandidat
+  master saat cluster dibentuk.
+- **Kenapa sekarang bisa indikator dapat `green`, bukan lagi `yellow` terus ?** — ingat dari Sesi
   1: replica shard butuh node LAIN untuk ditempati. Dengan 3 node, replica
   akhirnya punya tempat, jadi status bisa `green` (semua primary DAN
   replica ter-assign) — kontras langsung dengan single-node yang
-  mentok `yellow` selamanya.
+  maksimal pada indikator `yellow`.
 - **High Availability (HA)** — kalau 1 node mati, cluster (dengan replica
   yang tersebar di node lain) tetap bisa melayani baca/tulis data,
   meski statusnya turun ke `yellow` sampai node itu kembali atau
@@ -67,15 +66,13 @@ murah, bukan disimpan penuh di hot tier — di luar cakupan lab ini).
 
 ## d. Praktik: Instalasi & Konfigurasi
 
-**Matikan dulu stack single-node Sesi 1** — cluster 3-node sesi ini pakai
-port yang SAMA (`9200`) dengan Elasticsearch single-node Sesi 1-6, jadi
+**Matikan dulu stack single-node Sesi 1** cluster 3-node sesi ini pakai
+port yang SAMA (`9200`) dengan Elasticsearch single-node, jadi
 keduanya tidak bisa jalan bersamaan:
 ```bash
 cd lab/day-1-fundamentals/sesi-1-intro-elk
 docker compose down
 ```
-(Nanti waktu lanjut ke Sesi 8, kamu akan nyalakan lagi stack Sesi 1 ini —
-lihat catatan di README Sesi 8.)
 
 **Sebelum mulai — cek kapasitas host** (dilakukan PROAKTIF, sebelum
 `docker compose up`, supaya tidak ketemu masalah storage/memory di
@@ -85,18 +82,11 @@ docker system df                                    # cek disk terpakai Docker
 docker info --format '{{.MemTotal}}'                 # cek RAM total dialokasikan ke Docker Desktop
 ```
 Kalau `docker system df` menunjukkan banyak image/build cache menumpuk
-dari sesi-sesi sebelumnya (wajar setelah mengerjakan Sesi 1-6 di host
-yang sama), bersihkan DULU sebelum lanjut: `docker builder prune -f`
-(aman, cuma build cache). Kalau RAM Docker Desktop di bawah 12GB (lihat
+dari sesi-sesi sebelumnya, bersihkan DULU sebelum lanjut: `docker builder prune -f`.
+Kalau RAM Docker Desktop di bawah 12GB (lihat
 catatan RAM di bawah), naikkan dulu lewat Docker Desktop → Settings →
 Resources → Memory, SEBELUM `docker compose up` — jauh lebih mudah
 dibanding mendiagnosis cluster yang gagal `green` di tengah sesi.
-
-> **RAM:** cluster 3-node ini makan RAM jauh lebih banyak dari single-node
-> Sesi 1-6 — dites nyata, tiap node pakai **~1.4GB RAM** (total **~4.2GB**
-> cuma untuk Elasticsearch, di luar overhead Docker Desktop sendiri).
-> Pastikan Docker Desktop dialokasikan **minimal 12GB** (lebih dari 8GB
-> yang cukup untuk single-node) sebelum lanjut.
 
 ```bash
 cd lab/day-4-administration-ingestion/sesi-7-administration-scaling
@@ -120,12 +110,12 @@ Expected Output:
 ```
 **`green`** — beda dari single-node yang selalu `yellow` (lihat penjelasan di atas).
 
-> **Kalau cluster tetap `yellow` lebih dari ~1 menit** (bukan langsung
+> **Kalau cluster tetap `yellow` lebih dari ~1 menit** (tidak langsung
 > `green`), cek dulu penyebabnya sebelum curiga ada yang rusak:
 > ```bash
 > curl "http://localhost:9200/_cluster/allocation/explain?pretty"
 > ```
-> Kalau alasannya `disk_threshold` — itu bukan masalah cluster, itu disk
+> Kalau alasannya `disk_threshold` itu bukan masalah cluster, itu disk
 > Docker Desktop-mu yang penuh (default watermark ES: 85% terpakai baru
 > menahan alokasi shard). Ini kemungkinan besar terjadi kalau kamu sudah
 > mengerjakan banyak sesi sebelumnya di host yang sama (image/volume
@@ -134,14 +124,7 @@ Expected Output:
 > `docker system prune` (lebih agresif, hapus image tak terpakai) — cluster
 > akan otomatis re-cek disk dan pindah ke `green` dalam ~30 detik setelah
 > ruang cukup.
->
-> **Efeknya bukan cuma status `yellow`** — kalau disk-nya BENAR-BENAR
-> penuh (bukan cuma di atas watermark tipis), operasi yang butuh
-> ALOKASI SHARD BARU (termasuk snapshot restore, bukan cuma index baru)
-> bisa gagal total dengan error `no_shard_available_action_exception`,
-> bukan cuma lambat. Kalau kamu ketemu ini saat snapshot/restore
-> (exercise sesi ini), solusinya SAMA: bersihkan disk Docker Desktop
-> dulu, baru ulangi restore-nya — bukan tanda snapshot-nya rusak.
+
 
 **Lihat daftar node:**
 ```bash
@@ -186,7 +169,7 @@ POST _snapshot/lab-fs-repo/snapshot-1/_restore?wait_for_completion=true
 GET lab-cluster-demo/_count                          # -> count: 1 lagi
 ```
 Expected Output: count SEBELUM dan SESUDAH restore identik (**1**
-di kedua sisi) — restore benar-benar mengembalikan data persis sama, di
+di kedua sisi) restore benar-benar mengembalikan data persis sama, di
 cluster 3-node sekalipun.
 
 Semua langkah di atas juga bisa dilakukan lewat UI: **Stack Management →
