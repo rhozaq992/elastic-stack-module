@@ -12,30 +12,31 @@ kemampuan memperbarui stok saat barang keluar/masuk.
 
 1. Buat index `exercise-inventory` dengan mapping eksplisit, **minimal 4
    field**:
-   - `item_name_text` (`text`) nama barang, bisa dicari sebagian kata.
-   - `item_name_keyword` (`keyword`) nama barang sama persis, dipakai
+   - `item_name_text` (`text`): nama barang, dapat dicari berdasarkan
+     sebagian kata.
+   - `item_name_keyword` (`keyword`): nama barang secara persis, digunakan
      untuk laporan/agregasi.
-   - `stock` (`integer`) jumlah stok.
-   - `kategori` (`keyword`) mis. `"kertas"`, `"tulis"`, `"printer"`.
+   - `stock` (`integer`): jumlah stok.
+   - `kategori` (`keyword`): mis. `"kertas"`, `"tulis"`, `"printer"`.
 2. INDEX **3 dokumen barang ATK** (contoh: pulpen, kertas A4, tinta
-   printer — atau barang ATK lain, bebas asal jelas jenisnya), nama
-   beda-beda, stock awal beda-beda, kategori diisi sesuai jenis barangnya.
-3. UPDATE salah satu dokumen (kurangi stock-nya, simulasi barang keluar).
-4. Buktikan `_version` naik setelah update.
-5. DELETE satu dokumen, buktikan GET setelahnya HTTP 404.
+   printer — atau barang ATK lain, asalkan jelas jenisnya), dengan nama,
+   stok awal, dan kategori yang berbeda-beda sesuai jenis barangnya.
+3. UPDATE salah satu dokumen (kurangi stoknya, sebagai simulasi barang keluar).
+4. Buktikan `_version` bertambah setelah update.
+5. DELETE satu dokumen, buktikan GET setelahnya menghasilkan HTTP 404.
 
 ## Kriteria Selesai
 
-- Index `exercise-inventory` ada dengan mapping minimal 4 field sesuai
-  daftar di atas (2 tipe teks + `stock` + `kategori`).
+- Index `exercise-inventory` telah dibuat dengan mapping minimal 4 field
+  sesuai daftar di atas (2 tipe teks + `stock` + `kategori`).
 - Ada bukti nyata (output `_version` sebelum/sesudah update) bahwa update
   benar-benar mengubah dokumen.
 - Ada bukti HTTP 404 setelah delete.
 
-## Petunjuk (buka kalau stuck)
+## Petunjuk (buka apabila mengalami kendala)
 
 <details>
-<summary>Klik untuk lihat contoh mapping & command</summary>
+<summary>Klik untuk melihat contoh mapping dan perintah</summary>
 
 ```
 PUT exercise-inventory
@@ -58,7 +59,7 @@ POST exercise-inventory/_update/1
 ```
 </details>
 
-Validasi hasil kerjamu:
+Validasi hasil kerja Anda:
 ```bash
 bash exercise/scripts/validate_sesi2.sh
 ```
