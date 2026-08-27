@@ -1,8 +1,5 @@
 # Panduan Peserta — Mulai di Sini
 
-Kamu **tidak perlu** bikin akun/token apa pun untuk mengikuti lab ini.
-Semua sudah disiapkan instruktur — kamu tinggal clone dan ikuti.
-
 ## 1. Cek Prerequisites
 
 Sebelum mulai, baca [`prerequisites.md`](prerequisites.md) — terutama
