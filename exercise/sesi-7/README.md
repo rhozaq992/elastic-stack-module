@@ -24,8 +24,18 @@ Sesi 7 bagian c).
 3. Hapus index-nya.
 4. Restore dari snapshot, buktikan jumlah dokumen identik sebelum dan
    sesudah.
-5. Matikan 1 node (simulasi failure) SELAMA proses restore berlangsung,
-   lalu amati: apakah restore tetap selesai, atau gagal?
+5. Hapus index tersebut sekali lagi, lalu ulangi restore — kali ini
+   matikan 1 node (simulasi failure) SELAMA proses restore berlangsung,
+   lalu amati: apakah restore tetap selesai, atau gagal? **Catatan
+   praktis:** dengan data sekecil ini, restore sinkron (`wait_for_completion=true`
+   seperti pada langkah 4) selesai dalam hitungan milidetik — tidak ada
+   waktu untuk mematikan node di terminal lain sebelum proses selesai.
+   Jalankan restore secara ASINKRON (tanpa `wait_for_completion`, atau
+   dengan nilainya `false`) supaya perintah langsung kembali tanpa
+   menunggu, baru kemudian matikan node dan periksa progres restore lewat
+   Recovery API (`GET exercise-cluster-backup/_recovery?human`, bukan
+   API status snapshot — API tersebut untuk memantau proses PEMBUATAN
+   snapshot, bukan restore).
 
 ## Kriteria Selesai
 
@@ -58,6 +68,21 @@ curl -X DELETE "http://localhost:9200/exercise-cluster-backup"
 curl -X POST "http://localhost:9200/_snapshot/lab-fs-repo/snapshot-exercise-7/_restore?wait_for_completion=true" \
   -H 'Content-Type: application/json' \
   -d '{ "indices": "exercise-cluster-backup", "include_global_state": false }'
+```
+
+Untuk langkah 5 (restore + matikan node), ulangi delete lalu restore
+TANPA `wait_for_completion` supaya sempat mematikan node sebelum restore
+selesai:
+```bash
+curl -X DELETE "http://localhost:9200/exercise-cluster-backup"
+
+curl -X POST "http://localhost:9200/_snapshot/lab-fs-repo/snapshot-exercise-7/_restore" \
+  -H 'Content-Type: application/json' \
+  -d '{ "indices": "exercise-cluster-backup", "include_global_state": false }'
+
+docker stop elk-lab-es-node3
+
+curl "http://localhost:9200/exercise-cluster-backup/_recovery?human"
 ```
 </details>
 
