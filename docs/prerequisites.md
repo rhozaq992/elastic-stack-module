@@ -68,6 +68,18 @@ DALAM terminal WSL2** (buka lewat aplikasi "Ubuntu" pada Start Menu, atau
 ketik `wsl` pada Windows Terminal) — **bukan** pada Command Prompt atau
 PowerShell biasa, karena seluruh perintah pada lab ini ditulis dalam
 sintaks bash dan membutuhkan akses langsung ke Docker socket gaya Linux.
+Docker Desktop for Windows sendiri sudah membutuhkan WSL2 sebagai
+backend, tetapi hal tersebut tidak otomatis berarti terminal Anda bash
+— WSL2 tetap harus dibuka secara eksplisit sebagaimana dijelaskan di atas.
+
+**Alternatif**: **Git Bash** (ikut terpasang bersama Git for Windows,
+lihat bagian 2.3) cukup untuk perintah yang tidak membutuhkan akses
+langsung ke Docker socket gaya Linux, namun WSL2 tetap lebih disarankan
+untuk konsistensi penuh di seluruh sesi lab ini. Apabila perintah bash
+dijalankan pada PowerShell/Command Prompt biasa (bukan WSL2/Git Bash),
+sebagian besar akan **gagal** (`bash: command not found`, error sintaks
+`$(...)`, dan sejenisnya) — ini bukan galat pada modul, melainkan karena
+perintah tersebut memang tidak ditulis untuk shell tersebut.
 
 macOS dan Linux tidak memerlukan langkah tambahan — terminal bawaan
 sudah kompatibel dengan bash.
