@@ -41,12 +41,9 @@ lambat, Anda hanya tahu "checkout lambat" tanpa mengetahui apakah
 penyebabnya `cart`, `payment`, `shipping`, atau kombinasi ketiganya.
 
 **Cara kerja APM di stack ini:**
-```
-[cart / payment]  --trace-->  [apm-server:8200]  -->  [Elasticsearch]  <--  [Kibana APM UI]
-  (APM agent                   (terima data,           (index                (baca &
-   di dalam kode)                kirim ke ES)            traces-apm-*,         visualisasi)
-                                                          metrics-apm-*)
-```
+
+![Diagram cara kerja APM: cart/payment mengirim trace ke apm-server, disimpan ke Elasticsearch, dibaca oleh Kibana APM UI](../../../docs/diagrams/sesi6-apm-architecture.svg)
+
 1. **APM agent** — library kecil yang di-install DI DALAM kode aplikasi
    (satu per bahasa pemrograman: Python, Node.js, Java, dst.). Tugasnya
    mencatat setiap request masuk (disebut **transaction**) dan setiap
