@@ -10,13 +10,13 @@ duluan) memakai `function_score` dan `boost`.
 ## b. Output yang Diharapkan
 
 Sesi ini selesai kalau:
-- Robot Shop jalan — 7 servis yang punya healthcheck (`catalogue`, `user`,
+- Robot Shop jalan 7 servis yang punya healthcheck (`catalogue`, `user`,
   `cart`, `shipping`, `ratings`, `payment`, `web`) berstatus `healthy` di
-  `docker compose ps` (5 servis pendukung — `mongodb`, `redis`, `rabbitmq`,
-  `mysql`, `dispatch` — tidak punya healthcheck sendiri, cukup pastikan
-  statusnya `Up`) — dan index `robot-shop-catalogue` di Elasticsearch
+  `docker compose ps` (5 servis pendukung `mongodb`, `redis`, `rabbitmq`,
+  `mysql`, `dispatch` tidak punya healthcheck sendiri, cukup pastikan
+  statusnya `Up`) dan index `robot-shop-catalogue` di Elasticsearch
   sudah berisi data produk asli.
-- Kamu berhasil menjalankan query pencarian yang hasilnya BERUBAH urutan
+- Kamu berhasil menjalankan query pencarian yang hasilnya berubah urutan
   setelah ditambah `function_score`/`boost`, dan bisa jelaskan kenapa.
 
 ## c. Teori & Struktur Sistem
@@ -29,7 +29,7 @@ memahami sistem yang akan kamu observasi sesi ini.
 menurut Elasticsearch). Secara default, `_score` dihitung dari algoritma
 BM25 (seberapa sering & langka kata yang dicari muncul di dokumen). Ini
 bagus untuk relevansi TEKS, tapi sering kali kamu ingin urutan juga
-mempertimbangkan sinyal BISNIS lain — rating produk, popularitas, stok,
+mempertimbangkan sinyal bisnis lain berupa rating produk, popularitas, stok,
 dst. Dua cara utama:
 
 - **`function_score`** — modifikasi `_score` pakai fungsi matematis
@@ -43,13 +43,13 @@ dst. Dua cara utama:
 
 *(Prasyarat: stack Sesi 1 masih jalan untuk Elasticsearch/Kibana.)*
 
-> **Ke mana tiap command di bawah dijalankan?** Sesi ini gabung dua
+> **Kemana setiap command di bawah dijalankan?** Sesi ini gabung dua
 > tempat — **Terminal** (semua yang diawali `$`/blok berlabel `bash`:
 > `docker compose`, `curl`, `python3`) untuk operasi di luar Elasticsearch
-> (jalankan Robot Shop, panggil API Robot Shop, transfer data), dan
+> seperti menjalankan Robot Shop, memanggil API Robot Shop, dan transfer data), dan
 > **Kibana Dev Tools Console** (blok `GET`/`POST` TANPA `curl` di
-> depannya, format sama seperti Sesi 2-3) khusus untuk query ke
-> Elasticsearch. Tiap blok di bawah diberi label eksplisit supaya jelas.
+> depannya) khusus untuk query ke Elasticsearch.
+> Tiap blok di bawah diberi label eksplisit.
 
 **[Terminal] Jalankan Robot Shop** (lihat [`robot-shop-structure.md`](robot-shop-structure.md) untuk detail arsitektur):
 ```bash
@@ -58,8 +58,8 @@ docker compose up -d
 ```
 **Kalau laptopmu ARM (Apple Silicon)** — cek dulu lewat
 `docker info --format '{{.Architecture}}'` (lihat `prerequisites.md`).
-Kalau hasilnya `arm64`, pakai command ini SEBAGAI GANTI yang di atas
-(bukan tambahan) — tanpa ini, `mysql` akan jalan lewat emulasi dengan
+Kalau hasilnya `arm64`, pakai command ini sebagai ganti yang di atas
+tanpa ini, `mysql` akan jalan lewat emulasi dengan
 warning platform-mismatch (tetap jalan, tapi lebih lambat & membingungkan
 kalau tidak diberi tahu dulu):
 ```bash
@@ -72,13 +72,11 @@ pertama kali. (`mongodb`/`redis`/`rabbitmq`/`mysql`/`dispatch` tidak
 punya healthcheck sendiri dan akan selalu tampil tanpa status `healthy`
 di `docker compose ps` — itu normal, cukup pastikan statusnya `Up`.)
 
-> **[Terminal] WAJIB dilakukan dulu — isi rating awal.** Robot Shop yang BARU pertama
-> kali dijalankan punya `avg_rating: 0` untuk SEMUA produk (belum pernah
-> ada yang kasih rating) — kalau langsung lanjut ke contoh `function_score`
-> di bawah tanpa langkah ini, query-nya akan jalan tanpa error, TAPI
-> urutan hasilnya TIDAK BERUBAH sama sekali (boost dari rating 0 selalu 0),
-> bertentangan dengan Expected Output yang didokumentasikan. Kirim
-> beberapa rating dulu:
+> **[Terminal] Lakukan hal ini terlebih dahulu untuk isi rating awal.** Robot Shop yang BARU pertama
+> kali dijalankan punya `avg_rating: 0` untuk semua produk apabila
+> langsung lanjut ke contoh `function_score` di bawah tanpa langkah ini, query-nya akan jalan tanpa error,
+> namun urutan hasilnya tidak berubah (boost dari rating 0 selalu 0),
+> bertentangan dengan Expected Output yang diharapkan dalam modul ini. jalankan perintah berikut:
 > ```bash
 > curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/Watson/5" -o /dev/null
 > curl -s -X PUT "http://localhost:8080/api/ratings/api/rate/Watson/4" -o /dev/null
@@ -120,16 +118,15 @@ PYEOF
 curl -s -X POST "http://localhost:9200/robot-shop-catalogue/_bulk?refresh=true" \
   -H 'Content-Type: application/x-ndjson' --data-binary @/tmp/catalogue_bulk.ndjson
 ```
-Expected Output: `"errors":false`, 11 item — 11 produk asli
+Expected Output: `"errors":false`, 11 item
 Robot Shop (nama, deskripsi, harga, stok, kategori, rating) sekarang ada di
 index `robot-shop-catalogue`.
 
 > **Kenapa harus ambil data ini secara manual?** Robot Shop sendiri
 > menyimpan produknya di MongoDB (dipakai oleh service `catalogue`), bukan
 > di Elasticsearch. Langkah di atas menyalin data itu ke Elasticsearch
-> supaya bisa kamu pakai untuk latihan Query DSL/relevance — pola ini
-> mirip proses **ETL (Extract-Transform-Load)** sederhana yang umum di
-> dunia nyata sebelum data bisa dicari lewat Elasticsearch.
+> supaya bisa dapat digunakan untuk Query DSL/relevance — pola ini
+> mirip proses **ETL (Extract-Transform-Load)** sederhana.
 
 **[Dev Tools Console] Coba search dulu tanpa scoring khusus** — buka
 `http://localhost:5601/app/dev_tools#/console`, cari produk kategori "Robot":
@@ -175,8 +172,8 @@ dibangun ulang — bagian `match` dari skor ikut bergantung pada statistik
 korpus (jumlah dokumen, panjang field rata-rata), bukan cuma
 `avg_rating`. Urutan dan pola naik/turunnya tetap konsisten.)
 
-`modifier: "ln1p"` (log(1+x)) dipakai supaya rating 5 tidak "meledak"
-dibanding rating 4 — pola umum untuk field yang skalanya kecil (1-5).
+`modifier: "ln1p"` (log(1+x)) dipakai supaya rating 5 tidak melebihi batasnya
+dibanding rating 4 pola umum untuk field yang skalanya kecil (1-5).
 `missing: 0` menangani produk yang belum punya rating sama sekali.
 
 **[Dev Tools Console] Boosting kategori tertentu** (`bool.should` dengan `boost`):
@@ -193,7 +190,7 @@ GET robot-shop-catalogue/_search
   }
 }
 ```
-Expected Output — SEMUA produk tetap muncul (`must: match_all`),
+Expected Output : semua produk tetap muncul (`must: match_all`),
 tapi yang kategorinya "Artificial Intelligence" melonjak ke atas:
 ```
 7.208  Watson   (kategori: Artificial Intelligence)
@@ -214,11 +211,11 @@ pattern isi `robot-shop-catalogue` → **Save data view to Kibana**.
 
 ![Discover menampilkan 11 dokumen robot-shop-catalogue setelah data view dibuat](../../../docs/screenshots/sesi-4/01-discover-data-view-dibuat.png)
 
-*Data view `robot-shop-catalogue` aktif — 11 produk Robot Shop yang
+*Data view `robot-shop-catalogue` aktif 11 produk Robot Shop yang
 di-index di bagian (d) muncul di tabel.*
 
 **2. Tambah kolom `name`, `avg_rating`, `price`** (hover field di
-sidebar kiri → klik ikon **+**, lihat Sesi 3 kalau lupa caranya), lalu
+sidebar kiri → klik ikon **+**), lalu
 ketik filter KQL yang setara dengan query `bool.should` di atas:
 `categories: "Artificial Intelligence"`
 
@@ -226,7 +223,7 @@ ketik filter KQL yang setara dengan query `bool.should` di atas:
 
 *3 produk kategori "Artificial Intelligence" — Watson, Ewooid, Stan —
 persis sama dengan yang lolos filter di query Dev Tools Console di atas.
-Bedanya: di sini kamu TIDAK dapat kontrol `_score`/`boost` numerik seperti
+Bedanya: di sini kamu tidak dapat dikontrol `_score`/`boost` numerik seperti
 Query DSL (KQL cuma filter ya/tidak) — untuk kebutuhan RANKING numerik
 seperti boost rating, tetap perlu Query DSL lewat Dev Tools Console atau
 lewat API dari aplikasi. Discover paling pas untuk eksplorasi cepat,
