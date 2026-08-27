@@ -15,10 +15,13 @@ lingkungan lab ini.
 Sesi ini dinyatakan selesai apabila index `payment-service-parsed-*`,
 `cart-service-parsed-*`, dan `web-service-parsed-*` telah terisi dokumen
 nyata dari log Robot Shop (dengan field yang benar ter-extract, bukan
-`null`), dan Anda berhasil menginstal serta menjalankan Filebeat &
-Logstash secara manual (bukan melalui image Docker Elastic) pada sebuah
-container Linux polos, serta memverifikasi sendiri bahwa data mengalir
-dari Filebeat → Logstash → parsed output.
+`null`), Anda berhasil menginstal serta menjalankan Filebeat & Logstash
+secara manual (bukan melalui image Docker Elastic) pada sebuah container
+Linux polos, serta memverifikasi sendiri bahwa data mengalir dari
+Filebeat → Logstash → parsed output — termasuk memperluas Filebeat untuk
+membaca lebih dari satu sumber sekaligus (log akses web, log autentikasi
+SSH, dan command history), menghasilkan dokumen `ssh_login_success`/
+`ssh_login_failed`/`bash_history` yang terpisah sesuai sumbernya.
 
 ## c. Teori & Struktur Sistem
 
@@ -244,6 +247,123 @@ ter-parse, tiap dokumen berisi `response.status_code`, `url.original`,
 > **INFORMATION:** field yang ter-extract ini PERSIS sama seperti hasil
 > parsing `web-service.conf` terhadap log Robot Shop — instalasi manual
 > ini menghasilkan pipeline yang fungsinya identik dengan versi Docker.
+
+**8. Perluas cakupan pengumpulan data — log aktivitas SSH & command
+history.** Log akses web (langkah 1-7) hanya menjawab "traffic apa yang
+masuk", bukan "siapa yang masuk ke server dan menjalankan perintah apa".
+Untuk audit trail yang lebih lengkap, Filebeat pada server nyata sering
+dikonfigurasi membaca **lebih dari satu sumber sekaligus** — tambahkan
+dua sumber baru: log autentikasi SSH (`/var/log/auth.log`, mencatat
+setiap upaya login berhasil/gagal) dan command history shell
+(`~/.bash_history`, mencatat perintah yang dijalankan setelah login).
+
+> **INFORMATION:** `.bash_history` polos tidak punya timestamp per
+> baris secara default, dan mudah diubah/dihapus oleh pengguna itu
+> sendiri — untuk audit yang benar-benar andal, lingkungan produksi
+> biasanya memakai `auditd` atau shell logging terpusat lewat syslog.
+> Mekanisme Filebeat/Logstash yang dipelajari di sini tetap sama persis
+> apabila sumbernya diganti ke salah satu dari itu.
+
+**Siapkan data contoh** (mensimulasikan `auth.log` dengan satu login sah
+lewat SSH key, diikuti percobaan brute-force ke akun `root` — pola yang
+umum ditemukan pada server yang terekspos ke internet):
+```bash
+cat > /var/log/auth.log << 'EOF'
+Aug 27 09:14:02 web-prod-01 sshd[10432]: Accepted publickey for deploy from 10.20.30.41 port 52344 ssh2
+Aug 27 09:16:47 web-prod-01 sshd[10577]: Failed password for root from 198.51.100.23 port 41822 ssh2
+Aug 27 09:16:50 web-prod-01 sshd[10577]: Failed password for root from 198.51.100.23 port 41822 ssh2
+Aug 27 09:16:53 web-prod-01 sshd[10577]: Failed password for root from 198.51.100.23 port 41822 ssh2
+EOF
+
+mkdir -p /home/deploy
+cat > /home/deploy/.bash_history << 'EOF'
+whoami
+cd /var/www/app
+git pull origin main
+sudo systemctl restart app
+EOF
+```
+
+**Tambahkan 2 input baru pada Filebeat** (edit
+`/etc/filebeat/filebeat.yml`, tambahkan di bawah input yang sudah ada —
+`fields`/`fields_under_root` menandai sumber tiap dokumen, dipakai
+Logstash untuk memilih filter yang sesuai):
+```yaml
+  - type: filestream
+    id: native-ssh-auth
+    paths:
+      - /var/log/auth.log
+    fields:
+      log_source: ssh_auth
+    fields_under_root: true
+  - type: filestream
+    id: native-bash-history
+    paths:
+      - /home/deploy/.bash_history
+    fields:
+      log_source: bash_history
+    fields_under_root: true
+```
+
+**Tambahkan filter baru pada Logstash** (edit
+`/etc/logstash/conf.d/native-demo.conf`, tambahkan di dalam blok
+`filter { }` yang sudah ada, SEBELUM baris grok `%{COMBINEDAPACHELOG}`):
+```
+  if [log_source] == "ssh_auth" {
+    grok {
+      match => { "message" => "%{SYSLOGTIMESTAMP:timestamp} %{HOSTNAME:host} sshd\[%{NUMBER:pid}\]: %{GREEDYDATA:ssh_message}" }
+      tag_on_failure => ["_grok_auth_base_failed"]
+    }
+    if [ssh_message] =~ "^Accepted" {
+      grok {
+        match => { "ssh_message" => "Accepted %{WORD:auth_method} for %{USERNAME:ssh_user} from %{IP:src_ip} port %{NUMBER:src_port:int} ssh2" }
+      }
+      mutate { add_field => { "log_type" => "ssh_login_success" } }
+    } else if [ssh_message] =~ "^Failed password" {
+      grok {
+        match => { "ssh_message" => "Failed password for (invalid user )?%{USERNAME:ssh_user} from %{IP:src_ip} port %{NUMBER:src_port:int} ssh2" }
+      }
+      mutate { add_field => { "log_type" => "ssh_login_failed" } }
+    }
+  } else if [log_source] == "bash_history" {
+    grok {
+      match => { "message" => "%{GREEDYDATA:command}" }
+    }
+    mutate { add_field => { "log_type" => "bash_history" } }
+  }
+```
+
+**Restart Filebeat** (Ctrl+C pada terminal langkah 7, lalu jalankan
+ulang perintah yang sama) dan tunggu beberapa detik. Expected Output —
+4 dokumen SSH (1 `ssh_login_success`, 3 `ssh_login_failed` dari
+percobaan brute-force) dan 4 dokumen `bash_history`, tampil di terminal
+Logstash (langkah 6):
+```
+{
+    "log_source" => "ssh_auth",
+      "log_type" => "ssh_login_failed",
+        "ssh_user" => "root",
+         "src_ip" => "198.51.100.23",
+       "src_port" => 41822
+}
+{
+    "log_source" => "ssh_auth",
+      "log_type" => "ssh_login_success",
+        "ssh_user" => "deploy",
+    "auth_method" => "publickey",
+         "src_ip" => "10.20.30.41",
+       "src_port" => 52344
+}
+{
+    "log_source" => "bash_history",
+      "log_type" => "bash_history",
+        "command" => "sudo systemctl restart app"
+}
+```
+> **INFORMATION:** pola query yang sama seperti pada payment/cart/web
+> (agregasi per field, filter per status) berlaku juga di sini — mis.
+> `terms` per `src_ip` pada dokumen `ssh_login_failed` akan langsung
+> menunjukkan sumber percobaan brute-force di atas.
 
 **Bersihkan** container percobaan setelah selesai:
 ```bash
