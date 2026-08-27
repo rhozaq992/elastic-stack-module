@@ -3,9 +3,9 @@
 ## a. Tujuan Sesi
 
 Setelah sesi ini, kamu mampu melakukan analisis data agregat di
-Elasticsearch — mulai dari agregasi dasar (rata-rata, grup per kategori),
+Elasticsearch. mulai dari agregasi dasar (rata-rata, grup per kategori),
 agregasi bertingkat (pipeline), sampai agregasi berbasis lokasi geografis
-(geo) — dan memahami bagaimana hasilnya bisa divisualisasikan di Kibana.
+(geo) serta memahami bagaimana hasilnya bisa divisualisasikan di Kibana.
 
 ## b. Output yang Diharapkan
 
@@ -25,9 +25,9 @@ bertingkat/nested). Dua kategori utama:
   rentang waktu, `geohash_grid` per area geografis).
 
 Bucket dan metric bisa **digabung bertingkat** — mis. "rata-rata bytes,
-DIKELOMPOKKAN per response code" (metric di dalam bucket).
+dikumpulkan sesuai response code" (metric di dalam bucket).
 
-**Pipeline aggregation** adalah agregasi yang inputnya BUKAN dokumen
+**Pipeline aggregation** adalah agregasi yang inputnya bukan dokumen
 mentah, tapi HASIL agregasi lain (bucket aggregation lain) — makanya
 disebut "pipeline", hasil satu aggregation jadi input aggregation
 berikutnya. Contoh: "rata-rata dari total-bytes-per-hari" (`avg_bucket` di
@@ -139,12 +139,12 @@ visualisasi **Maps**, `date_histogram` ke bar chart/line chart time-series.
 Lens, point-and-click).*
 
 **Bikin bar chart "Count per day" dari nol** (X-axis: `@timestamp` date
-histogram, Y-axis: Count) — hasilnya nanti langsung mencerminkan angka
+histogram, Y-axis: Count) hasilnya nanti langsung mencerminkan angka
 `requests_per_day` yang barusan kamu hitung lewat query pipeline
 aggregation di atas:
 
 **3. Ganti Data view** ke "Kibana Sample Data Logs" (klik data view aktif
-di kiri atas, pilih dari daftar) — editor mulai kosong, siap diisi:
+di kiri atas, pilih dari daftar) editor mulai kosong, siap diisi:
 
 ![Editor Lens kosong dengan data view Kibana Sample Data Logs aktif](../../../docs/screenshots/sesi-5/06-lens-kosong.png)
 
@@ -164,7 +164,7 @@ histogram**, lalu pilih field `@timestamp` di dropdown "Field" yang muncul:
 
 ![Panel Horizontal axis dengan Date histogram dan field @timestamp dipilih](../../../docs/screenshots/sesi-5/08-lens-horizontal-axis-timestamp.png)
 
-*Sekarang bar tunggal tadi otomatis pecah jadi bar chart per hari —
+*Sekarang bar tunggal tadi otomatis pecah jadi bar chart per hari
 persis pola yang sama dengan `requests_per_day` di query pipeline
 aggregation, cuma sekarang dalam bentuk visual.*
 
@@ -172,9 +172,9 @@ aggregation, cuma sekarang dalam bentuk visual.*
 
 ![Bar chart jadi menampilkan Count of records per hari dari kibana_sample_data_logs](../../../docs/screenshots/sesi-5/09-lens-chart-jadi.png)
 
-**7. Simpan ke Visualize Library** — klik **Save** di kanan atas, isi
+**7. Simpan ke Visualize Library** klik **Save** di kanan atas, isi
 Title, pilih **Add to dashboard: None** (kalau belum mau taruh di
-dashboard manapun) — "Add to library" otomatis tercentang:
+dashboard manapun) "Add to library" otomatis tercentang:
 
 ![Modal Save Lens visualization dengan title Requests per Day - Web Logs, opsi None, tombol Save and add to library](../../../docs/screenshots/sesi-5/10-lens-save-modal.png)
 
@@ -191,9 +191,6 @@ Sample Data eCommerce):
 termasuk **"[eCommerce] Revenue Dashboard"**. Klik untuk membukanya:*
 
 ![Kibana Dashboard eCommerce Revenue menampilkan metric sum of revenue $77,218.02, breakdown kategori, transaksi per hari](../../../docs/screenshots/sesi-5/05-dashboard-ecommerce-jadi.png)
-
-*Contoh dashboard jadi — gabungan metric, bar chart, dan breakdown
-kategori, semuanya interaktif (klik filter Manufacturer/Category di atas).*
 
 ## f. Referensi Exercise
 
