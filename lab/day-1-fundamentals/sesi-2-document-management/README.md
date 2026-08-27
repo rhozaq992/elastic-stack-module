@@ -43,7 +43,7 @@ tipe field secara otomatis (*dynamic mapping*) saat dokumen pertama masuk.
 
 ![Sidebar menu Kibana terbuka menampilkan Analytics, Elasticsearch, Observability](../../../docs/screenshots/sesi-2/02-klik-menu-hamburger.png)
 
-*2. Menu sidebar terbuka — Dev Tools ada di bagian bawah menu Elasticsearch/Management (scroll kalau perlu).*
+*2. Menu sidebar terbuka — Dev Tools ada di bagian bawah menu Elasticsearch/Management.*
 
 ![Kibana Dev Tools Console kosong, siap diisi query](../../../docs/screenshots/sesi-2/03-dev-tools-console-kosong.png)
 
@@ -99,7 +99,7 @@ supaya kamu terbiasa dengan alur ketik-jalankan-baca hasil di Console:
 
 ![Hasil response query match_all di Dev Tools Console, menampilkan 2 dokumen](../../../docs/screenshots/sesi-2/05-dev-tools-hasil-response.png)
 
-*5. Klik ▶ (atau `Cmd+Enter`/`Ctrl+Enter`) — hasil muncul di panel kanan: 2 dokumen `lab-mapping-demo` yang barusan kamu index.*
+*5. Klik ▶ (atau `Cmd+Enter`/`Ctrl+Enter`) — hasil muncul di panel kanan: 2 dokumen `lab-mapping-demo`.*
 
 **Query 1** — `match` di field `text` dengan kata `"Security"` (partial match):
 ```
@@ -162,13 +162,11 @@ Expected Output: `"result":"deleted"`, `"_version":3`.
 ### Preview: Lihat & Export Data Lewat Discover
 
 Sejauh ini kamu selalu lihat data lewat Dev Tools Console (respons JSON
-mentah). Kibana juga punya **Discover** — tampilan tabel untuk menjelajah
-dokumen tanpa nulis query JSON (dalamnya dipakai penuh mulai Sesi 3).
+mentah). Kibana juga punya **Discover**.
 Di sini kita coba sekilas pakai data `lab-mapping-demo` yang barusan kamu buat.
 
 **1. Buat Data View** (index custom seperti `lab-mapping-demo` perlu
-didaftarkan dulu supaya muncul di Discover — beda dengan sample data
-bawaan Kibana yang sudah otomatis terdaftar): buka menu ☰ → Discover,
+didaftarkan dulu supaya muncul di Discover): buka menu ☰ → Discover,
 klik nama data view aktif di kiri atas → **"Create a data view"** → isi
 **Name** dan **Index pattern** dengan `lab-mapping-demo` (index ini tidak
 punya field tanggal, jadi field **Timestamp** dibiarkan kosong) → **Save
@@ -202,12 +200,12 @@ Management → Reporting** untuk ambil hasilnya:
 
 *Status **Done** — klik ikon download di kolom Actions untuk mengunduh file CSV-nya.*
 
-Expected Output (isi file CSV yang terunduh):
+Expected Output (isi file CSV):
 ```csv
 "_id","_ignored","_index","_score","jabatan_keyword","jabatan_text"
 1,"-","lab-mapping-demo",0.693,"Security Operations Analyst","Security Operations Analyst"
 ```
-CSV berisi PERSIS dokumen yang lolos filter (bukan seluruh index) — cara
+CSV berisi PERSIS dokumen yang lolos filter — cara
 ini yang dipakai kalau kamu perlu bagikan hasil pencarian ke orang lain
 dalam bentuk spreadsheet, tanpa mereka perlu akses Kibana.
 
