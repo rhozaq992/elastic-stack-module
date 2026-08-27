@@ -3,7 +3,7 @@
 # image cuma 1 (terlalu kecil), dinaikkan di sini. ERROR=1 mengaktifkan
 # transaksi anomali bawaan Robot Shop (task `error()` di load generator)
 # -- frekuensinya sudah diatur rendah lewat task weight di dalam image
-# (bukan lewat env var), lihat README sesi ini dan exercise/sesi-8 untuk
+# (bukan lewat env var), lihat README sesi ini dan exercise/sesi-7 untuk
 # cara menganalisisnya.
 #
 # File ini di-merge ke docker-compose.yml sesi ini sendiri (bukan

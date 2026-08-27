@@ -132,11 +132,11 @@ python3 --version
   **Settings → Resources → Memory** (geser slider, klik **Apply &
   Restart**). Pada Linux, Docker Engine memakai RAM host secara langsung
   — pastikan tersedia minimal 8GB RAM bebas pada host.
-- **Sesi 7 (Hari 4, cluster 3-node) membutuhkan minimal 12GB.** Naikkan
-  alokasi memori SEBELUM memulai Sesi 7 lewat langkah Docker Desktop di
+- **Sesi 8 (Hari 4, cluster 3-node) membutuhkan minimal 12GB.** Naikkan
+  alokasi memori SEBELUM memulai Sesi 8 lewat langkah Docker Desktop di
   atas.
 
-> **INFORMATION:** kebutuhan 12GB pada Sesi 7 berdasarkan pemakaian tiap
+> **INFORMATION:** kebutuhan 12GB pada Sesi 8 berdasarkan pemakaian tiap
 > node Elasticsearch sebesar ±1,4GB RAM (±4,2GB total hanya untuk
 > Elasticsearch, di luar overhead Docker Desktop dan aplikasi lain yang
 > mungkin masih berjalan dari sesi sebelumnya).
