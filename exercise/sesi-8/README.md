@@ -8,13 +8,11 @@ untuk format log custom yang belum pernah kamu temui di lab.
 
 Traffic payment Robot Shop bisa menunjukkan dua jenis status "tidak
 normal": `http_status: 500` (SELALU ada, disuntik sengaja lewat load
-generator) dan `http_status: 429` (MUNGKIN ada, tergantung seberapa kuat
-laptopmu menangani beban — lihat catatan Sesi 6/8). Tim finance dan tim
+generator) dan `http_status: 429`. Tim finance dan tim
 infrastruktur SAMA-SAMA khawatir soal status "tidak normal", tapi butuh
 penjelasan yang beda: yang satu butuh investigasi fraud, yang satu lagi
 cuma butuh tambah kapasitas server. Tugasmu: pakai data di
-`payment-service-parsed-*` untuk membuktikan MANA YANG MANA — jangan cuma
-tebak dari nama status code-nya.
+`payment-service-parsed-*` untuk membuktikan bukan hanya dari status code.
 
 **Kalau traffic-mu tidak punya `429` sama sekali** (cek dulu breakdown di
 tugas 1) — itu normal, bukan kegagalan. Kerjakan tugas 2, 4, 5 dengan
@@ -81,7 +79,7 @@ Tim platform baru saja deploy layanan internal baru, **Task Tracker**
 (`crud-app/` di root repo ini) — log akses-nya BUKAN JSON, BUKAN Combined
 Log Format seperti yang sudah kamu tangani di lab, tapi format custom
 pipe-delimited buatan tim itu sendiri. Kamu diminta bikin pipeline
-parsing-nya dari NOL — situasi realistis: di dunia nyata, tiap tim
+parsing-nya dari NOL. situasi realistis: di dunia nyata, tiap tim
 sering punya format log sendiri-sendiri.
 
 ### Tugas Bagian 2
