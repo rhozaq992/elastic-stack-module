@@ -32,9 +32,9 @@ fi
 count_429=$(curl -s "http://localhost:9200/payment-service-parsed-*/_count" -H 'Content-Type: application/json' -d '{"query":{"term":{"http_status":429}}}' 2>/dev/null | grep -o '"count":[0-9]*' | head -1 | grep -o '[0-9]*')
 count_429=${count_429:-0}
 if [ "$count_429" -gt 0 ] 2>/dev/null; then
-  echo "INFO - payment-service-parsed-* punya transaksi kapasitas http_status=429 (count=$count_429) -- host-mu kena bottleneck, bahan bagus buat perbandingan"
+  echo "INFO - payment-service-parsed-* punya transaksi kapasitas http_status=429 (count=$count_429) -- host Anda mengalami bottleneck, bahan bagus untuk perbandingan"
 else
-  echo "INFO - payment-service-parsed-* tidak ada http_status=429 (count=0) -- normal, host-mu cukup kuat menangani NUM_CLIENTS:6 tanpa payment kewalahan"
+  echo "INFO - payment-service-parsed-* tidak ada http_status=429 (count=0) -- normal, host Anda cukup kuat menangani NUM_CLIENTS:6 tanpa payment kewalahan"
 fi
 
 count_200=$(curl -s "http://localhost:9200/payment-service-parsed-*/_count" -H 'Content-Type: application/json' -d '{"query":{"term":{"http_status":200}}}' 2>/dev/null | grep -o '"count":[0-9]*' | head -1 | grep -o '[0-9]*')
@@ -57,13 +57,13 @@ tt_status_type=$(curl -s "http://localhost:9200/task-tracker-parsed-*/_mapping" 
 if [ -n "$tt_status_type" ]; then
   check "Bagian 2: field status di-mapping sebagai tipe numerik" 0
 else
-  check "Bagian 2: field status di-mapping sebagai tipe numerik -- cek grok pattern-mu pakai :int" 1
+  check "Bagian 2: field status di-mapping sebagai tipe numerik -- periksa apakah grok pattern Anda menggunakan :int" 1
 fi
 
 echo ""
 echo "Ringkasan: $PASS pass, $FAIL fail"
-echo "(Script ini cuma cek DATA-nya tersedia untuk dianalisis -- kesimpulan"
-echo "anomali kamu sendiri yang menilai berdasarkan kriteria di README.)"
+echo "(Script ini hanya memeriksa ketersediaan DATA untuk dianalisis -- kesimpulan"
+echo "anomali Anda sendiri yang menilai berdasarkan kriteria di README.)"
 
 if [ "$FAIL" -eq 0 ]; then
   exit 0

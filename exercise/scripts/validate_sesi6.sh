@@ -45,7 +45,7 @@ fi
 echo ""
 echo "Ringkasan: $PASS pass, $FAIL fail"
 echo "(Bagian 2 -- perbandingan service tercepat/terlambat dan span breakdown"
-echo "kamu tunjukkan sendiri dari Kibana APM UI, sesuai kriteria di README.)"
+echo "Anda tunjukkan sendiri dari Kibana APM UI, sesuai kriteria di README.)"
 
 if [ "$FAIL" -eq 0 ]; then
   exit 0
