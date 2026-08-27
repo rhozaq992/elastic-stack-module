@@ -3,40 +3,38 @@
 ## a. Tujuan Sesi
 
 Setelah sesi ini, kamu mampu mengukur performa query Elasticsearch secara
-nyata (bukan menebak), memahami cara kerja request cache, tahu pengaturan
-index apa yang perlu disesuaikan saat bulk-loading data besar, DAN
-memahami APM (Application Performance Monitoring) — cara melihat latency
-tiap microservice secara individual untuk tahu persis servis mana yang
-lambat, bukan cuma menduga dari gejala di permukaan.
+langsung, memahami cara kerja request cache, tahu pengaturan
+index apa yang perlu disesuaikan saat bulk-loading data besar, serta
+memahami APM (Application Performance Monitoring) untuk melihat latency
+setiap microservice secara individual untuk tahu persis servis mana yang
+lambat.
 
 ## b. Output yang Diharapkan
 
 Sesi ini selesai kalau kamu berhasil mengukur & membandingkan `took`
 (waktu eksekusi) query sebelum/sesudah cache aktif, menjalankan `_profile`
 API untuk membedah waktu eksekusi query, mengubah `refresh_interval` index
-lalu mengembalikannya ke semula, DAN melihat di Kibana APM **Service
+lalu mengembalikannya ke semula, serta melihat di Kibana APM **Service
 Inventory** bahwa service `cart` dan `payment` tampil dengan angka latency
-yang jauh berbeda — kamu bisa sebutkan mana yang lebih lambat dan berapa
+yang jauh berbeda agar bisa menentukan service yang mana lebih lambat dan berapa
 kira-kira selisihnya.
 
 ## c. Teori & Struktur Sistem
 
-Robot Shop sesi ini **BUKAN** reuse dari Sesi 4 — sesi ini punya stack
+Robot Shop sesi ini **BUKAN** reuse dari Sesi 4. sesi ini punya stack
 Robot Shop sendiri (lihat bagian d), di mana dua service (`cart` dan
 `payment`) sudah disisipi **Elastic APM agent**. Traffic dari load
-generator (Locust) yang mengalir ke keduanya sekarang benar-benar
-**terpakai**: setiap request yang diproses menghasilkan data trace yang
-tersimpan di Elasticsearch dan bisa kamu analisis — bukan cuma lewat di
-log lalu hilang seperti sebelumnya.
+generator (Locust) yang mengalir: setiap request yang diproses menghasilkan data trace yang
+tersimpan di Elasticsearch dan bisa kamu analisis.
 
 **Apa itu APM?** Application Performance Monitoring — cara mengukur
-seberapa cepat/lambat aplikasi merespons, DI DALAM kode aplikasi itu
+seberapa cepat/lambat aplikasi merespons, di dalam kode aplikasi itu
 sendiri (beda dari mengukur dari luar seperti curl timing). Untuk sistem
 microservice (seperti Robot Shop, 12 service saling panggil lewat HTTP),
 APM sangat penting karena satu request pengguna bisa melewati BANYAK
-service — tanpa APM, kalau checkout terasa lambat, kamu cuma tahu
-"checkout lambat", tidak tahu APAKAH itu `cart`, `payment`, `shipping`,
-atau kombinasi ketiganya.
+service — tanpa APM, apabila proses terasa lambat, kita hanya memiliki asumsi internet lambat dan
+tidak memiliki pengetahuan atas proses dari service yang berjalan
+atau kombinasi.
 
 **Cara kerja APM di stack ini:**
 ```
@@ -45,7 +43,7 @@ atau kombinasi ketiganya.
    di dalam kode)                kirim ke ES)            traces-apm-*,         visualisasi)
                                                           metrics-apm-*)
 ```
-1. **APM agent** — library kecil yang di-install DI DALAM kode aplikasi
+1. **APM agent** — library kecil yang di-install di kode aplikasi
    (satu per bahasa pemrograman: Python, Node.js, Java, dst). Tugasnya:
    catat setiap request masuk (disebut **transaction**) dan setiap
    operasi di dalamnya (disebut **span** — mis. query database, panggil
@@ -60,31 +58,29 @@ atau kombinasi ketiganya.
    tetap bisa di-query manual seperti index lain, lihat bagian e).
 
 **Kenapa cuma `cart` dan `payment`** (bukan semua 12 service)? Supaya
-sesi ini tetap fokus dan cepat — dua service ini representatif: `cart`
+sesi ini tetap fokus dan cepat dua service ini representatif: `cart`
 (Node.js, operasi ringan ke Redis) vs `payment` (Python, operasi lebih
-berat termasuk panggilan HTTP keluar) — perbandingan keduanya sudah cukup
+berat termasuk panggilan HTTP keluar) perbandingan keduanya sudah cukup
 untuk menunjukkan konsep "per-service latency" dengan jelas.
 
 **Tiga teknik optimasi lain yang tetap dibahas sesi ini** (pakai
 `kibana_sample_data_logs`, dataset besar & deterministik supaya angkanya
-konsisten untuk belajar konsepnya dulu — sebelum diterapkan ke data
+konsisten untuk belajar konsepnya dulu sebelum diterapkan ke data
 trace APM kamu sendiri yang jumlahnya tidak pasti di bagian e):
 - **Query profiling** (`_profile` API) — membedah SATU query, menunjukkan
-  berapa lama tiap bagian internal (matching, scoring, dst.) makan waktu —
+  berapa lama tiap bagian internal (matching, scoring, dst.) makan waktu
   dipakai untuk mendiagnosis query yang lambat.
-- **Request cache** — Elasticsearch otomatis meng-cache hasil query yang
+- **Request cache** Elasticsearch otomatis meng-cache hasil query yang
   identik (khususnya `size:0` dengan aggregation) — request kedua dengan
   query PERSIS sama jauh lebih cepat, sampai ada dokumen baru masuk (cache
   otomatis invalidasi).
-- **Index settings saat bulk load** — `refresh_interval` (jarak waktu
+- **Index settings saat bulk load** `refresh_interval` (jarak waktu
   dokumen baru jadi bisa dicari) dan jumlah replica bisa disesuaikan
   sementara untuk mempercepat proses index besar-besaran.
 
 ## d. Praktik: Instalasi & Konfigurasi
 
-**[Terminal] Matikan dulu Robot Shop Sesi 4** (sesi ini bawa stack Robot
-Shop sendiri dengan 2 service ber-APM — menjalankan dua Robot Shop
-sekaligus cuma membebani resource host tanpa manfaat tambahan):
+**[Terminal] Matikan dulu Robot Shop Sesi 4**:
 ```bash
 cd lab/day-2-query-relevance/sesi-4-relevance-scoring
 docker compose down
@@ -102,10 +98,10 @@ docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml up -d
 ```
 Tunggu semua service `healthy` (`docker compose ps`) — termasuk
 `shipping`/`ratings` yang butuh waktu lebih lama saat MySQL inisialisasi
-pertama kali (lihat Sesi 4 kalau butuh mengingat detailnya).
+pertama kali.
 
 **[Terminal] Jalankan load generator** (traffic nyata ke Robot Shop, ~4% di
-antaranya transaksi anomali — bahan latihan Sesi 8 — DAN sekarang jadi
+antaranya transaksi anomali akan jadi
 sumber data trace APM untuk `cart`/`payment`):
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.load.yml up -d load
@@ -116,7 +112,7 @@ beberapa menit): traffic asli mengalir ke `/api/user/login`,
 traffic Robot Shop random — lihat catatan di Sesi 4).
 
 > **Catatan performa (perilaku bisa beda tergantung host):** `NUM_CLIENTS`
-> di `docker-compose.load.yml` sengaja diset rendah (6), bukan tinggi —
+> di `docker-compose.load.yml` sengaja diset rendah (6), bukan tinggi
 > `payment` (uwsgi, single worker process, lihat `[pid: 6|app: 0|...]` di
 > log-nya) cuma punya kapasitas concurrent request yang kecil. Di
 > pengujian instruktur (host dengan beban Docker lain berjalan bersamaan),
@@ -146,16 +142,16 @@ tergantung waktu) — tapi angka `took` sendiri bisa beda beberapa ms di
 laptopmu (tergantung beban CPU/proses lain yang jalan bersamaan), itu
 normal.
 
-**Jalankan query PERSIS SAMA lagi:**
+**Jalankan query lagi:**
 ```
 GET kibana_sample_data_logs/_search
 { "size": 0, "query": { "bool": { "filter": [ { "range": { "bytes": { "gt": 5000 } } } ] } } }
 ```
-Expected Output: `"took": 0` (ms) — request cache Elasticsearch
+Expected Output: `"took": 0` (ms) request cache Elasticsearch
 langsung mengembalikan hasil tanpa eksekusi ulang. **Query ini memang
 sudah sangat cepat dari awal**, jadi `took` kadang TIDAK terlihat turun
-banyak (bisa saja masih 1-2ms) — bukti yang lebih diandalkan adalah
-statistik cache-nya langsung, bukan cuma `took`:
+banyak (bisa saja masih 1-2ms) bukti yang lebih diandalkan adalah
+statistik cache-nya langsung :
 ```
 GET kibana_sample_data_logs/_stats/request_cache
 ```
@@ -166,13 +162,11 @@ lebih dari 1 karena tiap shard punya cache-nya sendiri).
 
 ### Melihat Latency per Microservice Lewat APM
 
-**Cara install APM agent** (contoh nyata, dua bahasa berbeda — kamu TIDAK
-perlu menjalankan ini sendiri, `cart`/`payment` di stack sesi ini sudah
-disiapkan begitu; ini referensi kalau nanti kamu instrumentasi aplikasimu
-sendiri). Pola umumnya SAMA di semua bahasa: agent di-`start()` di titik
+**Cara install APM agent**
+Pola umumnya untuk di semua bahasa sama : agent di-`start()` di titik
 paling awal aplikasi, diberi `serverUrl` APM Server tujuan.
 
-Python (Flask) — `payment`:
+Python (Flask) `payment`:
 ```python
 from elasticapm.contrib.flask import ElasticAPM
 
@@ -185,7 +179,7 @@ app.config['ELASTIC_APM'] = {
 apm = ElasticAPM(app)
 ```
 
-Node.js (Express) — `cart`:
+Node.js (Express) `cart`:
 ```javascript
 // WAJIB baris PALING ATAS file, sebelum require() lain
 require('elastic-apm-node').start({
@@ -196,42 +190,40 @@ require('elastic-apm-node').start({
 ```
 
 Begitu agent aktif, SETIAP request yang masuk ke `cart`/`payment` otomatis
-tercatat sebagai **transaction** — tidak perlu kode tambahan apa pun di
+tercatat sebagai **transaction** tanpa perlu kode tambahan apa pun di
 tiap endpoint.
 
 **Buka Kibana APM** (menu ☰ → Observability → APM → Service inventory):
 
 ![Kibana APM Service inventory menampilkan service cart dan payment dengan kolom latency, throughput, failed transaction rate](../../../docs/screenshots/sesi-6/01-apm-service-inventory.png)
 
-*Dua service muncul otomatis — `cart` (ikon Node.js) dan `payment` (ikon
-Python) — kolom **Latency (avg.)** menunjukkan `payment` jauh lebih
+*Dua service muncul otomatis `cart` (ikon Node.js) dan `payment` (ikon
+Python) kolom **Latency (avg.)** menunjukkan `payment` jauh lebih
 lambat dari `cart` (bedanya bisa puluhan-ratusan kali lipat, tergantung
-berapa lama load generator sudah jalan di laptopmu — coba refresh setelah
-beberapa menit kalau baru mulai). Ini PERSIS pertanyaan "servis mana yang
+berapa lama load generator sudah jalan di laptopmu coba refresh setelah
+beberapa menit kalau baru mulai). Ini akan menjawab pertanyaan "servis mana yang
 lambat" yang tidak bisa dijawab cuma dari log biasa.*
 
 **Klik salah satu service** (mis. `payment`) untuk detail:
 
 ![Halaman detail service payment di Kibana APM menampilkan grafik latency, throughput, dan failed transaction rate](../../../docs/screenshots/sesi-6/02-apm-payment-overview.png)
 
-*Tab **Overview** — grafik latency & throughput dari waktu ke waktu, plus
+*Tab **Overview** grafik latency & throughput dari waktu ke waktu, plus
 tab **Transactions** untuk lihat breakdown per-endpoint (`POST /pay/<id>`
-dst.), **Dependencies** untuk lihat apa yang dipanggil service ini keluar
+dst.), **Dependencies** untuk melihat apa yang dipanggil service ini keluar
 (database, service lain), dan **Errors** untuk exception yang tertangkap.*
 
 ![Detail transaksi POST /pay/id menampilkan breakdown time spent by span type, mayoritas di kategori http](../../../docs/screenshots/sesi-6/03-apm-transaction-detail.png)
 
-*Klik transaksi tertentu (mis. `POST /pay/<id>`) — panel **"Time spent by
-span type"** ini yang menjawab PERTANYAAN LANJUTAN "kenapa lambat":
+*Klik transaksi tertentu (mis. `POST /pay/<id>`) panel **"Time spent by
+span type"** ini yang menjawab pertanyaan "kenapa lambat":
 kalau mayoritas waktu ada di kategori `app` (kode aplikasi sendiri),
 optimasi ada di kode; kalau mayoritas di `http`/`db` (panggilan keluar),
-masalahnya ada di service/dependency lain yang dipanggil — bukan di
+masalahnya ada di service/dependency lain yang dipanggil bukan di
 `payment` sendiri.*
 
 **Query data trace-nya langsung** (APM Server menyimpannya sebagai index
-Elasticsearch biasa — bisa di-query seperti index lain, ini yang membuat
-traffic load generator akhirnya "terpakai" untuk latihan aggregation
-juga):
+Elasticsearch biasa bisa di-query seperti index lain :
 ```
 GET traces-apm-default/_search
 {
@@ -246,14 +238,14 @@ GET traces-apm-default/_search
   }
 }
 ```
-Expected Output (pola-nya — angka pastimu tergantung berapa lama
+Expected Output (pola-nya angka pastimu tergantung berapa lama
 load generator sudah jalan): dua bucket, `cart` dengan
 `avg_duration_ms` di kisaran satuan milidetik, `payment` di kisaran
 ratusan milidetik — konsisten dengan yang tampil di Service Inventory di atas.
 
 ### Tiga Teknik Optimasi Query (`kibana_sample_data_logs`)
 
-**[Dev Tools Console] `_profile` API** — membedah query yang sama, lihat waktu eksekusi internal:
+**[Dev Tools Console] `_profile` API** membedah query yang sama, lihat waktu eksekusi internal:
 ```
 GET kibana_sample_data_logs/_search
 {
@@ -270,14 +262,14 @@ beban host-mu saat itu), dan `breakdown` — rincian per operasi internal
 operasi mana yang paling banyak makan waktu lewat breakdown ini.
 
 **Ubah `refresh_interval` sebelum bulk load besar** (index baru butuh
-waktu ~1 detik default sebelum dokumen bisa dicari — kalau kamu mau bulk
+waktu ~1 detik default sebelum dokumen bisa dicari apabila akan bulk
 index jutaan dokumen, menaikkan interval ini mengurangi overhead):
 ```
 PUT kibana_sample_data_logs/_settings
 { "index": { "refresh_interval": "30s" } }
 ```
 Expected Output: `{"acknowledged":true}`. **Setelah bulk load
-selesai, WAJIB dikembalikan** ke default (atau nilai produksi normal),
+selesai, perlu dikembalikan** ke default (atau nilai produksi normal),
 supaya data baru kembali cepat muncul di pencarian:
 ```
 PUT kibana_sample_data_logs/_settings
