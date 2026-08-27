@@ -1,14 +1,18 @@
 # Exercise Sesi 6 — Profiling Aggregation eCommerce + Analisis APM
 
-Dua bagian: **Bagian 1** melanjutkan agregasi revenue eCommerce dari Sesi 5
-(fokus profiling & cache), **Bagian 2** analisis data trace APM `cart`/
+Dua bagian: **Bagian 1** menggunakan data eCommerce yang sudah Anda muat
+sejak Sesi 3 untuk latihan aggregation baru (per kategori), kali ini
+fokus pada performanya. **Bagian 2** analisis data trace APM `cart`/
 `payment` yang sudah mengalir dari load generator sesi ini.
 
 ## Bagian 1 — Use Case
 
-Lanjutkan agregasi revenue per kategori dari Sesi 5 — kali ini fokus pada
-performanya: apakah query tersebut efisien, dan apakah request cache
-benar-benar bekerja?
+Data `kibana_sample_data_ecommerce` yang sudah Anda muat sejak lab Sesi 3
+dipakai kembali di sini — kali ini untuk agregasi revenue **per
+kategori** (`terms` + `avg`, kombinasi yang belum pernah dicoba
+sebelumnya; Sesi 5 melatih `date_histogram` + pipeline aggregation pada
+data lain), dengan fokus pada performanya: apakah query tersebut efisien,
+dan apakah request cache benar-benar bekerja?
 
 ## Tugas Bagian 1
 
