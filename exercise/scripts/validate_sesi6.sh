@@ -42,10 +42,18 @@ else
   check "Data trace APM ada untuk minimal 2 service (ditemukan $apm_services) -- pastikan load generator sudah jalan beberapa menit" 1
 fi
 
+span_dest_count=$(curl -s "http://localhost:9200/traces-apm-default/_search" -H 'Content-Type: application/json' -d '{"size":0,"query":{"bool":{"filter":[{"term":{"service.name":"payment"}},{"exists":{"field":"span.destination.service.resource"}}]}}}' 2>/dev/null | grep -o '"value":[0-9]*' | head -1 | grep -o '[0-9]*')
+span_dest_count=${span_dest_count:-0}
+if [ "$span_dest_count" -gt 0 ] 2>/dev/null; then
+  check "Data span payment punya field span.destination.service.resource (count=$span_dest_count) -- cukup untuk Bagian 2 langkah 3" 0
+else
+  check "Data span payment punya field span.destination.service.resource (count=$span_dest_count) -- pastikan load generator sudah jalan beberapa menit" 1
+fi
+
 echo ""
 echo "Ringkasan: $PASS pass, $FAIL fail"
-echo "(Bagian 2 -- perbandingan service tercepat/terlambat dan span breakdown"
-echo "Anda tunjukkan sendiri dari Kibana APM UI, sesuai kriteria di README.)"
+echo "(Bagian 2 -- endpoint paling lambat, dependency spesifik penyebabnya,"
+echo "dan kesimpulan akar penyebab Anda tunjukkan sendiri sesuai kriteria di README.)"
 
 if [ "$FAIL" -eq 0 ]; then
   exit 0
