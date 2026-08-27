@@ -8,6 +8,15 @@ toko online yang dipakai di lab) untuk latihan Query DSL.
 
 ## Tugas
 
+Disarankan: eksplorasi dahulu lewat **Kibana Discover** (pilih data view
+"Kibana Sample Data Flights", gunakan filter KQL — sama seperti yang
+dipelajari pada lab Sesi 3 bagian d) untuk melihat sendiri polanya
+sebelum menuliskan query Query DSL yang setara di bawah. Jawaban akhir
+tetap perlu dalam bentuk Query DSL (bukan hanya filter KQL di Discover),
+karena `validate_sesi3.sh` memeriksa hasilnya secara terprogram lewat
+API — namun proses eksplorasi lewat UI akan mempermudah Anda memastikan
+polanya benar sebelum menuliskan query-nya.
+
 1. Load sample data flights.
 2. Cari total penerbangan yang DIBATALKAN (`Cancelled: true`).
 3. Cari penerbangan maskapai tertentu (pilih salah satu `Carrier` yang ada
