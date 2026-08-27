@@ -3,12 +3,12 @@
 ## Use Case
 
 Tim analytics eCommerce mau tahu berapa banyak pelanggan unik yang pernah
-belanja, dan dari daerah mana saja order-nya berasal — pakai
+belanja, dan dari daerah mana saja order-nya berasal, gunakan
 `kibana_sample_data_ecommerce` (beda dataset dari latihan lab yang pakai
 data log web server).
 
 **Soal data:** exercise ini pakai index `kibana_sample_data_ecommerce`
-yang SAMA dengan yang sudah kamu load di lab Sesi 3 — **tidak perlu load
+yang SAMA dengan yang sudah kamu load di lab Sesi 3 **tidak perlu load
 ulang** kalau kamu sudah mengerjakan Sesi 3 secara berurutan. Kalau belum
 ada (`curl http://localhost:9200/kibana_sample_data_ecommerce/_count`
 mengembalikan 404), load dulu:
