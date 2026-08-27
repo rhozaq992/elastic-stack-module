@@ -53,11 +53,21 @@ kosong.
 
 ## d. Praktik: Instalasi & Konfigurasi
 
-*(Prasyarat: stack single-node Sesi 1 dan Robot Shop Sesi 6 masih
-berjalan. Apabila sudah Anda matikan, nyalakan kembali terlebih dahulu:
-`cd lab/day-3-analytics-optimization/sesi-6-performance-optimization && docker compose up -d`.
-Traffic dari load generator Sesi 6 sebaiknya masih mengalir supaya ada log
-untuk di-parsing.)*
+**Prasyarat:** stack single-node Sesi 1 dan Robot Shop Sesi 6 masih
+berjalan. Apabila Anda baru saja menyelesaikan Sesi 7, cluster 3-node
+pada sesi tersebut memakai port `9200` yang sama dengan Sesi 1 —
+pastikan sudah dimatikan lebih dahulu:
+```bash
+cd lab/day-4-administration-ingestion/sesi-7-administration-scaling
+docker compose down
+```
+Nyalakan ulang stack yang diperlukan:
+```bash
+cd lab/day-1-fundamentals/sesi-1-intro-elk && docker compose up -d
+cd ../../day-3-analytics-optimization/sesi-6-performance-optimization && docker compose up -d
+```
+*(Traffic dari load generator Sesi 6 sebaiknya masih mengalir supaya ada
+log untuk di-parsing.)*
 
 ```bash
 cd lab/day-4-administration-ingestion/sesi-8-data-ingestion

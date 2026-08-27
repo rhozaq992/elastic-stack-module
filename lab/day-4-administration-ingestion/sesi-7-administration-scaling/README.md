@@ -248,6 +248,17 @@ cocok dipasangi ILM ini). Halaman Kibana **Stack Management → Index
 Lifecycle Policies** menampilkan policy ini dalam bentuk visual — dapat
 diakses kembali pada Sesi 8 setelah Kibana aktif kembali.
 
+**[Terminal] Setelah menyelesaikan sesi ini (termasuk exercise Sesi 7),
+matikan cluster 3-node sebelum melanjutkan ke Sesi 8** — Sesi 8
+membutuhkan kembali stack single-node Sesi 1 (Kibana + Logstash) pada
+port `9200` yang sama:
+```bash
+cd lab/day-4-administration-ingestion/sesi-7-administration-scaling
+docker compose down
+cd ../../day-1-fundamentals/sesi-1-intro-elk
+docker compose up -d
+```
+
 ## f. Referensi Exercise
 
 Lanjutkan latihan mandiri pada [`exercise/sesi-7/README.md`](../../../exercise/sesi-7/README.md).
