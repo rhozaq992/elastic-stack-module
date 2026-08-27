@@ -116,8 +116,10 @@ nyata tiap tim sering memiliki format log sendiri-sendiri.
 
 ### Kriteria Bagian 2
 
-- Index baru (nama bebas, disarankan `task-tracker-parsed-*`) berisi
-  dokumen dari log Task Tracker dengan field method/path/status ter-extract.
+- Index baru bernama `task-tracker-parsed-*` (nama ini WAJIB dipakai
+  persis, bukan sekadar saran — `validate_sesi8.sh` memeriksa index
+  dengan nama ini secara spesifik) berisi dokumen dari log Task Tracker
+  dengan field method/path/status ter-extract.
 - Field `status` dan `duration_ms` bertipe numerik pada mapping (bukan `text`/`keyword`).
 - Anda dapat menjelaskan MENGAPA Anda memilih named-pattern tertentu (misalnya
   `%{NUMBER:status:int}` vs `%{WORD:...}`) untuk tiap bagian pesan.
