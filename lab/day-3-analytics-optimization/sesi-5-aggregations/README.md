@@ -13,7 +13,9 @@ di Kibana.
 Sesi ini dinyatakan selesai apabila Anda berhasil menjalankan dan
 menjelaskan hasil dari 4 jenis agregasi: metric+bucket dasar, `terms`+`avg`
 bertingkat, pipeline aggregation (`avg_bucket`), dan geo aggregation
-(`geohash_grid`).
+(`geohash_grid`) — serta berhasil memvisualisasikan hasil geo aggregation
+lewat Kibana Maps dan membuat satu visualisasi Lens dengan filter KQL
+diterapkan sebelum breakdown-nya.
 
 ## c. Teori & Struktur Sistem
 
@@ -187,6 +189,61 @@ tercentang:
 
 *Klik **Save and add to library** — visualisasi ini sekarang dapat dipakai
 kembali di dashboard mana pun tanpa perlu dibuat ulang dari nol.*
+
+**Memvisualisasikan geo aggregation lewat Kibana Maps** — hasil
+`geohash_grid` yang baru saja Anda hitung lewat query dapat divisualisasikan
+langsung di peta:
+
+**1. Buka Maps** (menu ☰ → Analytics → Maps → **Create map**), klik
+**Add layer** → pilih tipe **Documents**, lalu pilih data view "Kibana
+Sample Data Logs" — Kibana otomatis mendeteksi field bertipe `geo_point`
+(`geo.coordinates`) sebagai geospatial field:
+
+**2. Atur rentang waktu** agar mencakup seluruh data (data ini
+time-relative — lihat catatan sebelumnya), lalu klik ikon **"Fit to data
+bounds"** pada toolbar kiri agar peta otomatis berpusat pada lokasi data:
+
+![Kibana Maps menampilkan titik-titik lokasi traffic kibana_sample_data_logs terpusat di Amerika Utara](../../../docs/screenshots/sesi-5/11-maps-geo-visualization.png)
+
+*Tiap titik mewakili satu dokumen pada koordinat `geo.coordinates`-nya —
+konsentrasi titik paling padat terlihat di Amerika Serikat, konsisten
+dengan asal traffic pada dataset contoh ini. Pada tingkat zoom yang lebih
+jauh dan volume dokumen lebih besar, titik-titik yang berdekatan akan
+otomatis dirender sebagai kumpulan padat — versi visual dari konsep
+`geohash_grid` yang sudah Anda hitung lewat query.*
+
+**Visualisasi dengan filter — breakdown response error.** Selain
+breakdown biasa (seperti bar chart per hari di atas), Kibana Lens juga
+dapat memfilter data SEBELUM membuat breakdown-nya — berguna untuk fokus
+hanya pada subset tertentu (mis. hanya transaksi error, bukan seluruh
+traffic):
+
+**1. Buat visualisasi baru** (Visualize Library → Create visualization →
+Visualization), atur rentang waktu agar mencakup seluruh data seperti
+sebelumnya.
+
+**2. Ketik filter KQL** `NOT response: "200"` pada search bar — ini
+mengecualikan seluruh traffic normal, menyisakan HANYA response error.
+
+**3. Isi Vertical axis = Count**, dan **Horizontal axis = Top values**
+pada field `response.keyword`:
+
+![Bar chart Lens menampilkan breakdown response error terfilter: 404 dengan 801 dokumen, 503 dengan 441 dokumen](../../../docs/screenshots/sesi-5/12-lens-filtered-response-breakdown.png)
+
+*Hasilnya HANYA menampilkan kode `404` dan `503` (angka pada layar Anda
+mengikuti hasil query breakdown response code pada bagian d di atas) —
+`200` tidak muncul sama sekali karena sudah difilter di awal. Pola ini
+(filter dahulu, baru breakdown) berguna untuk visualisasi semacam
+"berapa banyak request per response code TERTENTU" atau "berapa banyak
+IP unik per HTTP method tertentu" — filter mempersempit populasi data,
+breakdown/aggregation baru dihitung dari populasi yang sudah dipersempit
+itu.*
+
+> **INFORMATION:** `kibana_sample_data_logs` tidak memiliki field method
+> HTTP (`GET`/`POST`) — seluruh datanya mensimulasikan akses baca ke
+> situs dokumentasi. Pola filter+breakdown di atas berlaku sama persis
+> apabila datanya punya field method (mis. log Robot Shop pada Sesi 6/7),
+> tinggal ganti field pada langkah 3 sesuai kebutuhan.
 
 **Referensi — dashboard eCommerce bawaan Kibana** (contoh dashboard
 lengkap dengan banyak visualisasi tergabung, ikut ter-ship otomatis
