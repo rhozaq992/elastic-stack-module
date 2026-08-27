@@ -2,19 +2,19 @@
 
 ## a. Tujuan Sesi
 
-Setelah sesi ini, kamu mampu menulis query pencarian di Elasticsearch
+Setelah sesi ini, Anda mampu menulis query pencarian di Elasticsearch
 memakai Query DSL dari full-text search sederhana sampai kombinasi
-kondisi (boolean query) dan memahami jebakan umum yang sering bikin
+kondisi (boolean query) dan memahami jebakan umum yang sering membuat
 hasil query meleset.
 
 ## b. Output yang Diharapkan
 
-Sesi ini selesai kalau:
+Sesi ini selesai apabila:
 - Sample data `kibana_sample_data_ecommerce` sudah ter-load (4675 dokumen).
-- Kamu berhasil menjalankan `match`, `match_phrase`, `term`, dan `bool`
-  query, dan bisa jelaskan kapan pakai yang mana.
-- Mengerti kenapa `range` pada field bertipe salah **"tidak error"**, dan
-  kenapa itu berbahaya.
+- Anda berhasil menjalankan `match`, `match_phrase`, `term`, dan `bool`
+  query, dan dapat menjelaskan kapan menggunakan yang mana.
+- Memahami kenapa `range` pada field bertipe salah **"tidak menghasilkan
+  error"**, dan kenapa hal tersebut berbahaya.
 
 ## c. Teori & Struktur Sistem
 
@@ -45,11 +45,11 @@ sample data"** (atau langsung `http://localhost:5601/app/home#/tutorial_director
 
 ![Katalog Kibana Sample Data menampilkan 3 dataset: eCommerce orders, Flight data, Web logs](../../../docs/screenshots/sesi-3/00-sample-data-catalog.png)
 
-*Tiga dataset bawaan Kibana :
+*Tiga dataset bawaan Kibana:
 **1. eCommerce orders**,
-**2. Flight data**, dan 
-**3. Web logs** (log akses web). 
-Ketiganya bisadiload lewat halaman ini atau lewat API `POST /api/sample_data/<nama>` seperti
+**2. Flight data**, dan
+**3. Web logs** (log akses web).
+Ketiganya bisa dimuat lewat halaman ini atau lewat API `POST /api/sample_data/<nama>` seperti
 command di bawah.*
 
 **Load sample data eCommerce**:
@@ -119,18 +119,28 @@ belanja > 100.
 
 *Data view eCommerce aktif — tabel dokumen terupdate sesuai pilihan.*
 
+**Atur rentang waktu (time range) terlebih dahulu.** Kibana Sample Data
+menempatkan timestamp dokumennya relatif terhadap tanggal saat data
+tersebut dimuat, sehingga tabel dapat tampil kosong apabila rentang waktu
+default di pojok kanan atas ("Last 15 minutes") terlalu sempit. Klik
+rentang waktu tersebut dan pilih **"Last 90 days"** sebelum melanjutkan ke
+langkah berikutnya — seluruh screenshot pada bagian ini menggunakan
+rentang waktu tersebut.
+
 ![Kibana Discover dengan filter KQL customer_gender MALE dan taxful_total_price di atas 200, menampilkan hasil dan histogram](../../../docs/screenshots/sesi-3/04-discover-kql-filter.png)
 
 *3. Ketik filter KQL `customer_gender: "MALE" and taxful_total_price > 200`
 di search bar, tekan Enter — histogram & daftar dokumen ter-update
-otomatis. (Jumlah dokumen di layar bisa beda dari hasil query DSL langsung
-ke ES — Discover membatasi hasil sesuai rentang waktu yang dipilih di
-kanan atas, sedangkan query lewat Dev Tools Console di atas tidak dibatasi waktu.)*
+otomatis. (Jumlah dokumen di layar bisa berbeda dari hasil query DSL
+langsung ke ES — Discover membatasi hasil sesuai rentang waktu yang
+dipilih di kanan atas, sedangkan query lewat Dev Tools Console di atas
+tidak dibatasi waktu.)*
 
-**Filter menggunakan UI.** Selain ketik KQL manual, Discover
-punya beberapa cara untuk filter/atur tampilan data. (Catatan:
-jumlah dokumen di semua screenshot di bawah bersifat **time-relative** —
-"Last 90 days" bergeser tiap hari, jadi angkamu pasti beda, itu normal.)
+**Filter menggunakan UI.** Selain mengetik KQL manual, Discover
+memiliki beberapa cara untuk memfilter/mengatur tampilan data. (Catatan:
+jumlah dokumen pada seluruh screenshot di bawah bersifat **time-relative**
+— "Last 90 days" bergeser tiap hari, sehingga angka pada layar Anda pasti
+berbeda, hal ini normal.)
 
 **a) Tambah filter lewat form :** klik **"+ Add filter"**
 di sebelah kiri search bar:
@@ -166,7 +176,7 @@ field yang mau difilter:
 
 ![Detail dokumen menampilkan ikon filter for/out saat hover di baris customer_gender](../../../docs/screenshots/sesi-3/09-doc-flyout-hover-filter.png)
 
-*Hover baris `customer_gender` menunjukan ikon **+** dan **–** (filter out, sembunyikan
+*Hover baris `customer_gender` menunjukkan ikon **+** dan **–** (filter out, sembunyikan
 dokumen dengan nilai ini).*
 
 ![Filter customer_gender: FEMALE otomatis terbentuk setelah klik ikon +](../../../docs/screenshots/sesi-3/10-filter-for-value-hasil.png)
@@ -179,30 +189,34 @@ tanpa setup ulang: klik **Save** di kanan atas, kasih nama:
 
 ![Modal Save Discover session dengan title Wanita - Kategori Pakaian](../../../docs/screenshots/sesi-3/11-save-search-modal.png)
 
-*Isi **Title**, biarkan "Add to dashboard" = **None** kalau belum perlu
-dashboard, klik **Save and add to library**.*
+*Isi **Title**, biarkan "Add to dashboard" = **None** apabila belum
+memerlukan dashboard, klik **Save and add to library**.*
 
 ![Discover session tersimpan, breadcrumb menampilkan nama Wanita - Kategori Pakaian](../../../docs/screenshots/sesi-3/12-save-search-selesai.png)
 
-*Tersimpan — breadcrumb di kiri atas sekarang menampilkan nama yang kamu
-kasih, dan search ini bisa dibuka lagi lewat menu ☰ → Discover → buka
-session tersimpan.*
+*Tersimpan — breadcrumb di kiri atas sekarang menampilkan nama yang Anda
+berikan, dan search ini dapat dibuka kembali lewat menu ☰ → Discover →
+buka session tersimpan.*
 
 ## e. Contoh Implementasi
 
 **Jebakan: `range` pada field bertipe salah bukan error, hasilnya kurang tepat.**
-Beda dengan `term` di atas yang tegas menolak nilai yang tidak persis, `range`
-**tidak menunjukan error** apabila dugunakan pada field `keyword` dengan operand angka:
+Berbeda dengan `term` di atas yang tegas menolak nilai yang tidak persis, `range`
+**tidak menunjukkan error** apabila digunakan pada field `keyword` dengan operand angka:
 ```
 GET kibana_sample_data_ecommerce/_search
 { "query": { "range": { "customer_gender": { "gt": 100 } } } }
 ```
 Expected Output: **HTTP 200, mengembalikan sebanyak 4675 dokumen** —
-bukan error, bukan 0 hits. Elasticsearch membandingkan nilai `100` sebagai
-**string** `"100"` secara leksikografis terhadap `"FEMALE"`/`"MALE"`, dan
-kebetulan kedua nilai itu > `"100"` secara alfabetis, jadi semua dokumen
-"match" walau query-nya tidak masuk akal secara semantik. **Selalu cek
-tipe field lewat `_mapping` sebelum pakai `range`**:
+bukan error, bukan 0 hits. Penyebabnya: field `customer_gender` bertipe
+`keyword` (string), sehingga Elasticsearch membandingkan `100` sebagai
+**teks** `"100"` dengan aturan urutan alfabet (seperti menyusun kata di
+kamus, huruf demi huruf) terhadap `"FEMALE"`/`"MALE"` — BUKAN sebagai
+angka. Secara alfabet, huruf memang selalu dianggap "lebih besar" dari
+angka, sehingga `"FEMALE"` dan `"MALE"` sama-sama dianggap `> "100"`, dan
+seluruh dokumen "match" walau query-nya tidak masuk akal secara makna.
+**Selalu periksa tipe field lewat `_mapping` sebelum menggunakan
+`range`**:
 ```
 GET kibana_sample_data_ecommerce/_mapping/field/customer_gender
 ```

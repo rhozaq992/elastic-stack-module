@@ -2,33 +2,42 @@
 
 ## Use Case
 
-Kamu sudah belajar snapshot/restore pakai index demo kosong di lab. Kali
-ini praktikkan ke data yang benar-benar berisi (bukan cuma 1 dokumen
-kosong) — simulasi backup rutin yang beneran dilakukan di produksi.
+Anda telah mempelajari snapshot/restore menggunakan index demo kosong
+pada lab. Kali ini praktikkan pada data yang benar-benar berisi (bukan
+hanya 1 dokumen kosong) — simulasi backup rutin yang dilakukan pada
+lingkungan produksi.
 
-**Kerjakan exercise ini SELAGI cluster Sesi 7 masih jalan**.
+**Kerjakan exercise ini SELAGI cluster Sesi 7 masih berjalan** (sebelum
+Anda matikan untuk melanjutkan ke Sesi 8).
+
+Seluruh perintah pada exercise ini dijalankan lewat **terminal**
+(`curl`) — Kibana tidak aktif pada sesi ini (lihat catatan pada lab
+Sesi 7 bagian c).
 
 ## Tugas
 
 1. Bulk-index minimal 10 dokumen baru ke index `exercise-cluster-backup`
-   (bebas isinya bisa gunakan lagi pola data dari exercise Sesi 1).
-2. Snapshot index itu ke repository `lab-fs-repo` (nama snapshot BEBAS,
-   asal tidak bentrok dengan `snapshot-1` yang sudah dipakai di lab).
+   (bebas isinya — dapat menggunakan kembali pola data dari exercise Sesi 1).
+2. Snapshot index tersebut ke repository `lab-fs-repo` (nama snapshot
+   BEBAS, asalkan tidak bentrok dengan `snapshot-1` yang sudah dipakai
+   pada lab).
 3. Hapus index-nya.
-4. Restore dari snapshot, buktikan jumlah dokumen identik sebelum & sesudah.
-5. Matikan 1 node (simulasi failure) SELAMA proses restore berlangsung dan lihat
-   apa yang terjadi? Restore tetap selesai, atau gagal?
+4. Restore dari snapshot, buktikan jumlah dokumen identik sebelum dan
+   sesudah.
+5. Matikan 1 node (simulasi failure) SELAMA proses restore berlangsung,
+   lalu amati: apakah restore tetap selesai, atau gagal?
 
 ## Kriteria Selesai
 
-- Kamu punya bukti nyata: count dokumen SEBELUM hapus dan SETELAH restore
-  identik.
-- Kamu tahu jawaban eksperimen poin 5 dari percobaan nyata, bukan tebakan.
+- Anda memiliki bukti nyata: jumlah dokumen SEBELUM hapus dan SETELAH
+  restore identik.
+- Anda mengetahui jawaban eksperimen poin 5 dari percobaan nyata, bukan
+  dari dugaan.
 
-## Petunjuk (buka kalau stuck)
+## Petunjuk (buka apabila mengalami kendala)
 
 <details>
-<summary>Klik untuk lihat command</summary>
+<summary>Klik untuk melihat perintah</summary>
 
 ```bash
 curl -X POST "http://localhost:9200/exercise-cluster-backup/_bulk?refresh=true" \
@@ -39,18 +48,20 @@ curl -X POST "http://localhost:9200/exercise-cluster-backup/_bulk?refresh=true" 
 {"item":"contoh-2","value":200}
 '
 ```
-```
-PUT _snapshot/lab-fs-repo/snapshot-exercise-7?wait_for_completion=true
-{ "indices": "exercise-cluster-backup", "ignore_unavailable": true }
+```bash
+curl -X PUT "http://localhost:9200/_snapshot/lab-fs-repo/snapshot-exercise-7?wait_for_completion=true" \
+  -H 'Content-Type: application/json' \
+  -d '{ "indices": "exercise-cluster-backup", "ignore_unavailable": true }'
 
-DELETE exercise-cluster-backup
+curl -X DELETE "http://localhost:9200/exercise-cluster-backup"
 
-POST _snapshot/lab-fs-repo/snapshot-exercise-7/_restore?wait_for_completion=true
-{ "indices": "exercise-cluster-backup", "include_global_state": false }
+curl -X POST "http://localhost:9200/_snapshot/lab-fs-repo/snapshot-exercise-7/_restore?wait_for_completion=true" \
+  -H 'Content-Type: application/json' \
+  -d '{ "indices": "exercise-cluster-backup", "include_global_state": false }'
 ```
 </details>
 
-Validasi hasil kerjamu (jalankan SELAGI cluster Sesi 7 masih up):
+Validasi hasil pekerjaan Anda (jalankan SELAGI cluster Sesi 7 masih aktif):
 ```bash
 bash exercise/scripts/validate_sesi7.sh
 ```

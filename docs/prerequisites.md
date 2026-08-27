@@ -1,12 +1,18 @@
-# Prerequisites
+# Prasyarat
 
-Sebelum memulai sesi mana pun, pastikan environment berikut sudah siap.
-Ikuti urutan di bawah ini — terutama langkah identifikasi arsitektur CPU,
-karena itu menentukan image mana yang akan ditarik di sesi-sesi berikutnya.
+Sebelum memulai sesi mana pun, pastikan environment berikut telah siap.
+Ikuti urutan berikut — khususnya langkah identifikasi arsitektur CPU,
+karena hal ini menentukan varian image yang akan diunduh pada sesi-sesi
+berikutnya.
 
-## 1. Identifikasi Arsitektur CPU (WAJIB, lakukan ini duluan)
+Mayoritas peserta menggunakan laptop **Windows**, sehingga panduan pada
+dokumen ini disusun dengan Windows sebagai jalur utama. Panduan untuk
+**macOS (termasuk Apple Silicon/arm64)** dan **Linux** juga disediakan
+sebagai opsi alternatif pada tiap langkah.
 
-Jalankan salah satu command berikut:
+## 1. Identifikasi Arsitektur CPU (Wajib, Lakukan Terlebih Dahulu)
+
+Jalankan salah satu perintah berikut pada terminal:
 
 ```bash
 docker info --format '{{.Architecture}}'
@@ -14,54 +20,125 @@ docker info --format '{{.Architecture}}'
 uname -m
 ```
 
-- Hasil `aarch64` / `arm64` → laptop kamu **ARM** (mis. Apple Silicon M1/M2/M3/M4).
-- Hasil `x86_64` / `amd64` → laptop kamu **x86/amd64** (mayoritas laptop Windows/Intel/AMD).
+- Hasil `aarch64` / `arm64` → perangkat Anda **ARM** (misalnya Apple
+  Silicon M1/M2/M3/M4, atau laptop Windows berbasis ARM).
+- Hasil `x86_64` / `amd64` → perangkat Anda **x86/amd64** (mayoritas
+  laptop Windows/Intel/AMD).
 
-Catat hasilnya. Image yang dipakai lab ini sudah disiapkan untuk **kedua** arsitektur —
-`docker pull`/`docker compose up` akan otomatis menarik varian yang sesuai
-dengan arsitektur laptopmu tanpa perlu setting tambahan. Kalau ada
-pengecualian untuk service tertentu, itu akan disebutkan eksplisit di
+Catat hasilnya. Seluruh image yang digunakan pada lab ini telah disiapkan
+untuk **kedua** arsitektur — `docker pull`/`docker compose up` akan
+otomatis mengunduh varian yang sesuai dengan arsitektur perangkat Anda
+tanpa perlu pengaturan tambahan. Apabila terdapat pengecualian untuk
+service tertentu, hal tersebut akan disebutkan secara eksplisit pada
 README sesi terkait.
 
-## 2. Wajib
+## 2. Instalasi Perangkat Lunak yang Diperlukan
 
-- **Docker Desktop** — terinstal dan berjalan (`docker ps` harus berhasil tanpa error).
-- **Docker Compose v2** — sudah termasuk di Docker Desktop modern (`docker compose version`,
-  bukan `docker-compose` versi lama).
-- **RAM minimal 8GB** dialokasikan ke Docker Desktop (Settings → Resources → Memory)
-  untuk sesi single-node (Hari 1–3). **Sesi 7 (Hari 4, cluster 3-node)
-  butuh minimal 12GB** — dites nyata, tiap node Elasticsearch pakai ~1.4GB
-  RAM (~4.2GB total cuma untuk Elasticsearch, di luar overhead Docker
-  Desktop dan Robot Shop yang mungkin masih jalan dari sesi sebelumnya).
-- **Koneksi internet** untuk pull image Docker.
-- **Git** — untuk clone repo.
+### 2.1 Docker Desktop (Wajib — semua peserta)
 
-## 3. Terminal — WAJIB Diperhatikan Kalau Pakai Windows
+Docker Desktop menyediakan Docker Engine beserta Docker Compose v2, yang
+dipakai di seluruh sesi lab ini.
 
-Seluruh command di lab ini ditulis dalam sintaks **bash**. Kalau laptopmu
-**Windows**:
+| Platform | Unduh | Catatan |
+|---|---|---|
+| **Windows** | [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/) | Wajib mengaktifkan backend **WSL2** saat instalasi (lihat bagian 2.2) |
+| **macOS (Apple Silicon / Intel)** | [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/) | Pilih installer sesuai chip (Apple Silicon atau Intel) |
+| **Linux** | Docker Engine native, bukan Docker Desktop — ikuti [docs.docker.com/engine/install](https://docs.docker.com/engine/install/) sesuai distro (Ubuntu/Debian/Fedora/dst.), lalu install [Docker Compose plugin](https://docs.docker.com/compose/install/linux/) terpisah | Tidak ada batas memori virtual seperti Docker Desktop — Docker langsung memakai resource host |
 
-- **WAJIB** jalankan semua command DI DALAM **WSL2** (Windows Subsystem for
-  Linux) — kamu harus **membuka terminal WSL2 secara eksplisit** (
-  lewat aplikasi "Ubuntu" atau `wsl` di Windows
-  Terminal) sebelum menjalankan command apa pun di lab ini.
+Verifikasi instalasi setelah selesai:
+```bash
+docker --version
+docker compose version
+```
 
-macOS dan Linux tidak perlu langkah tambahan — terminal bawaan sudah bash-compatible.
+### 2.2 WSL2 (Wajib — khusus Windows)
 
-## 4. Opsional
+Docker Desktop for Windows membutuhkan WSL2 (Windows Subsystem for
+Linux) sebagai backend. Jalankan pada **PowerShell sebagai
+Administrator**:
+```powershell
+wsl --install
+```
+Perintah ini menginstal WSL2 beserta distribusi Ubuntu secara default.
+Restart perangkat apabila diminta. Dokumentasi resmi (apabila
+menemukan kendala): [learn.microsoft.com/windows/wsl/install](https://learn.microsoft.com/en-us/windows/wsl/install).
 
-- **Python 3** — hanya kalau ada script exercise tertentu yang membutuhkannya
-  (akan disebutkan eksplisit di README exercise terkait kalau relevan).
+Setelah instalasi selesai, **seluruh perintah pada lab ini dijalankan DI
+DALAM terminal WSL2** (buka lewat aplikasi "Ubuntu" pada Start Menu, atau
+ketik `wsl` pada Windows Terminal) — **bukan** pada Command Prompt atau
+PowerShell biasa, karena seluruh perintah pada lab ini ditulis dalam
+sintaks bash dan membutuhkan akses langsung ke Docker socket gaya Linux.
 
-## 5. Cek Cepat
+macOS dan Linux tidak memerlukan langkah tambahan — terminal bawaan
+sudah kompatibel dengan bash.
+
+### 2.3 Git (Wajib — semua peserta)
+
+Dipakai untuk clone repository lab ini.
+
+| Platform | Unduh |
+|---|---|
+| **Windows** | [git-scm.com/download/win](https://git-scm.com/download/win) — install di dalam WSL2 lebih disarankan: jalankan `sudo apt-get update && sudo apt-get install -y git` di terminal WSL2 |
+| **macOS** | Sudah terpasang bawaan (Command Line Tools) — apabila belum, jalankan `git --version` dan ikuti prompt instalasi, atau unduh dari [git-scm.com/download/mac](https://git-scm.com/download/mac) |
+| **Linux** | `sudo apt-get install -y git` (Debian/Ubuntu) atau setara sesuai distro |
+
+Verifikasi:
+```bash
+git --version
+```
+
+### 2.4 Python 3 (Wajib mulai Hari 2 — Sesi 4)
+
+Sesi 4 menjalankan script Python untuk memindahkan data Robot Shop ke
+Elasticsearch — **bukan opsional**, dibutuhkan pada langkah praktik inti
+sesi tersebut (bukan hanya exercise).
+
+| Platform | Unduh |
+|---|---|
+| **Windows (WSL2)** | `sudo apt-get update && sudo apt-get install -y python3` |
+| **macOS** | Sudah terpasang bawaan pada versi macOS terkini. Apabila perlu versi lebih baru: [python.org/downloads/macos](https://www.python.org/downloads/macos/) |
+| **Linux** | `sudo apt-get install -y python3` (Debian/Ubuntu) atau setara sesuai distro |
+
+Verifikasi (minimal Python 3.8):
+```bash
+python3 --version
+```
+
+## 3. Spesifikasi RAM
+
+- **RAM minimal 8GB** dialokasikan untuk Docker (Hari 1–3, sesi
+  single-node). Pada Windows/macOS, atur lewat Docker Desktop →
+  **Settings → Resources → Memory** (geser slider, klik **Apply &
+  Restart**). Pada Linux, Docker Engine memakai RAM host secara langsung
+  — pastikan tersedia minimal 8GB RAM bebas pada host.
+- **Sesi 7 (Hari 4, cluster 3-node) membutuhkan minimal 12GB** — hasil
+  pengujian menunjukkan tiap node Elasticsearch memakai ±1,4GB RAM
+  (±4,2GB total hanya untuk Elasticsearch, di luar overhead Docker
+  Desktop dan aplikasi lain yang mungkin masih berjalan dari sesi
+  sebelumnya). Naikkan alokasi memori SEBELUM memulai Sesi 7 lewat
+  langkah Docker Desktop di atas.
+
+## 4. Koneksi Internet
+
+Diperlukan untuk mengunduh image Docker pada setiap sesi. Ukuran
+unduhan bervariasi per sesi (image Elasticsearch/Kibana/Logstash resmi
+berukuran ±1-2GB masing-masing) — disarankan mengunduh lebih awal pada
+koneksi yang stabil apabila memungkinkan.
+
+## 5. Pemeriksaan Cepat
+
+Jalankan seluruh perintah berikut untuk memastikan environment sudah
+siap sebelum memulai Sesi 1:
 
 ```bash
-docker info --format '{{.Architecture}}'   # catat hasilnya, lihat langkah 1
+docker info --format '{{.Architecture}}'   # catat hasilnya, lihat bagian 1
 docker --version
 docker compose version
 docker ps                 # harus berhasil, bukan "Cannot connect to the Docker daemon"
 git --version
+python3 --version          # dibutuhkan mulai Sesi 4
 ```
 
-Kalau `docker ps` gagal, buka Docker Desktop terlebih dahulu dan tunggu sampai
-status "Running" di menu bar sebelum lanjut.
+Apabila `docker ps` gagal, buka aplikasi Docker Desktop terlebih dahulu
+dan tunggu hingga status menunjukkan "Running" pada menu bar sebelum
+melanjutkan.
