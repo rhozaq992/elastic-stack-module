@@ -44,7 +44,7 @@ Bedanya dengan database relasional (RDBMS) yang mungkin sudah kamu kenal:
 **ELK Stack** adalah tiga komponen yang biasa dipakai bersama:
 - **Elasticsearch** — penyimpanan & mesin pencari.
 - **Logstash** — pipeline untuk menarik, memproses (parsing/transform), dan
-  mengirim data ke Elasticsearch (dipakai mendalam di Sesi 8).
+  mengirim data ke Elasticsearch.
 - **Kibana** — antarmuka web untuk eksplorasi, visualisasi, dan administrasi
   data di Elasticsearch.
 
@@ -55,11 +55,11 @@ disimpan & diindeks di Elasticsearch, lalu dieksplorasi lewat Kibana —
 tapi kamu juga bisa bicara langsung ke Elasticsearch lewat REST API tanpa
 lewat Kibana sama sekali (lihat bagian "Struktur REST API" di bawah).*
 
-**Istilah dasar (dipakai terus sepanjang lab ini):**
+**Istilah dasar :**
 - **Cluster** — kumpulan satu atau lebih node Elasticsearch yang berbagi
   nama cluster dan menyimpan data secara terdistribusi. Lab ini pakai
   **single-node** (1 anggota saja), tapi konsep cluster tetap berlaku.
-- **Node** — satu instance Elasticsearch yang berjalan (di lab ini: 1 container).
+- **Node** — satu instance Elasticsearch yang berjalan.
 - **Index** — kumpulan dokumen dengan struktur/skema serupa (mirip "tabel"
   di database relasional, tapi jauh lebih fleksibel skemanya).
 - **Shard** — index dipecah jadi beberapa bagian (shard) supaya data & beban
@@ -72,11 +72,10 @@ lewat Kibana sama sekali (lihat bagian "Struktur REST API" di bawah).*
   menampung replica-nya).
 
 Elasticsearch expose REST API-nya di port **9200**, Kibana (antarmuka web)
-di port **5601** — dua port ini dipakai terus sepanjang lab.
+di port **5601**.
 
 **Struktur REST API Elasticsearch.** Semua interaksi dengan Elasticsearch —
-lewat `curl` di terminal ATAU lewat Dev Tools Console di Kibana (dikenalkan
-di Sesi 2) — mengikuti pola URL yang sama:
+lewat `curl` di terminal atau lewat Dev Tools Console di Kibana :
 
 ```
 <METHOD> http://<host>:9200/<index>/_<endpoint>
@@ -89,7 +88,7 @@ di Sesi 2) — mengikuti pola URL yang sama:
 | `POST` | buat resource (ID di-generate otomatis) atau jalankan aksi | `POST /myindex/_search` |
 | `DELETE` | hapus resource | `DELETE /myindex` |
 
-Endpoint yang paling sering dipakai sepanjang lab ini:
+Endpoint yang akan digunakan pada lab ini:
 
 | Endpoint | Fungsi |
 |---|---|
@@ -99,7 +98,7 @@ Endpoint yang paling sering dipakai sepanjang lab ini:
 | `GET /<index>/_search` | cari dokumen (pakai Query DSL, JSON di body — detail Sesi 3) |
 | `POST /<index>/_bulk` | kirim banyak dokumen sekaligus dalam satu request (dipakai di exercise sesi ini) |
 
-Response-nya selalu **JSON**, dan HTTP status code mengikuti konvensi umum
+Response **JSON**, dan HTTP status code mengikuti konvensi umum
 (`200` sukses, `404` index/dokumen tidak ada, `400` request salah format).
 `curl` di terminal dan Dev Tools Console di Kibana memanggil API yang
 **persis sama** — Console cuma menyingkat penulisannya (host/port
@@ -107,17 +106,16 @@ otomatis, format `GET index/_search` tanpa perlu `curl -X GET
 "http://localhost:9200/index/_search"` lengkap). Kamu akan pakai kedua
 caranya bergantian sepanjang lab: `curl` untuk hal yang perlu dijalankan
 dari terminal/script (termasuk exercise sesi ini), Dev Tools Console untuk
-eksplorasi interaktif mulai Sesi 2.
+eksplorasi interaktif.
 
-**Sekilas isi sidebar Kibana** (kamu akan buka Kibana pertama kali di
-langkah (d) di bawah) — menu utama ada di ikon ☰ (hamburger) pojok kiri
+**Penjelasan sidebar Kibana** menu utama ada di ikon ☰ pojok kiri
 atas:
-- **Discover** — jelajahi dokumen mentah per index, filter & search bebas (mulai dipakai Sesi 3).
-- **Dashboard** & **Visualize Library** — susun dan buat chart/grafik dari data (Sesi 5).
-- **Dev Tools** — Console untuk menjalankan request Elasticsearch langsung dari browser (Sesi 2).
-- **Stack Management** — administrasi: index, ILM policy, snapshot, dll (Sesi 7).
-- **Observability** — APM, log monitoring (disinggung di Sesi 6).
-- Menu lain (Security, Integrations, dst.) ada tapi di luar cakupan lab ini.
+- **Discover** — jelajahi dokumen mentah per index, filter & search bebas.
+- **Dashboard** & **Visualize Library** — susun dan buat chart/grafik dari data.
+- **Dev Tools** — Console untuk menjalankan request Elasticsearch langsung dari browser.
+- **Stack Management** — administrasi: index, ILM policy, snapshot, dll.
+- **Observability** — APM, log monitoring.
+- Menu lain (Security, Integrations, dst.).
 
 ## d. Praktik: Instalasi & Konfigurasi
 
@@ -127,8 +125,8 @@ docker compose up -d
 ```
 
 Kibana baru mulai setelah Elasticsearch berstatus `healthy` (diatur lewat
-`depends_on: condition: service_healthy` di `docker-compose.yml`), jadi
-wajar kalau butuh puluhan detik lagi sampai ketiganya `healthy`/`running`.
+`depends_on: condition: service_healthy` di `docker-compose.yml`), 
+tunggu sampai response `healthy`/`running`.
 
 **Cek status container:**
 ```bash
@@ -158,8 +156,7 @@ Expected Output:
   "tagline" : "You Know, for Search"
 }
 ```
-(`name` dan `cluster_uuid` di layarmu akan beda — itu identifier acak per
-instance, normal.)
+(`name` dan `cluster_uuid` di layarmu akan beda
 
 **Verifikasi Kibana (port 5601):**
 ```bash
@@ -186,10 +183,9 @@ Expected Output:
 }
 ```
 Angka `active_primary_shards` dan `active_shards_percent_as_number` di
-layarmu **boleh beda** — jumlahnya tergantung index sistem internal Kibana
-yang dibuat otomatis (bisa sedikit beda tiap versi). Status **`yellow`** itu
-**normal** untuk single-node (lihat penjelasan Replikasi di atas) — bukan
-berarti ada yang rusak. Yang harus SAMA dan WAJIB diperhatikan:
+tampilan **akan berbeda** — jumlahnya tergantung index sistem internal Kibana
+yang dibuat otomatis. Status **`yellow`** itu
+**normal** untuk single-node. Yang harus SAMA dan WAJIB diperhatikan:
 **`unassigned_primary_shards` harus 0**. Kalau bukan nol, baru itu tanda
 ada masalah nyata.
 
@@ -197,7 +193,7 @@ ada masalah nyata.
 
 Buka Kibana di browser: `http://localhost:5601`. Ini yang akan kamu pakai
 sepanjang lab untuk eksplorasi data (Discover), membuat visualisasi, dan
-administrasi cluster — mulai dipakai aktif dari Sesi 2 seterusnya.
+administrasi cluster.
 
 ![Kibana halaman utama setelah instalasi berhasil](../../../docs/screenshots/sesi-1/01-kibana-home.png)
 
@@ -228,9 +224,7 @@ curl -X DELETE "http://localhost:9200/lab-intro-demo"
 Expected Output: `{"acknowledged":true}`
 
 Tiga command di atas persis mengikuti pola `<METHOD>
-http://host:9200/<index>/_<endpoint>` yang dijelaskan di bagian (c) — ini
-pola yang akan terus kamu pakai (lewat `curl` maupun Dev Tools Console)
-sampai sesi terakhir.
+http://host:9200/<index>/_<endpoint>` yang dijelaskan di bagian (c)
 
 ## f. Referensi Exercise
 
