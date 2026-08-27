@@ -3,12 +3,12 @@
 ## Use Case
 
 Tim marketing Robot Shop mau hasil pencarian selalu mengutamakan produk
-yang MASIH ADA STOK-nya di atas produk yang habis — beda kriteria boost
+yang MASIH ADA STOK-nya di atas produk yang habis. beda kriteria boost
 dari latihan lab (yang pakai rating & kategori). Dua varian: **Varian A**
 lewat Query DSL (Dev Tools Console), **Varian B** lewat Kibana UI
-(Discover) — kerjakan DUA-DUANYA, keduanya melatih skill yang berbeda.
+(Discover) kerjakan dua lab ini, keduanya melatih skill yang berbeda.
 
-## Varian A — Query DSL (Dev Tools Console)
+## Varian A Query DSL (Dev Tools Console)
 
 ### Tugas
 
@@ -18,8 +18,8 @@ lewat Query DSL (Dev Tools Console), **Varian B** lewat Kibana UI
 3. Bandingkan urutan hasilnya dengan query `match_all` polos (tanpa boost)
    — apa yang berubah?
 4. Coba variasi: pakai `function_score` dengan `field_value_factor` pada
-   field `price` (mis. produk lebih murah dapat skor lebih tinggi) —
-   gimana urutannya sekarang?
+   field `price` (mis. produk lebih murah dapat skor lebih tinggi)
+   bagaimana urutannya sekarang?
 
 ### Kriteria Selesai
 
@@ -45,10 +45,10 @@ GET robot-shop-catalogue/_search
 ```
 </details>
 
-## Varian B — Kibana UI (Discover)
+## Varian B Kibana UI (Discover)
 
 Query DSL bisa boost/ranking numerik, Discover/KQL **tidak bisa**
-(cuma filter ya/tidak) — Varian B ini melatih apa yang Discover BISA
+(cuma filter ya/tidak). Varian B ini melatih apa yang Discover BISA
 lakukan: filter + sort tanpa nulis query sama sekali.
 
 ### Tugas
