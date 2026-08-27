@@ -3,8 +3,7 @@
 ## Use Case
 
 Tim operasional maskapai butuh laporan cepat soal penerbangan bermasalah
-— pakai dataset penerbangan (beda use case dari data toko online yang
-dipakai di lab) untuk latihan Query DSL.
+gunakan dataset penerbangan untuk latihan Query DSL.
 
 ## Tugas
 
@@ -76,7 +75,7 @@ GET kibana_sample_data_flights/_search
 }
 ```
 **Catatan:** kalau query barusan setelah load data menunjukkan 0 hasil,
-tunggu 1-2 detik dan coba lagi — Elasticsearch butuh waktu singkat
+tunggu 1-2 detik dan coba lagi Elasticsearch butuh waktu singkat
 ("refresh", default ~1 detik) sebelum dokumen yang baru masuk bisa
 langsung dicari (lihat penjelasan lengkap soal `_bulk`+refresh di Sesi 1).
 </details>
