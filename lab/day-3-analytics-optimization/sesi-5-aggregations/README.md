@@ -16,7 +16,7 @@ aggregation (`avg_bucket`), dan geo aggregation (`geohash_grid`).
 ## c. Teori & Struktur Sistem
 
 **Aggregation** adalah cara Elasticsearch merangkum banyak dokumen jadi
-statistik (mirip `GROUP BY` di SQL, tapi jauh lebih fleksibel — bisa
+statistik (mirip `GROUP BY` di SQL, tapi jauh lebih fleksibel bisa
 bertingkat/nested). Dua kategori utama:
 - **Metric aggregation** — hitung satu angka dari sekumpulan dokumen
   (`avg`, `sum`, `min`, `max`, `cardinality`, dst.).
@@ -24,11 +24,11 @@ bertingkat/nested). Dua kategori utama:
   berdasarkan kriteria (`terms` per nilai field, `date_histogram` per
   rentang waktu, `geohash_grid` per area geografis).
 
-Bucket dan metric bisa **digabung bertingkat** — mis. "rata-rata bytes,
+Bucket dan metric bisa **digabung bertingkat** contohnya : "rata-rata bytes,
 dikumpulkan sesuai response code" (metric di dalam bucket).
 
 **Pipeline aggregation** adalah agregasi yang inputnya bukan dokumen
-mentah, tapi HASIL agregasi lain (bucket aggregation lain) — makanya
+mentah, tapi HASIL agregasi lain (bucket aggregation lain) sehingga
 disebut "pipeline", hasil satu aggregation jadi input aggregation
 berikutnya. Contoh: "rata-rata dari total-bytes-per-hari" (`avg_bucket` di
 atas `date_histogram`).
@@ -48,7 +48,7 @@ curl -X POST "http://localhost:5601/api/sample_data/logs" \
 ```
 Expected Output: `{"elasticsearchIndicesCreated":{"kibana_sample_data_logs":14074},"kibanaSavedObjectsLoaded":8}`
 
-**Agregasi dasar bertingkat** — breakdown response code + rata-rata ukuran response:
+**Agregasi dasar bertingkat** breakdown response code + rata-rata ukuran response:
 ```
 GET kibana_sample_data_logs/_search
 {
@@ -72,7 +72,7 @@ biasanya tidak mengirim body, jadi `bytes`-nya memang nol, bukan bug.
 
 ## e. Contoh Implementasi
 
-**Pipeline aggregation** — rata-rata total bytes PER HARI (agregasi di
+**Pipeline aggregation** rata-rata total bytes PER HARI (agregasi di
 atas hasil `date_histogram`, bukan dokumen mentah):
 ```
 GET kibana_sample_data_logs/_search
@@ -100,12 +100,12 @@ mentah lagi — perhatikan `buckets_path: "requests_per_day>total_bytes"`,
 sintaksnya berarti "ambil hasil agregasi `total_bytes` di dalam tiap
 bucket `requests_per_day`".
 
-**Tanggal & angka persis di layarmu akan beda** — `kibana_sample_data_logs`
+**Tanggal & angka persis di layarmu akan beda** `kibana_sample_data_logs`
 itu data time-relative, Kibana generate ulang rentang tanggalnya relatif
 ke kapan kamu load datanya, bukan tanggal tetap. Jumlah bucket ~61 dan
 pola angkanya akan konsisten, cuma tanggal & totalnya bergeser.
 
-**Geo aggregation** — kelompokkan traffic berdasarkan lokasi (grid geografis):
+**Geo aggregation** kelompokkan traffic berdasarkan lokasi (grid geografis):
 ```
 GET kibana_sample_data_logs/_search
 {
@@ -122,7 +122,7 @@ Expected Output:
 595 grid cell terisi
 grid terpadat: "c1c" -> 135 dokumen
 ```
-`precision: 3` mengatur seberapa detail grid-nya — angka lebih besar
+`precision: 3` mengatur seberapa detail grid-nya angka lebih besar
 berarti grid lebih kecil/detail, cocok untuk zoom level peta yang berbeda.
 
 **Visualisasi di Kibana.** Hasil agregasi seperti ini adalah dasar dari
@@ -135,7 +135,7 @@ visualisasi **Maps**, `date_histogram` ke bar chart/line chart time-series.
 
 ![Modal Create visualization menampilkan pilihan Visualization, Maps, Vega](../../../docs/screenshots/sesi-5/02-pilih-tipe-visualisasi.png)
 
-*2. Klik "Create visualization" — pilih tipe "Visualization" (editor
+*2. Klik "Create visualization" pilih tipe "Visualization" (editor
 Lens, point-and-click).*
 
 **Bikin bar chart "Count per day" dari nol** (X-axis: `@timestamp` date
@@ -149,17 +149,17 @@ di kiri atas, pilih dari daftar) editor mulai kosong, siap diisi:
 ![Editor Lens kosong dengan data view Kibana Sample Data Logs aktif](../../../docs/screenshots/sesi-5/06-lens-kosong.png)
 
 *Panel kanan ada 3 slot: **Horizontal axis**, **Vertical axis**,
-**Breakdown** (opsional) — klik "Add or drag-and-drop a field" di tiap
+**Breakdown** (opsional) klik "Add or drag-and-drop a field" di tiap
 slot untuk mengisi, TANPA perlu drag-and-drop manual.*
 
-**4. Isi Vertical axis** — klik slot-nya, pilih fungsi **Count**:
+**4. Isi Vertical axis** klik slot-nya, pilih fungsi **Count**:
 
 ![Panel Vertical axis dengan fungsi Count dipilih, chart menampilkan 1 bar total](../../../docs/screenshots/sesi-5/07-lens-vertical-axis-count.png)
 
 *Baru diisi Vertical axis = Count → hasilnya 1 bar tunggal (total semua
 dokumen), belum ada breakdown waktu.*
 
-**5. Isi Horizontal axis** — klik slot-nya, pilih fungsi **Date
+**5. Isi Horizontal axis** klik slot-nya, pilih fungsi **Date
 histogram**, lalu pilih field `@timestamp` di dropdown "Field" yang muncul:
 
 ![Panel Horizontal axis dengan Date histogram dan field @timestamp dipilih](../../../docs/screenshots/sesi-5/08-lens-horizontal-axis-timestamp.png)
@@ -181,7 +181,7 @@ dashboard manapun) "Add to library" otomatis tercentang:
 *Klik **Save and add to library** — visualisasi ini sekarang bisa dipakai
 lagi di dashboard mana pun tanpa bikin ulang dari nol.*
 
-**Referensi — dashboard eCommerce bawaan Kibana** (contoh dashboard
+**Referensi dashboard eCommerce bawaan Kibana** (contoh dashboard
 lengkap dengan banyak visualisasi digabung, ship otomatis bareng Kibana
 Sample Data eCommerce):
 
