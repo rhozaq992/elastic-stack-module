@@ -5,17 +5,15 @@
 Setelah sesi ini, kamu mampu membangun pipeline ingestion data dari sumber
 nyata (log container Robot Shop) ke Elasticsearch memakai Filebeat +
 Logstash, termasuk parsing 3 format log yang berbeda (grok manual, JSON,
-dan format standar industri) — DAN kamu tahu cara **install Filebeat &
-Logstash langsung di Linux (VM/bare-metal)**, bukan cuma lewat image
-Docker resmi, supaya skill ini bisa kamu terapkan di server nyata di
-luar lab ini.
+dan format standar industri) selain itu anda mengerti cara **install Filebeat &
+Logstash langsung di Linux (VM/bare-metal)**.
 
 ## b. Output yang Diharapkan
 
 Sesi ini selesai kalau index `payment-service-parsed-*`,
 `cart-service-parsed-*`, dan `web-service-parsed-*` terisi dokumen nyata
 dari log Robot Shop (dengan field yang benar ter-extract, bukan `null`),
-DAN kamu berhasil install + jalankan Filebeat & Logstash secara manual
+dan kamu berhasil install + jalankan Filebeat & Logstash secara manual
 (bukan image Docker Elastic) di sebuah container Linux polos, memverifikasi
 sendiri datanya mengalir Filebeat → Logstash → parsed output.
 
@@ -35,17 +33,6 @@ Filebeat (root, baca /var/lib/docker/containers)
   --output.logstash-->  Logstash (non-root, port 5044)
     --filter (grok/json per service)-->  Elasticsearch (single-node Sesi 1)
 ```
-
-> **Kenapa balik ke single-node Sesi 1, bukan lanjut cluster 3-node
-> Sesi 7?** Dites nyata: menjalankan cluster 3-node Sesi 7 BERSAMAAN
-> dengan Robot Shop (Sesi 6) + load generator + pipeline sesi ini
-> sekaligus butuh RAM lebih dari yang tersedia di banyak laptop — pada
-> pengujian ini bahkan sampai bikin salah satu node ES mati ke-OOM-kill
-> Docker. Sesi 7 sengaja jadi modul MANDIRI (boleh kamu matikan setelah
-> selesai) — Sesi 8 lanjut pakai cluster single-node yang sama dari Sesi
-> 1-6, jauh lebih ringan. Kalau kamu sudah selesai Sesi 7 dan cluster
-> 3-node-nya masih jalan, matikan dulu sebelum lanjut ke sesi ini:
-> `docker compose -f lab/day-4-administration-ingestion/sesi-7-administration-scaling/docker-compose.yml down`.
 
 **Grok** = filter Logstash untuk mengekstrak field terstruktur dari teks
 bebas pakai named-pattern (`%{PATTERN:nama_field}`, opsional `:tipe` untuk
@@ -84,7 +71,7 @@ curl "http://localhost:9200/payment-service-parsed-*/_count"
 curl "http://localhost:9200/cart-service-parsed-*/_count"
 curl "http://localhost:9200/web-service-parsed-*/_count"
 ```
-Expected Output (satu pengukuran nyata — angkamu akan beda,
+Expected Output (satu pengukuran nyata angkamu akan beda,
 tergantung berapa lama traffic sudah mengalir):
 ```
 payment-service-parsed-*: 322
@@ -120,8 +107,7 @@ echo "deb [signed-by=/usr/share/keyrings/elastic.gpg] https://artifacts.elastic.
 apt-get update -qq
 ```
 
-**2. Install Filebeat & Logstash** (pin versi sama dengan stack lab ini,
-9.5.2 — supaya kompatibel):
+**2. Install Filebeat & Logstash** :
 ```bash
 apt-get install -y filebeat=9.5.2 logstash=1:9.5.2-1
 ```
@@ -135,7 +121,7 @@ nginx`, dst.) — TIDAK ada langkah spesial. Verifikasi:
 Expected Output: `filebeat version 9.5.2 (arm64)...` dan
 `logstash 9.5.2`.
 
-**3. Buat config Logstash** — pipeline sederhana, baca file, parsing
+**3. Buat config Logstash** pipeline sederhana, baca file, parsing
 `%{COMBINEDAPACHELOG}` (pattern bawaan Logstash, sama seperti
 `web-service.conf` yang kamu pakai untuk Robot Shop), output ke `stdout`
 dulu (supaya hasilnya langsung kelihatan tanpa perlu setup Elasticsearch
@@ -156,8 +142,8 @@ EOF
 chown logstash:logstash /etc/logstash/conf.d/native-demo.conf
 ```
 
-**4. Buat config Filebeat** — baca file log contoh, kirim ke Logstash
-(pola arsitektur SAMA seperti bagian d di atas — Filebeat baca file,
+**4. Buat config Filebeat** baca file log contoh, kirim ke Logstash
+(pola arsitektur seperti bagian d di atas, Filebeat baca file,
 kirim ke Logstash lewat port beats):
 ```bash
 mkdir -p /etc/filebeat
@@ -198,7 +184,7 @@ command ini saja), `su logstash` polos akan ditolak dengan error
 mkdir -p /tmp/ls-data /tmp/ls-logs && chown logstash:logstash /tmp/ls-data /tmp/ls-logs
 su -s /bin/bash logstash -c "/usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/native-demo.conf --path.settings /etc/logstash --path.data /tmp/ls-data --path.logs /tmp/ls-logs &"
 ```
-`--path.settings /etc/logstash` WAJIB disebutkan eksplisit di sini — beda
+`--path.settings /etc/logstash` disebutkan eksplisit di sini berbeda
 dari kalau kamu jalankan lewat `systemctl` (yang otomatis tahu lokasi
 config), invocation manual seperti ini tidak otomatis menemukan
 `log4j2.properties`/`jvm.options` paket APT (lokasinya di `/etc/logstash`,
@@ -216,7 +202,7 @@ sebelum lanjut ke langkah 7 — cek dengan `tail -f /tmp/ls-logs/logstash-plain.
   --path.home /usr/share/filebeat --path.config /etc/filebeat \
   --path.data /tmp/fb-data --path.logs /tmp/fb-logs
 ```
-Expected Output — di terminal Logstash (langkah 6), 5 dokumen
+Expected Output di terminal Logstash (langkah 6), 5 dokumen
 ter-parse, tiap dokumen berisi `response.status_code`, `url.original`,
 `source.address`, `user_agent.original` — PERSIS field yang sama seperti
 hasil parsing `web-service.conf` terhadap log Robot Shop, membuktikan
@@ -266,9 +252,9 @@ MUNGKIN ada tergantung performa host-mu (429, kapasitas):
 GET payment-service-parsed-*/_search
 { "size": 0, "aggs": { "by_status": { "terms": { "field": "http_status" } } } }
 ```
-Expected Output (dari SALAH SATU pengukuran nyata — punyamu bisa
+Expected Output (dari SALAH SATU pengukuran nyata milikmu bisa
 beda total): `429: 133`, `200: 14`, `500: 13`. **Kalau di layarmu tidak ada
-`429` sama sekali dan hampir semua `200`** — itu normal juga, artinya host-mu
+`429` sama sekali dan hampir semua `200`** hal itu normal juga, artinya host-mu
 cukup kuat menangani `NUM_CLIENTS: 6` tanpa `payment` kewalahan (lihat
 catatan Sesi 6). Yang PASTI selalu ada (tidak tergantung performa host):
 field `500`.
@@ -286,13 +272,13 @@ generator, lihat Sesi 6) — pola KONSENTRASI pada satu identitas
 mencurigakan adalah tanda anomali/fraud.
 
 **Kalau `429` MUNCUL di traffic-mu**, breakdown per user-nya akan
-menunjukkan pola yang SANGAT berbeda dari 500 — tersebar ke banyak user id
+menunjukkan pola yang SANGAT berbeda dari 500. tersebar ke banyak user id
 `anonymous-N` yang berbeda-beda (masing-masing cuma 1-2 kejadian), bukan
 terkonsentrasi di satu id. Itu tandanya BUKAN anomali/fraud, tapi
 **kapasitas service kewalahan** (lihat Sesi 6): banyak user LEGITIMATE
 yang kebetulan sama-sama gagal karena `payment` tidak sanggup menampung
 request bersamaan. Dua pola yang sama-sama "tidak normal" tapi butuh
-respons berbeda — 500 butuh investigasi keamanan, 429 (kalau muncul)
+respons berbeda. 500 butuh investigasi keamanan, 429 (kalau muncul)
 butuh perbaikan kapasitas/scaling.
 
 ## f. Referensi Exercise
