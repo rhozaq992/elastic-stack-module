@@ -39,15 +39,17 @@ relevance score memang dibutuhkan.
 
 ## d. Praktik: Instalasi & Konfigurasi
 
-**Kibana Sample Data — apa saja yang tersedia.** Sebelum load data,
-kenalan dulu dengan katalognya: buka menu ☰ → **Home**, klik **"Try
+**Kibana Sample Data yang tersedia.** Sebelum load data,
+periksa dulu isi katalognya: buka menu ☰ → **Home**, klik **"Try
 sample data"** (atau langsung `http://localhost:5601/app/home#/tutorial_directory/sampleData`):
 
 ![Katalog Kibana Sample Data menampilkan 3 dataset: eCommerce orders, Flight data, Web logs](../../../docs/screenshots/sesi-3/00-sample-data-catalog.png)
 
-*Tiga dataset bawaan Kibana — **eCommerce orders**,
-**Flight data**, dan **Web logs** (log akses web). Ketiganya bisa
-di-load lewat halaman ini atau lewat API `POST /api/sample_data/<nama>` seperti
+*Tiga dataset bawaan Kibana :
+**1. eCommerce orders**,
+**2. Flight data**, dan 
+**3. Web logs** (log akses web). 
+Ketiganya bisadiload lewat halaman ini atau lewat API `POST /api/sample_data/<nama>` seperti
 command di bawah.*
 
 **Load sample data eCommerce**:
@@ -99,7 +101,7 @@ GET kibana_sample_data_ecommerce/_search
   }
 }
 ```
-Expected Output: **469 hits** — pelanggan FEMALE **dan** total
+Expected Output: **469 hits** pelanggan FEMALE **dan** total
 belanja > 100.
 
 **Query yang sama, lewat UI Discover** :
@@ -125,7 +127,7 @@ otomatis. (Jumlah dokumen di layar bisa beda dari hasil query DSL langsung
 ke ES — Discover membatasi hasil sesuai rentang waktu yang dipilih di
 kanan atas, sedangkan query lewat Dev Tools Console di atas tidak dibatasi waktu.)*
 
-**Filter TANPA ketik KQL — lewat UI.** Selain ketik KQL manual, Discover
+**Filter menggunakan UI.** Selain ketik KQL manual, Discover
 punya beberapa cara untuk filter/atur tampilan data. (Catatan:
 jumlah dokumen di semua screenshot di bawah bersifat **time-relative** —
 "Last 90 days" bergeser tiap hari, jadi angkamu pasti beda, itu normal.)
@@ -135,7 +137,7 @@ di sebelah kiri search bar:
 
 ![Form Add filter kosong -- pilih field, operator, value](../../../docs/screenshots/sesi-3/05-add-filter-kosong.png)
 
-*Form kosong — pilih **Field**, **Operator**, lalu **Value**.*
+*Form kosong pilih **Field**, **Operator**, lalu **Value**.*
 
 ![Form Add filter terisi dengan field category.keyword, operator is, value Women's Clothing](../../../docs/screenshots/sesi-3/06-add-filter-terisi.png)
 
@@ -144,7 +146,7 @@ klik **Add filter** untuk menerapkan.*
 
 ![Filter pill category.keyword: Women's Clothing aktif di atas tabel hasil](../../../docs/screenshots/sesi-3/07-filter-ui-terapan.png)
 
-*Filter muncul sebagai "pill" di atas tabel — klik `×` di pill untuk
+*Filter muncul sebagai "pill" di atas tabel klik `×` di pill untuk
 hapus, atau klik pill-nya untuk edit/nonaktifkan sementara.*
 
 **b) Atur kolom tabel** (default cuma `order_date` + `_source` mentah,
@@ -164,13 +166,12 @@ field yang mau difilter:
 
 ![Detail dokumen menampilkan ikon filter for/out saat hover di baris customer_gender](../../../docs/screenshots/sesi-3/09-doc-flyout-hover-filter.png)
 
-*Hover baris `customer_gender` — menunjukan ikon **+** (filter for, cuma
-tampilkan dokumen dengan nilai ini) dan **–** (filter out, sembunyikan
+*Hover baris `customer_gender` menunjukan ikon **+** dan **–** (filter out, sembunyikan
 dokumen dengan nilai ini).*
 
 ![Filter customer_gender: FEMALE otomatis terbentuk setelah klik ikon +](../../../docs/screenshots/sesi-3/10-filter-for-value-hasil.png)
 
-*Klik **+** pada `FEMALE` — filter pill `customer_gender: FEMALE`
+*Klik **+** pada `FEMALE` filter pill `customer_gender: FEMALE`
 langsung terbentuk, tanpa ketik apa pun.*
 
 **d) Simpan filter jadi Saved Search** — supaya bisa dibuka lagi nanti
@@ -189,15 +190,15 @@ session tersimpan.*
 
 ## e. Contoh Implementasi
 
-**Jebakan: `range` pada field bertipe salah TIDAK error, hasilnya salah diam-diam.**
-Beda dengan `term` di atas yang tegas menolak nilai tidak persis, `range`
-**tidak pernah error** kalau dipakai pada field `keyword` dengan operand angka:
+**Jebakan: `range` pada field bertipe salah bukan error, hasilnya kurang tepat.**
+Beda dengan `term` di atas yang tegas menolak nilai yang tidak persis, `range`
+**tidak menunjukan error** apabila dugunakan pada field `keyword` dengan operand angka:
 ```
 GET kibana_sample_data_ecommerce/_search
 { "query": { "range": { "customer_gender": { "gt": 100 } } } }
 ```
-Expected Output: **HTTP 200, mengembalikan SEMUA 4675 dokumen** —
-bukan error, bukan 0 hits. Elasticsearch membandingkan `100` sebagai
+Expected Output: **HTTP 200, mengembalikan sebanyak 4675 dokumen** —
+bukan error, bukan 0 hits. Elasticsearch membandingkan nilai `100` sebagai
 **string** `"100"` secara leksikografis terhadap `"FEMALE"`/`"MALE"`, dan
 kebetulan kedua nilai itu > `"100"` secara alfabetis, jadi semua dokumen
 "match" walau query-nya tidak masuk akal secara semantik. **Selalu cek
