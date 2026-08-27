@@ -40,15 +40,12 @@ dst. Dua cara utama:
   `bool.should`), membuat dokumen yang match bagian itu naik skornya
   lebih tinggi dibanding yang cuma match bagian lain.
 
-**Bukan algoritma AI/machine learning — hanya rumus matematis bawaan.**
-`function_score` dan `boost` sering terdengar seperti sesuatu yang
-canggih ("sistem merekomendasikan produk terbaik"), padahal keduanya
-hanyalah **rumus aritmetika sederhana** yang sudah tersedia bawaan di
-Elasticsearch (penjumlahan/perkalian angka) — tidak ada model yang
-"belajar" dari data, tidak ada training, dan tidak ada komponen AI sama
-sekali. Analoginya seperti nilai ujian sekolah yang diberi **poin
-tambahan (bonus)**: nilai dasar tetap berasal dari jawaban (skor
-relevansi teks BM25), lalu guru menambahkan bonus tetap untuk faktor
+**Cara kerjanya: rumus aritmetika sederhana di atas skor dasar.**
+`function_score` dan `boost` menghitung skor akhir dengan
+menjumlahkan/mengalikan `_score` dasar (dari BM25) dengan nilai
+tambahan berdasarkan field lain. Analoginya seperti nilai ujian sekolah
+yang diberi **poin tambahan (bonus)**: nilai dasar tetap berasal dari
+jawaban (skor relevansi teks BM25), lalu ditambahkan bonus untuk faktor
 lain (mis. keaktifan di kelas = rating produk). Semakin besar bonusnya,
 semakin tinggi posisi akhirnya — tanpa mengubah cara jawaban ujian itu
 sendiri dinilai.
@@ -58,8 +55,7 @@ sendiri dinilai.
 *Skor akhir = skor dasar (relevansi teks BM25, dari query `match`) +
 bonus (dari `function_score`/`boost` berdasarkan field bisnis seperti
 `avg_rating`). Urutan hasil berubah karena bonusnya berbeda tiap
-dokumen — bukan karena Elasticsearch "memahami" produk mana yang lebih
-baik.*
+dokumen.*
 
 ## d. Praktik: Instalasi & Konfigurasi
 
