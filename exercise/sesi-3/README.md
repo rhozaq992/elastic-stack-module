@@ -13,16 +13,16 @@ gunakan dataset penerbangan untuk latihan Query DSL.
    di data) yang delay-nya di atas 60 menit.
 4. Cek mapping field `OriginCityName` (`GET
    kibana_sample_data_flights/_mapping/field/OriginCityName`), lalu coba
-   `match` dan `match_phrase` di field itu dengan nama kota yang sama —
+   `match` dan `match_phrase` di field itu dengan nama kota yang sama 
    **bandingkan hasilnya**. Ternyata jumlah hits-nya SELALU SAMA PERSIS,
-   berapa pun kota yang kamu coba — kenapa? (Petunjuk: cek tipe field-nya,
-   lalu bandingkan dengan field `category` yang dipakai di lab Sesi 3 —
+   berapa pun kota yang kamu coba kenapa? (Petunjuk: cek tipe field-nya,
+   lalu bandingkan dengan field `category` yang dipakai di lab Sesi 3
    tipe field-nya apa?)
 5. Cari penerbangan yang DIBATALKAN **HANYA dalam 7 hari terakhir** (bukan
    seluruh dataset seperti langkah 2) — pakai `range` query pada field
    `timestamp` dikombinasikan dengan `Cancelled: true`. Field `timestamp`
    bertipe `date`, jadi kamu bisa pakai **relative date math**
-   Elasticsearch (`now-7d`) alih-alih tanggal tetap — ini penting karena
+   Elasticsearch (`now-7d`) alih-alih tanggal tetap ini penting karena
    data sample selalu ter-generate ulang relatif ke waktu sekarang setiap
    kali di-load, jadi tanggal tetap (hardcoded) akan salah di lain waktu.
 
@@ -32,7 +32,7 @@ gunakan dataset penerbangan untuk latihan Query DSL.
 - Kamu punya angka pasti untuk delay >60 menit per carrier pilihanmu.
 - Kamu bisa jelaskan KENAPA `match` dan `match_phrase` di `OriginCityName`
   SELALU menghasilkan angka yang identik (bukan mencari kota yang "pas"
-  supaya beda — field ini memang tidak akan pernah menunjukkan
+  supaya beda, field ini memang tidak akan pernah menunjukkan
   perbedaan, dan itu sendiri poin pembelajarannya) — sebutkan tipe field
   `OriginCityName` vs tipe field `category` di lab sebagai alasannya.
 - Kamu punya angka pasti untuk penerbangan dibatalkan dalam 7 hari
