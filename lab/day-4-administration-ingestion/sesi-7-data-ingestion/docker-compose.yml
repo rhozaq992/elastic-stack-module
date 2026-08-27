@@ -1,13 +1,13 @@
 # Arsitektur: Filebeat (root, baca /var/lib/docker/containers) -->
 # Logstash (non-root, parsing grok/json) --> Elasticsearch (SINGLE-NODE
-# Sesi 1 -- BUKAN cluster 3-node Sesi 7, lihat catatan resource di README).
+# Sesi 1 -- BUKAN cluster 3-node Sesi 8, lihat catatan resource di README).
 # Logstash TIDAK BISA baca /var/lib/docker/containers langsung (permission
 # root-only di host, dan Logstash menolak jalan sebagai root) -- makanya
 # Filebeat yang baca file, kirim ke Logstash lewat network.
 services:
-  logstash-sesi8:
+  logstash-sesi7:
     image: docker.elastic.co/logstash/logstash:9.5.2
-    container_name: elk-lab-logstash-sesi8
+    container_name: elk-lab-logstash-sesi7
     environment:
       - "LS_JAVA_OPTS=-Xms256m -Xmx256m"
       - xpack.monitoring.enabled=false
@@ -19,21 +19,21 @@ services:
       - default
       - elk-lab-net
 
-  filebeat-sesi8:
+  filebeat-sesi7:
     image: docker.elastic.co/beats/filebeat:9.5.2
-    container_name: elk-lab-filebeat-sesi8
+    container_name: elk-lab-filebeat-sesi7
     user: root
     volumes:
       - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
-      - logstash-sesi8
+      - logstash-sesi7
     networks:
       - default
 
 networks:
   default:
-    name: elk-lab-sesi8-net
+    name: elk-lab-sesi7-net
   elk-lab-net:
     external: true

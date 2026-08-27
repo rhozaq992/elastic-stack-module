@@ -1,4 +1,4 @@
-# Sesi 7 — Elasticsearch Administration & Scaling
+# Sesi 8 — Elasticsearch Administration & Scaling
 
 ## a. Tujuan Sesi
 
@@ -39,7 +39,7 @@ yang tidak dapat didemonstrasikan pada single-node:
   data, meski statusnya turun ke `yellow` sampai node tersebut kembali
   atau Elasticsearch merealokasi shard ke node yang tersisa.
 
-![Diagram High Availability cluster 3-node: normal semua node hidup vs 1 node mati tapi tetap melayani](../../../docs/diagrams/sesi7-ha-cluster.svg)
+![Diagram High Availability cluster 3-node: normal semua node hidup vs 1 node mati tapi tetap melayani](../../../docs/diagrams/sesi8-ha-cluster.svg)
 
 *Perbandingan langsung: pada kondisi normal (kiri) primary (P) dan
 replica (R) tersebar di 3 node berbeda. Apabila `es-node3` mati (kanan),
@@ -75,8 +75,9 @@ sengaja dimatikan sementara — menjalankan keduanya bersamaan berisiko
 kehabisan resource pada laptop dengan RAM terbatas. **Konsekuensinya:
 seluruh interaksi pada sesi ini dilakukan lewat terminal (`curl`), BUKAN
 Dev Tools Console** (Dev Tools Console adalah bagian dari Kibana — tanpa
-Kibana berjalan, halaman tersebut tidak dapat diakses). Kibana akan
-aktif kembali pada Sesi 8.
+Kibana berjalan, halaman tersebut tidak dapat diakses). Sesi ini adalah
+sesi terakhir pada pelatihan, sehingga Kibana tidak perlu dinyalakan
+kembali setelahnya.
 
 ## d. Praktik: Instalasi & Konfigurasi
 
@@ -109,7 +110,7 @@ Resources → Memory (lihat `docs/prerequisites.md` bagian 3), SEBELUM
 yang gagal `green` di tengah sesi.
 
 ```bash
-cd lab/day-4-administration-ingestion/sesi-7-administration-scaling
+cd lab/day-4-administration-ingestion/sesi-8-administration-scaling
 docker compose up -d
 ```
 
@@ -259,22 +260,20 @@ curl "http://localhost:9200/_ilm/policy/lab-cluster-policy?pretty"
 ```
 
 Terapkan lewat index template ke pattern index yang ingin Anda kelola
-otomatis (lihat Sesi 8 untuk contoh index hasil pipeline Logstash yang
-cocok dipasangi ILM ini). Halaman Kibana **Stack Management → Index
-Lifecycle Policies** menampilkan policy ini dalam bentuk visual — dapat
-diakses kembali pada Sesi 8 setelah Kibana aktif kembali.
+otomatis (lihat kembali Sesi 7 untuk contoh index hasil pipeline
+Logstash yang cocok dipasangi ILM ini). Halaman Kibana **Stack
+Management → Index Lifecycle Policies** menampilkan policy ini dalam
+bentuk visual — Anda sudah melihat halaman ini sebelumnya, saat Kibana
+masih aktif pada Sesi 7.
 
-**[Terminal] Setelah menyelesaikan sesi ini (termasuk exercise Sesi 7),
-matikan cluster 3-node sebelum melanjutkan ke Sesi 8** — Sesi 8
-membutuhkan kembali stack single-node Sesi 1 (Kibana + Logstash) pada
-port `9200` yang sama:
+**[Terminal] Sesi ini adalah sesi terakhir pelatihan.** Setelah
+menyelesaikan sesi ini (termasuk exercise-nya), matikan cluster 3-node
+untuk membebaskan resource:
 ```bash
-cd lab/day-4-administration-ingestion/sesi-7-administration-scaling
+cd lab/day-4-administration-ingestion/sesi-8-administration-scaling
 docker compose down
-cd ../../day-1-fundamentals/sesi-1-intro-elk
-docker compose up -d
 ```
 
 ## f. Referensi Exercise
 
-Lanjutkan latihan mandiri pada [`exercise/sesi-7/README.md`](../../../exercise/sesi-7/README.md).
+Lanjutkan latihan mandiri pada [`exercise/sesi-8/README.md`](../../../exercise/sesi-8/README.md).

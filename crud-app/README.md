@@ -1,7 +1,7 @@
 # Task Tracker — CRUD Demo App
 
 Aplikasi CRUD sederhana (Node.js/Express, in-memory, tanpa database) —
-dipakai sebagai bahan latihan **exercise Sesi 8** (parsing log manual).
+dipakai sebagai bahan latihan **exercise Sesi 7** (parsing log manual).
 Bukan bagian dari `lab/` — hanya target observasi untuk exercise.
 
 ## Menjalankan
@@ -39,4 +39,4 @@ Lihat log-nya: `docker compose logs -f task-tracker`.
 > **INFORMATION:** format ini sengaja dibuat berbeda dari yang sudah
 > Anda jumpai di lab (JSON `cart`, plain-text `payment`, Combined Log
 > Format `web`) — dipakai untuk latihan menyusun grok pattern dari NOL
-> di [`exercise/sesi-8/README.md`](../exercise/sesi-8/README.md) Bagian 2.
+> di [`exercise/sesi-7/README.md`](../exercise/sesi-7/README.md) Bagian 2.

@@ -111,7 +111,7 @@ inisialisasi MySQL pertama kali (lihat Sesi 4 apabila perlu mengingat
 detailnya).
 
 **[Terminal] Jalankan load generator** (traffic nyata ke Robot Shop, ~4%
-di antaranya transaksi anomali — bahan latihan Sesi 8 — dan sekarang
+di antaranya transaksi anomali — bahan latihan Sesi 7 — dan sekarang
 sekaligus menjadi sumber data trace APM untuk `cart`/`payment`):
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.load.yml up -d load
@@ -137,11 +137,11 @@ beberapa menit): traffic asli mengalir ke `/api/user/login`,
 > memiliki kapasitas yang cukup untuk beban ini.
 >
 > Anda baru bisa memverifikasi status code traffic ini secara nyata pada
-> **Sesi 8** — index `payment-service-parsed-*` yang berisi field
+> **Sesi 7** — index `payment-service-parsed-*` yang berisi field
 > `http_status` baru dibuat oleh pipeline Logstash yang Anda bangun pada
 > sesi itu, belum tersedia pada titik ini. Catat baik-baik apakah
 > traffic Anda tadi lancar (kemungkinan besar semua `200`) atau banyak
-> yang gagal — Anda akan memeriksanya kembali secara nyata pada Sesi 8
+> yang gagal — Anda akan memeriksanya kembali secara nyata pada Sesi 7
 > setelah pipeline-nya siap.
 
 **[Dev Tools Console] Ukur query TANPA cache (request pertama):**

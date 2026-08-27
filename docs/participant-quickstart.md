@@ -27,8 +27,8 @@ lab/day-2-query-relevance/sesi-3-query-dsl/
 lab/day-2-query-relevance/sesi-4-relevance-scoring/
 lab/day-3-analytics-optimization/sesi-5-aggregations/
 lab/day-3-analytics-optimization/sesi-6-performance-optimization/
-lab/day-4-administration-ingestion/sesi-7-administration-scaling/
-lab/day-4-administration-ingestion/sesi-8-data-ingestion/
+lab/day-4-administration-ingestion/sesi-7-data-ingestion/
+lab/day-4-administration-ingestion/sesi-8-administration-scaling/
 ```
 
 Tiap `README.md` sesi memiliki struktur yang sama:

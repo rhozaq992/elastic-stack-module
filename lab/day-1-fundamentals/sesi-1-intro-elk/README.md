@@ -27,7 +27,7 @@ metrik, dan data semi-terstruktur dalam volume besar.
 Tiga kasus pemakaian yang paling umum di lapangan (dan yang akan Anda
 sentuh langsung pada lab ini):
 - **Log & event analytics** — kumpulkan log aplikasi/server, cari pola,
-  hitung frekuensi error (Sesi 8).
+  hitung frekuensi error (Sesi 7).
 - **Full-text search** — pencarian produk/dokumen yang relevan, bukan
   cuma cocok persis (Sesi 3-4).
 - **Observability & monitoring** — metrik performa, deteksi anomali
@@ -52,7 +52,7 @@ satu keluarga komponen pendukung yang sering disebut berdampingan:
 - **Beats** — kumpulan agen pengirim data berukuran ringan (satu binary
   kecil per jenis sumber data, contoh: **Filebeat** untuk file log).
   Tugasnya membaca data dari sumbernya lalu mengirimkannya ke Logstash
-  atau langsung ke Elasticsearch — dibahas mendalam pada Sesi 8.
+  atau langsung ke Elasticsearch — dibahas mendalam pada Sesi 7.
 
 ![Alur data ELK Stack: Sumber Data ke Beats/Logstash ke Elasticsearch ke Kibana](../../../docs/diagrams/elk-dataflow.svg)
 

@@ -1,4 +1,4 @@
-# Sesi 8 — Data Ingestion with Logstash & Beats
+# Sesi 7 — Data Ingestion with Logstash & Beats
 
 ## a. Tujuan Sesi
 
@@ -54,14 +54,9 @@ kosong.
 ## d. Praktik: Instalasi & Konfigurasi
 
 **Prasyarat:** stack single-node Sesi 1 dan Robot Shop Sesi 6 masih
-berjalan. Apabila Anda baru saja menyelesaikan Sesi 7, cluster 3-node
-pada sesi tersebut memakai port `9200` yang sama dengan Sesi 1 —
-pastikan sudah dimatikan lebih dahulu:
-```bash
-cd lab/day-4-administration-ingestion/sesi-7-administration-scaling
-docker compose down
-```
-Nyalakan ulang stack yang diperlukan:
+berjalan (lanjutan langsung dari Sesi 6, tidak perlu mematikan/
+menyalakan ulang apa pun). Apabila salah satunya sudah Anda matikan,
+nyalakan kembali:
 ```bash
 cd lab/day-1-fundamentals/sesi-1-intro-elk && docker compose up -d
 cd ../../day-3-analytics-optimization/sesi-6-performance-optimization && docker compose up -d
@@ -70,7 +65,7 @@ cd ../../day-3-analytics-optimization/sesi-6-performance-optimization && docker 
 log untuk di-parsing.)*
 
 ```bash
-cd lab/day-4-administration-ingestion/sesi-8-data-ingestion
+cd lab/day-4-administration-ingestion/sesi-7-data-ingestion
 docker compose up -d
 ```
 
@@ -319,6 +314,6 @@ perbaikan kapasitas/scaling.
 
 ## f. Referensi Exercise
 
-Lanjutkan latihan mandiri di [`exercise/sesi-8/README.md`](../../../exercise/sesi-8/README.md)
+Lanjutkan latihan mandiri di [`exercise/sesi-7/README.md`](../../../exercise/sesi-7/README.md)
 — Bagian 1 deteksi transaksi anomali, Bagian 2 menyusun grok pattern
 sendiri untuk format log custom aplikasi [`crud-app/`](../../../crud-app/README.md).

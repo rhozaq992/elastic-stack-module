@@ -27,12 +27,12 @@ lebih dulu, lalu **[`docs/prerequisites.md`](docs/prerequisites.md)**.
 | 2 | [Sesi 4](lab/day-2-query-relevance/sesi-4-relevance-scoring/) | Relevance Scoring & Search Ranking |
 | 3 | [Sesi 5](lab/day-3-analytics-optimization/sesi-5-aggregations/) | Data Aggregations and Analytics |
 | 3 | [Sesi 6](lab/day-3-analytics-optimization/sesi-6-performance-optimization/) | Search Performance Optimization |
-| 4 | [Sesi 7](lab/day-4-administration-ingestion/sesi-7-administration-scaling/) | Elasticsearch Administration & Scaling |
-| 4 | [Sesi 8](lab/day-4-administration-ingestion/sesi-8-data-ingestion/) | Data Ingestion with Logstash & Beats |
+| 4 | [Sesi 7](lab/day-4-administration-ingestion/sesi-7-data-ingestion/) | Data Ingestion with Logstash & Beats |
+| 4 | [Sesi 8](lab/day-4-administration-ingestion/sesi-8-administration-scaling/) | Elasticsearch Administration & Scaling |
 
 Silabus lengkap (tujuan, topik, output tiap sesi): [`Silabus_ELK_Training_V2.xlsx`](Silabus_ELK_Training_V2.xlsx).
 
 Setelah tiap sesi, lanjutkan ke latihan mandiri di [`exercise/`](exercise/).
 
 [`crud-app/`](crud-app/) — aplikasi CRUD demo kecil dipakai khusus untuk
-latihan parsing log manual di Exercise Sesi 8.
+latihan parsing log manual di Exercise Sesi 7.
