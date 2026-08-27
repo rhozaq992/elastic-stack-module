@@ -2,8 +2,10 @@
 
 Dua bagian: **Bagian 1** menggunakan data eCommerce yang sudah Anda muat
 sejak Sesi 3 untuk latihan aggregation baru (per kategori), kali ini
-fokus pada performanya. **Bagian 2** analisis data trace APM `cart`/
-`payment` yang sudah mengalir dari load generator sesi ini.
+fokus pada performanya. **Bagian 2** praktik mengelola data trace APM
+`cart`/`payment` secara langsung lewat query — bukan sekadar membaca
+panel Kibana APM UI — untuk menemukan akar penyebab latency, satu
+tingkat lebih dalam dari yang diajarkan pada lab.
 
 ## Bagian 1 — Use Case
 
@@ -66,36 +68,111 @@ curl "http://localhost:9200/kibana_sample_data_ecommerce/_stats/request_cache?pr
 
 ## Bagian 2 — Use Case
 
-Tim SRE ingin mengetahui, dari dua service yang sudah menerapkan APM
-(`cart`, `payment`), service mana yang paling banyak menyumbang latency
-terhadap pengalaman checkout pengguna, dan endpoint SPESIFIK mana pada
-service tersebut yang paling lambat.
+Tim SRE sudah tahu dari lab bahwa `payment` jauh lebih lambat daripada
+`cart` secara keseluruhan. Tapi "servis X lambat" belum actionable —
+tim yang berbeda perlu ditugaskan tergantung PENYEBABNYA: kalau
+penyebabnya kode `payment` sendiri, tim dev `payment` yang menindaklanjuti;
+kalau penyebabnya panggilan ke sistem/pihak LAIN, tim infra atau bahkan
+vendor pihak ketiga yang perlu dihubungi. Tugas Anda: mengelola data
+trace level SPAN (bukan sekadar transaction) lewat query untuk menemukan
+akar penyebabnya sendiri.
 
 ## Tugas Bagian 2
 
-1. Lewat Kibana APM (Service inventory), catat **Latency (avg.)** untuk
-   `cart` dan `payment` — mana yang lebih lambat, dan berapa kali lipat?
-2. Klik ke service yang lebih lambat → tab **Transactions** → catat nama
-   endpoint (`POST /...`) dengan latency tertinggi.
-3. Klik endpoint tersebut → lihat panel **"Time spent by span type"** —
-   apakah waktunya mayoritas berada di `app` (kode sendiri) atau di span
-   lain (`http`/`db`/dll)? Ini menentukan ke mana optimasi harus diarahkan.
-4. Susun query Dev Tools Console SENDIRI (tanpa contoh, pola sama seperti
-   pada lab bagian e) ke index `traces-apm-default` untuk menghitung
-   `avg(transaction.duration.us)` per `service.name` — bandingkan hasilnya
-   dengan yang Anda lihat pada UI di langkah 1.
+1. Query `traces-apm-default` untuk transaksi (`processor.event:
+   transaction`) pada `service.name: payment`, breakdown per
+   `transaction.name` — endpoint mana yang paling lambat?
+2. Untuk endpoint paling lambat itu, query span-level data
+   (`processor.event: span`, `service.name: payment`), breakdown per
+   `span.type`/`span.subtype` — catat hasilnya (Kibana APM UI menampilkan
+   breakdown yang sama lewat panel "Time spent by span type").
+3. **Perhatikan baik-baik hasil langkah 2** — apabila seluruh span
+   berbeda hanya bertipe SATU jenis yang sama (mis. semuanya
+   `external`/`http`), breakdown level type/subtype ITU SAJA TIDAK CUKUP
+   untuk menunjuk dependency SPESIFIK mana yang bermasalah, karena semua
+   panggilan keluar disamaratakan jadi satu kategori. Turunkan lagi
+   granularitasnya: breakdown per `span.destination.service.resource` —
+   dependency mana yang jauh lebih lambat dari yang lain?
+4. Bandingkan durasi rata-rata dependency tersebut dengan durasi
+   rata-rata dependency lain pada service yang sama — berapa kali lipat
+   perbedaannya?
 
 ## Kriteria Bagian 2
 
-- Anda dapat menyebutkan service mana yang lebih lambat dan endpoint
-  spesifiknya.
-- Anda dapat menjelaskan apakah lambatnya endpoint tersebut disebabkan
-  oleh kode aplikasi sendiri atau oleh panggilan ke sistem lain
-  (berdasarkan "Time spent by span type").
-- Query aggregation mandiri Anda pada `traces-apm-default` menghasilkan
-  angka yang KONSISTEN (tidak harus identik persis, tetapi service yang
-  sama yang muncul sebagai paling lambat) dengan yang tampil pada Kibana
-  APM UI.
+- Anda dapat menyebutkan endpoint `payment` yang paling lambat, dengan
+  angka durasi rata-ratanya.
+- Anda dapat menjelaskan MENGAPA breakdown per `span.type`/`span.subtype`
+  saja tidak selalu cukup untuk menemukan akar penyebab (dengan bukti
+  konkret dari data Anda sendiri, bukan hanya berdasarkan penjelasan ini).
+- Anda dapat menyebutkan dependency SPESIFIK (`span.destination.service.resource`)
+  yang menjadi penyebab utama, dengan angka durasi rata-ratanya, dan
+  berapa kali lipat lebih lambat dibanding dependency lain pada service
+  yang sama.
+- Anda dapat menyimpulkan: apakah tim `payment` perlu memperbaiki kode
+  mereka sendiri, atau berkoordinasi dengan pihak/servis lain soal
+  performanya — dengan alasan dari angka di atas.
+
+<details>
+<summary>Petunjuk Bagian 2 (klik apabila mengalami kesulitan)</summary>
+
+```
+GET traces-apm-default/_search
+{
+  "size": 0,
+  "query": { "bool": { "filter": [
+    { "term": { "service.name": "payment" } },
+    { "term": { "processor.event": "transaction" } }
+  ] } },
+  "aggs": {
+    "by_transaction": {
+      "terms": { "field": "transaction.name" },
+      "aggs": { "avg_ms": { "avg": { "field": "transaction.duration.us", "script": "_value / 1000" } } }
+    }
+  }
+}
+```
+Breakdown span per type/subtype (langkah 2):
+```
+GET traces-apm-default/_search
+{
+  "size": 0,
+  "query": { "bool": { "filter": [
+    { "term": { "service.name": "payment" } },
+    { "term": { "processor.event": "span" } }
+  ] } },
+  "aggs": {
+    "by_type": {
+      "terms": { "field": "span.type" },
+      "aggs": { "by_subtype": { "terms": { "field": "span.subtype" } } }
+    }
+  }
+}
+```
+Breakdown per dependency spesifik (langkah 3 — dijalankan HANYA apabila
+langkah 2 menunjukkan seluruh span bertipe sama):
+```
+GET traces-apm-default/_search
+{
+  "size": 0,
+  "query": { "bool": { "filter": [
+    { "term": { "service.name": "payment" } },
+    { "term": { "processor.event": "span" } }
+  ] } },
+  "aggs": {
+    "by_destination": {
+      "terms": { "field": "span.destination.service.resource" },
+      "aggs": { "avg_ms": { "avg": { "field": "span.duration.us", "script": "_value / 1000" } } }
+    }
+  }
+}
+```
+</details>
+
+> **INFORMATION:** Kibana APM UI memiliki tab **Dependencies** pada
+> halaman detail service yang menampilkan breakdown per dependency
+> secara visual — dapat dipakai untuk memverifikasi hasil query Anda,
+> tetapi tugas ini meminta Anda menyusun query-nya sendiri terlebih
+> dahulu, sesuai tema sesi ini (mengelola data secara langsung).
 
 Validasi hasil kerja Anda (Bagian 1):
 ```bash
