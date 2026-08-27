@@ -17,13 +17,11 @@ uname -m
 - Hasil `aarch64` / `arm64` → laptop kamu **ARM** (mis. Apple Silicon M1/M2/M3/M4).
 - Hasil `x86_64` / `amd64` → laptop kamu **x86/amd64** (mayoritas laptop Windows/Intel/AMD).
 
-Catat hasilnya. Image yang dipakai lab ini (Elasticsearch/Kibana/Logstash
-resmi, dan image Robot Shop) sudah disiapkan untuk **kedua** arsitektur —
+Catat hasilnya. Image yang dipakai lab ini sudah disiapkan untuk **kedua** arsitektur —
 `docker pull`/`docker compose up` akan otomatis menarik varian yang sesuai
 dengan arsitektur laptopmu tanpa perlu setting tambahan. Kalau ada
 pengecualian untuk service tertentu, itu akan disebutkan eksplisit di
-README sesi terkait (jangan asumsikan semua service otomatis kompatibel
-tanpa dicek).
+README sesi terkait.
 
 ## 2. Wajib
 
@@ -44,17 +42,9 @@ Seluruh command di lab ini ditulis dalam sintaks **bash**. Kalau laptopmu
 **Windows**:
 
 - **WAJIB** jalankan semua command DI DALAM **WSL2** (Windows Subsystem for
-  Linux) — BUKAN di Command Prompt atau PowerShell native. Docker Desktop
-  for Windows sendiri sudah butuh WSL2 sebagai backend, tapi itu tidak
-  otomatis berarti terminalmu bash — kamu harus **membuka terminal WSL2
-  secara eksplisit** (mis. lewat aplikasi "Ubuntu" atau `wsl` di Windows
+  Linux) — kamu harus **membuka terminal WSL2 secara eksplisit** (
+  lewat aplikasi "Ubuntu" atau `wsl` di Windows
   Terminal) sebelum menjalankan command apa pun di lab ini.
-- **Alternatif**: **Git Bash** (ikut terinstal bareng Git for Windows) —
-  cukup untuk command yang tidak butuh akses langsung ke Docker socket
-  native Linux, tapi WSL2 lebih direkomendasikan untuk konsistensi penuh.
-- Kalau kamu jalankan command bash di PowerShell/cmd biasa, sebagian besar
-  akan **gagal** (`bash: command not found`, error sintaks `$(...)`, dst.)
-  — ini bukan bug lab, tapi memang command-nya tidak ditulis untuk shell itu.
 
 macOS dan Linux tidak perlu langkah tambahan — terminal bawaan sudah bash-compatible.
 
