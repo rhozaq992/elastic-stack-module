@@ -19,8 +19,12 @@ skill yang berbeda.
 3. Bandingkan urutan hasilnya dengan query `match_all` polos (tanpa boost)
    — apa yang berubah?
 4. Coba variasi: gunakan `function_score` dengan `field_value_factor` pada
-   field `price` (mis. produk lebih murah mendapat skor lebih tinggi) —
-   bagaimana urutannya sekarang?
+   field `price`, DENGAN `"modifier": "reciprocal"` (menghitung `1/price`,
+   sehingga produk lebih MURAH mendapat skor lebih tinggi — tanpa
+   `modifier` ini, `field_value_factor` justru mengalikan skor dengan
+   nilai field apa adanya, sehingga produk yang lebih MAHAL yang naik,
+   kebalikan dari yang diinginkan tim marketing) — bagaimana urutannya
+   sekarang?
 
 ### Kriteria Selesai
 
