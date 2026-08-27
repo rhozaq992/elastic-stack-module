@@ -4,9 +4,9 @@ Dua bagian: **Bagian 1** lanjutkan agregasi revenue eCommerce dari Sesi 5
 (fokus profiling & cache), **Bagian 2** analisis data trace APM `cart`/
 `payment` yang sudah mengalir dari load generator sesi ini.
 
-## Bagian 1 — Use Case
+## Bagian 1 Use Case
 
-Lanjutkan agregasi revenue per kategori dari Sesi 5 — kali ini fokus ke
+Lanjutkan agregasi revenue per kategori dari Sesi 5 kali ini fokus ke
 performanya: apakah query itu efisien, dan apakah request cache benar-benar bekerja?
 
 ## Tugas Bagian 1
@@ -58,9 +58,9 @@ curl "http://localhost:9200/kibana_sample_data_ecommerce/_stats/request_cache?pr
 
 ---
 
-## Bagian 2 — Use Case
+## Bagian 2 Use Case
 
-Tim SRE mau tahu, dari dua service yang sudah ber-APM (`cart`, `payment`),
+Tim SRE mau tahu, dari dua service yang sudah menerapkan APM (`cart`, `payment`),
 service mana yang paling banyak menyumbang latency ke pengalaman
 checkout pengguna, dan endpoint SPESIFIK mana di service itu yang paling
 lambat.
@@ -68,10 +68,10 @@ lambat.
 ## Tugas Bagian 2
 
 1. Lewat Kibana APM (Service inventory), catat **Latency (avg.)** untuk
-   `cart` dan `payment` — mana yang lebih lambat, dan berapa kali lipat?
+   `cart` dan `payment` bagian mana yang lebih lambat, dan berapa kali lipat?
 2. Klik ke service yang lebih lambat → tab **Transactions** → catat nama
    endpoint (`POST /...`) dengan latency tertinggi.
-3. Klik endpoint itu → lihat panel **"Time spent by span type"** — apakah
+3. Klik endpoint itu → lihat panel **"Time spent by span type"** apakah
    waktunya mayoritas di `app` (kode sendiri) atau di span lain
    (`http`/`db`/dll)? Ini menentukan ke mana optimasi harus diarahkan.
 4. Susun query Dev Tools Console SENDIRI (tanpa contoh, pola sama seperti
@@ -83,7 +83,7 @@ lambat.
 
 - Kamu bisa sebutkan service mana yang lebih lambat dan endpoint
   spesifiknya.
-- Kamu bisa jelaskan APAKAH lambatnya endpoint itu karena kode aplikasi
+- Kamu bisa jelaskan mengapa lambatnya endpoint itu karena kode aplikasi
   sendiri atau karena panggilan ke sistem lain (berdasarkan "Time spent
   by span type").
 - Query aggregation manualmu di `traces-apm-default` menghasilkan angka
