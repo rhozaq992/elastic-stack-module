@@ -3,8 +3,8 @@
 ## a. Tujuan Sesi
 
 Setelah sesi ini, kamu mampu menulis query pencarian di Elasticsearch
-memakai Query DSL — dari full-text search sederhana sampai kombinasi
-kondisi (boolean query) — dan memahami jebakan umum yang sering bikin
+memakai Query DSL dari full-text search sederhana sampai kombinasi
+kondisi (boolean query) dan memahami jebakan umum yang sering bikin
 hasil query meleset.
 
 ## b. Output yang Diharapkan
@@ -13,14 +13,14 @@ Sesi ini selesai kalau:
 - Sample data `kibana_sample_data_ecommerce` sudah ter-load (4675 dokumen).
 - Kamu berhasil menjalankan `match`, `match_phrase`, `term`, dan `bool`
   query, dan bisa jelaskan kapan pakai yang mana.
-- Kamu paham kenapa `range` pada field bertipe salah **tidak error**, dan
+- Mengerti kenapa `range` pada field bertipe salah **"tidak error"**, dan
   kenapa itu berbahaya.
 
 ## c. Teori & Struktur Sistem
 
 **Query DSL** (Domain Specific Language) adalah bahasa berbasis JSON yang
 dipakai Elasticsearch untuk mendefinisikan query — semua contoh di sesi ini
-dijalankan lewat Kibana Dev Tools Console (lihat Sesi 2 kalau belum familiar).
+dijalankan lewat Kibana Dev Tools Console.
 
 Empat jenis query yang paling sering dipakai:
 
@@ -39,23 +39,18 @@ relevance score memang dibutuhkan.
 
 ## d. Praktik: Instalasi & Konfigurasi
 
-*(Prasyarat: stack Sesi 1 masih jalan.)*
-
 **Kibana Sample Data — apa saja yang tersedia.** Sebelum load data,
 kenalan dulu dengan katalognya: buka menu ☰ → **Home**, klik **"Try
 sample data"** (atau langsung `http://localhost:5601/app/home#/tutorial_directory/sampleData`):
 
 ![Katalog Kibana Sample Data menampilkan 3 dataset: eCommerce orders, Flight data, Web logs](../../../docs/screenshots/sesi-3/00-sample-data-catalog.png)
 
-*Tiga dataset bawaan Kibana — **eCommerce orders** (transaksi toko
-online, dipakai lab Sesi 3-5), **Flight data** (data penerbangan, dipakai
-di exercise sesi ini), dan **Web logs** (log akses web). Ketiganya bisa
-di-load lewat halaman ini (klik "View data" pada kartu yang belum
-ter-install) ATAU lewat API `POST /api/sample_data/<nama>` seperti
-command di bawah — dua-duanya hasilnya sama.*
+*Tiga dataset bawaan Kibana — **eCommerce orders**,
+**Flight data**, dan **Web logs** (log akses web). Ketiganya bisa
+di-load lewat halaman ini atau lewat API `POST /api/sample_data/<nama>` seperti
+command di bawah.*
 
-**Load sample data eCommerce** (dataset transaksi toko online, dipakai
-sepanjang Sesi 3-5):
+**Load sample data eCommerce**:
 ```bash
 curl -X POST "http://localhost:5601/api/sample_data/ecommerce" \
   -H "kbn-xsrf: true" -H "x-elastic-internal-origin: kibana"
@@ -65,23 +60,23 @@ Expected Output: `{"elasticsearchIndicesCreated":{"kibana_sample_data_ecommerce"
 Field yang relevan: `category` (text), `customer_gender` (keyword),
 `taxful_total_price` (angka), `order_date` (tanggal).
 
-**`match`** — full-text search (tokenized, partial match):
+**`match`** full-text search (tokenized, partial match):
 ```
 GET kibana_sample_data_ecommerce/_search
 { "query": { "match": { "category": "Clothing" } } }
 ```
 Expected Output: **3927 hits.** `match` tokenize "Clothing" dan
-mencocokkan ke field `category` yang juga di-tokenize — cocok dengan
+mencocokkan ke field `category` yang juga di-tokenize menampilkan data
 "Women's Clothing", "Men's Clothing", dll., bukan cuma yang persis "Clothing".
 
-**`match_phrase`** — full-text tapi urutan kata harus persis:
+**`match_phrase`** full-text tapi urutan kata harus persis:
 ```
 GET kibana_sample_data_ecommerce/_search
 { "query": { "match_phrase": { "category": "Women's Clothing" } } }
 ```
-Expected Output: **1903 hits.** Beda dengan `match` biasa —
+Expected Output: **1903 hits.** Beda dengan `match` biasa
 `match_phrase` mensyaratkan kata-katanya berurutan bersebelahan, jadi
-dokumen dengan category "Men's Clothing" TIDAK ikut match.
+dokumen dengan category "Men's Clothing" tidak match.
 
 **`term`** — exact match (field `keyword`, tidak di-tokenize):
 ```
@@ -107,8 +102,7 @@ GET kibana_sample_data_ecommerce/_search
 Expected Output: **469 hits** — pelanggan FEMALE **dan** total
 belanja > 100.
 
-**Query yang sama, lewat UI Discover** (bukan cuma lewat Dev Tools Console
-— Discover pakai sintaks KQL, mirip tapi tidak identik dengan Query DSL):
+**Query yang sama, lewat UI Discover** :
 
 ![Kibana Discover awal, data view belum dipilih](../../../docs/screenshots/sesi-3/01-discover-awal.png)
 
@@ -121,7 +115,7 @@ belanja > 100.
 
 ![Kibana Discover dengan data view Kibana Sample Data eCommerce dipilih](../../../docs/screenshots/sesi-3/03-discover-data-ecommerce.png)
 
-*Data view eCommerce aktif — tabel dokumen ter-update sesuai pilihan.*
+*Data view eCommerce aktif — tabel dokumen terupdate sesuai pilihan.*
 
 ![Kibana Discover dengan filter KQL customer_gender MALE dan taxful_total_price di atas 200, menampilkan hasil dan histogram](../../../docs/screenshots/sesi-3/04-discover-kql-filter.png)
 
@@ -132,11 +126,11 @@ ke ES — Discover membatasi hasil sesuai rentang waktu yang dipilih di
 kanan atas, sedangkan query lewat Dev Tools Console di atas tidak dibatasi waktu.)*
 
 **Filter TANPA ketik KQL — lewat UI.** Selain ketik KQL manual, Discover
-punya beberapa cara "klik saja" untuk filter/atur tampilan data. (Catatan:
+punya beberapa cara untuk filter/atur tampilan data. (Catatan:
 jumlah dokumen di semua screenshot di bawah bersifat **time-relative** —
 "Last 90 days" bergeser tiap hari, jadi angkamu pasti beda, itu normal.)
 
-**a) Tambah filter lewat form (bukan ketik KQL):** klik **"+ Add filter"**
+**a) Tambah filter lewat form :** klik **"+ Add filter"**
 di sebelah kiri search bar:
 
 ![Form Add filter kosong -- pilih field, operator, value](../../../docs/screenshots/sesi-3/05-add-filter-kosong.png)
@@ -162,15 +156,15 @@ muncul untuk jadikan kolom:
 *Setelah `customer_full_name` dan `category` ditambah sebagai kolom,
 tabel jadi jauh lebih ringkas dibanding `_source` mentah — field yang
 sedang jadi kolom tampil di grup "Selected fields" di sidebar, klik ikon
-**–** di situ untuk hapus kolom lagi.*
+**–** untuk hapus kolom.*
 
 **c) Filter langsung dari nilai dokumen** ("filter for/out value"): klik
-ikon perbesar (⤢) di kiri baris dokumen untuk buka detail, lalu hover nilai
-field yang mau di-filter:
+ikon perbesar (⤢) di kiri baris dokumen untuk buka detail, lalu pilih nilai
+field yang mau difilter:
 
 ![Detail dokumen menampilkan ikon filter for/out saat hover di baris customer_gender](../../../docs/screenshots/sesi-3/09-doc-flyout-hover-filter.png)
 
-*Hover baris `customer_gender` — muncul ikon **+** (filter for, cuma
+*Hover baris `customer_gender` — menunjukan ikon **+** (filter for, cuma
 tampilkan dokumen dengan nilai ini) dan **–** (filter out, sembunyikan
 dokumen dengan nilai ini).*
 
