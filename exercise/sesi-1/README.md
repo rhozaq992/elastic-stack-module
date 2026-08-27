@@ -1,22 +1,27 @@
 # Exercise Sesi 1 — Bulk Index & REST API Dasar
 
-Dua latihan di sesi ini: **Latihan 1** pakai data yang sudah disiapkan
-(fokus ke cara kerja `_bulk` API), **Latihan 2** kamu susun sendiri
-request-nya dari nol pakai bentuk data yang berbeda (fokus ke transfer
-skill dari tabel REST API di `lab/day-1-fundamentals/sesi-1-intro-elk/README.md` bagian c).
+Dua latihan pada sesi ini: **Latihan 1** menggunakan data yang sudah
+disiapkan (fokus pada cara kerja `_bulk` API), **Latihan 2** Anda susun
+sendiri request-nya dari awal menggunakan bentuk data yang berbeda
+(fokus pada transfer skill dari tabel REST API pada
+`lab/day-1-fundamentals/sesi-1-intro-elk/README.md` bagian c).
+
+Seluruh perintah pada exercise ini dijalankan lewat **terminal** (`curl`)
+— Dev Tools Console baru diperkenalkan pada Sesi 2.
 
 ## Latihan 1 — Bulk Index Data Monitoring Server (data disiapkan)
 
 ### Use Case
 
-Tim infrastruktur mau mulai menyimpan metrik monitoring server (CPU, disk)
-ke Elasticsearch, dan butuh cara cepat memasukkan banyak data metrik
-sekaligus (bukan satu-satu).
+Tim infrastruktur hendak mulai menyimpan metrik monitoring server (CPU,
+disk) ke Elasticsearch, dan membutuhkan cara cepat memasukkan banyak
+data metrik sekaligus (bukan satu per satu).
 
 ### Tugas
 
-1. Jalankan request `_bulk` di bawah ini apa adanya — ini data yang akan
-   kamu pakai (jangan diubah, supaya threshold di langkah 2 pasti ketemu):
+1. Jalankan request `_bulk` berikut apa adanya — ini adalah data yang
+   akan digunakan (jangan diubah, agar threshold pada langkah 2 pasti
+   ditemukan):
 
 ```bash
 curl -X POST "http://localhost:9200/exercise-server-monitoring/_bulk?refresh=true" \
@@ -36,28 +41,30 @@ curl -X POST "http://localhost:9200/exercise-server-monitoring/_bulk?refresh=tru
 '
 ```
 
-2. Cari server mana yang `cpu_percent`-nya di atas 90 (threshold alert) —
-   susun sendiri query-nya pakai `bool`/`filter`/`range` di endpoint
-   `GET <index>/_search` (lihat tabel endpoint di lab Sesi 1 bagian c untuk
-   pola `<METHOD> host/index/_endpoint`-nya; syntax `bool`/`filter`/`range`
-   sendiri belum pernah diajarkan — belum pernah lihat sebelumnya itu
-   normal, coba dulu, dan buka petunjuk di bawah kalau stuck).
+2. Cari server dengan `cpu_percent` di atas 90 (threshold alert) —
+   susun sendiri query-nya menggunakan `bool`/`filter`/`range` pada
+   endpoint `GET <index>/_search`, dijalankan lewat `curl` (lihat tabel
+   endpoint pada lab Sesi 1 bagian c untuk pola `<METHOD>
+   host/index/_endpoint`-nya; sintaks `bool`/`filter`/`range` sendiri
+   belum pernah diajarkan sebelumnya — hal ini normal, coba dahulu, dan
+   buka petunjuk di bawah apabila mengalami kendala).
 3. Pastikan cluster tetap `yellow`/`green` (bukan `red`) setelah bulk index.
 
 ### Kriteria Selesai
 
 - Index `exercise-server-monitoring` ada, 6 dokumen (sama seperti data di atas).
-- Kamu bisa tunjukkan hasil query threshold alert — harus menemukan
-  **2 dokumen** (`web-01` jam 09:00 dan `web-02` jam 09:00, keduanya di atas 90).
+- Anda dapat menunjukkan hasil query threshold alert — harus ditemukan
+  **2 dokumen** (`web-01` pukul 09:00 dan `web-02` pukul 09:00, keduanya
+  di atas 90).
 - `curl "http://localhost:9200/_cluster/health"` menunjukkan `status`
   bukan `red`.
 
 <details>
-<summary>Petunjuk query threshold (klik kalau stuck)</summary>
+<summary>Petunjuk query threshold (klik apabila mengalami kendala)</summary>
 
-```
-GET exercise-server-monitoring/_search
-{
+```bash
+curl "http://localhost:9200/exercise-server-monitoring/_search" \
+  -H 'Content-Type: application/json' -d '{
   "query": {
     "bool": {
       "filter": [
@@ -66,7 +73,7 @@ GET exercise-server-monitoring/_search
       ]
     }
   }
-}
+}'
 ```
 </details>
 
@@ -76,24 +83,24 @@ GET exercise-server-monitoring/_search
 
 ### Use Case
 
-Tim toko online mau mulai memindahkan data stok produk mereka ke
-Elasticsearch. Bentuk datanya **beda** dari metrik server di Latihan 1 —
-ini bukan angka metrik berurutan waktu, tapi katalog produk dengan
-campuran tipe data (teks, angka, boolean).
+Tim toko online hendak mulai memindahkan data stok produk mereka ke
+Elasticsearch. Bentuk datanya **berbeda** dari metrik server pada
+Latihan 1 — bukan angka metrik berurutan waktu, melainkan katalog
+produk dengan campuran tipe data (teks, angka, boolean).
 
 ### Tugas
 
-1. Index index baru bernama `exercise-toko-produk` lewat `_bulk` API — kali
-   ini **susun sendiri** request `_bulk`-nya (tidak ada template
-   disediakan), berisi **minimal 5 produk** dengan field:
+1. Index index baru bernama `exercise-toko-produk` lewat `_bulk` API —
+   kali ini **susun sendiri** request `_bulk`-nya (tidak disediakan
+   template), berisi **minimal 5 produk** dengan field:
    - `sku` (kode produk, string, mis. `"SKU-001"`)
    - `name` (nama produk, string)
    - `category` (kategori, string, mis. `"elektronik"`/`"pakaian"`)
    - `price` (harga, angka)
    - `in_stock` (boolean, `true`/`false`)
 
-   Pastikan minimal ada 2 produk dengan `in_stock: true` dan harga di
-   bawah 500000, supaya query di langkah 2 punya hasil.
+   Pastikan minimal terdapat 2 produk dengan `in_stock: true` dan harga
+   di bawah 500000, agar query pada langkah 2 memiliki hasil.
 2. Susun query pencarian: produk dengan `in_stock: true` DAN `price`
    di bawah 500000.
 3. Pastikan cluster tetap `yellow`/`green` (bukan `red`) setelah bulk index.
@@ -101,24 +108,25 @@ campuran tipe data (teks, angka, boolean).
 ### Kriteria Selesai
 
 - Index `exercise-toko-produk` ada, minimal 5 dokumen dengan field di atas.
-- Kamu bisa tunjukkan hasil query langkah 2 (minimal 1 hasil).
+- Anda dapat menunjukkan hasil query langkah 2 (minimal 1 hasil).
 - `curl "http://localhost:9200/_cluster/health"` menunjukkan `status`
   bukan `red`.
 
 <details>
-<summary>Petunjuk kalau benar-benar stuck (coba dulu tanpa buka ini)</summary>
+<summary>Petunjuk apabila benar-benar mengalami kendala (coba dahulu tanpa membuka ini)</summary>
 
 Pola endpoint-nya sama seperti Latihan 1 —
 `POST /<index>/_bulk?refresh=true`, header
 `Content-Type: application/x-ndjson`, tiap dokumen didahului baris
-`{"index":{}}`. Untuk query kombinasi boolean + angka, lihat lagi query
-threshold di Latihan 1: `bool.filter` bisa diisi lebih dari satu kondisi
-sekaligus (satu `term` untuk boolean, satu `range` untuk angka).
+`{"index":{}}`. Untuk query kombinasi boolean + angka, lihat kembali
+query threshold pada Latihan 1: `bool.filter` dapat diisi lebih dari
+satu kondisi sekaligus (satu `term` untuk boolean, satu `range` untuk
+angka).
 </details>
 
 ---
 
-Validasi hasil kerjamu (kedua latihan sekaligus):
+Validasi hasil pekerjaan Anda (kedua latihan sekaligus):
 ```bash
 bash exercise/scripts/validate_sesi1.sh
 ```

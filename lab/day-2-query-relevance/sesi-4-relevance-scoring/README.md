@@ -2,33 +2,34 @@
 
 ## a. Tujuan Sesi
 
-Setelah sesi ini, kamu memahami bagaimana Elasticsearch menentukan urutan
-hasil pencarian (`_score`), dan mampu menyesuaikan urutan itu supaya
+Setelah sesi ini, Anda memahami bagaimana Elasticsearch menentukan urutan
+hasil pencarian (`_score`), dan mampu menyesuaikan urutan tersebut supaya
 mencerminkan prioritas bisnis nyata (mis. produk rating tinggi tampil
-duluan) memakai `function_score` dan `boost`.
+lebih dahulu) menggunakan `function_score` dan `boost`.
 
 ## b. Output yang Diharapkan
 
-Sesi ini selesai kalau:
-- Robot Shop jalan 7 servis yang punya healthcheck (`catalogue`, `user`,
-  `cart`, `shipping`, `ratings`, `payment`, `web`) berstatus `healthy` di
-  `docker compose ps` (5 servis pendukung `mongodb`, `redis`, `rabbitmq`,
-  `mysql`, `dispatch` tidak punya healthcheck sendiri, cukup pastikan
-  statusnya `Up`) dan index `robot-shop-catalogue` di Elasticsearch
-  sudah berisi data produk asli.
-- Kamu berhasil menjalankan query pencarian yang hasilnya berubah urutan
-  setelah ditambah `function_score`/`boost`, dan bisa jelaskan kenapa.
+Sesi ini selesai apabila:
+- Robot Shop berjalan dengan 7 servis yang memiliki healthcheck
+  (`catalogue`, `user`, `cart`, `shipping`, `ratings`, `payment`, `web`)
+  berstatus `healthy` pada `docker compose ps` (5 servis pendukung
+  `mongodb`, `redis`, `rabbitmq`, `mysql`, `dispatch` tidak memiliki
+  healthcheck sendiri, cukup pastikan statusnya `Up`) dan index
+  `robot-shop-catalogue` di Elasticsearch sudah berisi data produk asli.
+- Anda berhasil menjalankan query pencarian yang hasilnya berubah urutan
+  setelah ditambahkan `function_score`/`boost`, dan dapat menjelaskan
+  penyebabnya.
 
 ## c. Teori & Struktur Sistem
 
-Baca [`robot-shop-structure.md`](robot-shop-structure.md) dulu untuk
-memahami sistem yang akan kamu observasi sesi ini.
+Baca [`robot-shop-structure.md`](robot-shop-structure.md) terlebih dahulu
+untuk memahami sistem yang akan Anda observasi pada sesi ini.
 
 **Relevance & `_score`.** Tiap hasil pencarian Elasticsearch punya `_score`
 — angka yang menentukan urutan tampil (semakin tinggi, semakin relevan
 menurut Elasticsearch). Secara default, `_score` dihitung dari algoritma
 BM25 (seberapa sering & langka kata yang dicari muncul di dokumen). Ini
-bagus untuk relevansi TEKS, tapi sering kali kamu ingin urutan juga
+bagus untuk relevansi TEKS, tetapi sering kali urutan juga perlu
 mempertimbangkan sinyal bisnis lain berupa rating produk, popularitas, stok,
 dst. Dua cara utama:
 
@@ -43,12 +44,12 @@ dst. Dua cara utama:
 
 *(Prasyarat: stack Sesi 1 masih jalan untuk Elasticsearch/Kibana.)*
 
-> **Kemana setiap command di bawah dijalankan?** Sesi ini gabung dua
-> tempat — **Terminal** (semua yang diawali `$`/blok berlabel `bash`:
+> **Ke mana setiap perintah di bawah dijalankan?** Sesi ini menggabungkan
+> dua tempat — **Terminal** (semua yang diawali `$`/blok berlabel `bash`:
 > `docker compose`, `curl`, `python3`) untuk operasi di luar Elasticsearch
-> seperti menjalankan Robot Shop, memanggil API Robot Shop, dan transfer data), dan
-> **Kibana Dev Tools Console** (blok `GET`/`POST` TANPA `curl` di
-> depannya) khusus untuk query ke Elasticsearch.
+> seperti menjalankan Robot Shop, memanggil API Robot Shop, dan transfer
+> data, dan **Kibana Dev Tools Console** (blok `GET`/`POST` TANPA `curl`
+> di depannya) khusus untuk query ke Elasticsearch.
 > Tiap blok di bawah diberi label eksplisit.
 
 **[Terminal] Jalankan Robot Shop** (lihat [`robot-shop-structure.md`](robot-shop-structure.md) untuk detail arsitektur):
@@ -56,12 +57,12 @@ dst. Dua cara utama:
 cd lab/day-2-query-relevance/sesi-4-relevance-scoring
 docker compose up -d
 ```
-**Kalau laptopmu ARM (Apple Silicon)** — cek dulu lewat
-`docker info --format '{{.Architecture}}'` (lihat `prerequisites.md`).
-Kalau hasilnya `arm64`, pakai command ini sebagai ganti yang di atas
-tanpa ini, `mysql` akan jalan lewat emulasi dengan
-warning platform-mismatch (tetap jalan, tapi lebih lambat & membingungkan
-kalau tidak diberi tahu dulu):
+**Apabila perangkat Anda ARM (Apple Silicon)** — periksa terlebih dahulu
+lewat `docker info --format '{{.Architecture}}'` (lihat
+`prerequisites.md`). Apabila hasilnya `arm64`, gunakan perintah berikut
+sebagai pengganti perintah di atas — tanpa ini, `mysql` akan berjalan
+lewat emulasi dengan warning platform-mismatch (tetap berjalan, tetapi
+lebih lambat & membingungkan apabila tidak diberi tahu terlebih dahulu):
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml up -d
 ```
@@ -222,12 +223,13 @@ ketik filter KQL yang setara dengan query `bool.should` di atas:
 ![Discover dengan filter kategori Artificial Intelligence, kolom name avg_rating price](../../../docs/screenshots/sesi-4/02-discover-search-ai-category.png)
 
 *3 produk kategori "Artificial Intelligence" — Watson, Ewooid, Stan —
-persis sama dengan yang lolos filter di query Dev Tools Console di atas.
-Bedanya: di sini kamu tidak dapat dikontrol `_score`/`boost` numerik seperti
-Query DSL (KQL cuma filter ya/tidak) — untuk kebutuhan RANKING numerik
-seperti boost rating, tetap perlu Query DSL lewat Dev Tools Console atau
-lewat API dari aplikasi. Discover paling pas untuk eksplorasi cepat,
-bukan pengganti Query DSL untuk relevance tuning.*
+persis sama dengan yang lolos filter pada query Dev Tools Console di
+atas. Bedanya: di sini `_score`/`boost` numerik tidak dapat dikontrol
+seperti pada Query DSL (KQL hanya filter ya/tidak) — untuk kebutuhan
+RANKING numerik seperti boost rating, tetap diperlukan Query DSL lewat
+Dev Tools Console atau lewat API dari aplikasi. Discover paling sesuai
+untuk eksplorasi cepat, bukan pengganti Query DSL untuk relevance
+tuning.*
 
 ## f. Referensi Exercise
 
