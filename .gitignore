@@ -1,17 +1,9 @@
-# Instructor-only / build-process material -- TIDAK PERNAH ikut commit
-# ke repo yang di-clone peserta. Lihat CLAUDE.md bagian "Pemisahan Repo".
 CLAUDE.md
 docs/instructor/
 qa/
-
-# Silabus asli (foto referensi klien, bukan bahan lab peserta)
 Silabus/
-
-# Secrets
 .env
 *.env
-
-# OS / editor noise
 .DS_Store
 ~$*.xlsx
 ~$*.docx
