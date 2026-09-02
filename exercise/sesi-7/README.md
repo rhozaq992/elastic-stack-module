@@ -1,5 +1,9 @@
 # Exercise Sesi 7 — Bedakan Anomali Fraud vs Masalah Kapasitas + Parser Manual
 
+**Topik yang dilatih (dari Silabus Sesi 7):** analisis lanjutan atas
+hasil Data Ingestion (Bagian 1), dan Parsing, Transforming, Filtering
+Data — menulis grok pattern sendiri (Bagian 2).
+
 Dua bagian: **Bagian 1** analisis anomali payment Robot Shop (agregasi,
 tanpa perlu menulis pipeline baru), **Bagian 2** menulis SENDIRI grok
 pattern untuk format log custom yang belum pernah Anda temui di lab.
@@ -98,18 +102,20 @@ pipeline parsing-nya dari NOL.
    Perhatikan strukturnya SEBELUM mencoba membuat grok pattern — jangan
    asumsikan formatnya sama dengan yang sudah Anda temui di lab.
 4. Buat file pipeline BARU di
-   `lab/day-4-administration-ingestion/sesi-7-data-ingestion/logstash/pipeline/task-tracker.conf` —
+   `lab/day-2-query-relevance/sesi-4-relevance-scoring/logstash/pipeline/task-tracker.conf` —
    filter berdasarkan isi pesan (lihat pola pada `payment-service.conf`
    untuk contoh `if [message] =~ "..."`, atau `web-service.conf` untuk
    contoh output ke index baru), grok pattern Anda susun sendiri dari
-   struktur yang Anda amati pada langkah 3.
+   struktur yang Anda amati pada langkah 3. Uji dulu pattern Anda lewat
+   Kibana Grok Debugger (lihat lab Sesi 7 bagian (d) topik 2) sebelum
+   menyalinnya ke file ini.
 
-   > **INFORMATION:** Logstash sesi 7 otomatis memuat semua file `.conf`
-   > pada folder tersebut.
-5. Reload Logstash — **kembali dulu ke folder Sesi 7**:
+   > **INFORMATION:** Logstash (`logstash-rs`, berjalan sejak Sesi 4)
+   > otomatis memuat semua file `.conf` pada folder tersebut.
+5. Reload Logstash — **kembali dulu ke folder Sesi 4**:
    ```bash
-   cd lab/day-4-administration-ingestion/sesi-7-data-ingestion
-   docker compose restart logstash-sesi7
+   cd lab/day-2-query-relevance/sesi-4-relevance-scoring
+   docker compose restart logstash-rs
    ```
    > **INFORMATION:** `docker compose restart` harus dijalankan dari
    > folder yang memiliki `docker-compose.yml` dengan service tersebut,

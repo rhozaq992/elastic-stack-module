@@ -50,7 +50,7 @@ tt_count=${tt_count:-0}
 if [ "$tt_count" -gt 0 ] 2>/dev/null; then
   check "Bagian 2: index task-tracker-parsed-* punya dokumen ter-parse (count=$tt_count)" 0
 else
-  check "Bagian 2: index task-tracker-parsed-* punya dokumen ter-parse (count=$tt_count) -- pastikan pipeline .conf sudah dibuat dan logstash-sesi7 sudah di-restart" 1
+  check "Bagian 2: index task-tracker-parsed-* punya dokumen ter-parse (count=$tt_count) -- pastikan pipeline .conf sudah dibuat dan logstash-rs (folder sesi-4-relevance-scoring) sudah di-restart" 1
 fi
 
 tt_status_type=$(curl -s "http://localhost:9200/task-tracker-parsed-*/_mapping" 2>/dev/null | grep -o '"status":{"type":"[a-z]*"' | head -1 | grep -oE '"(long|integer|short)"$')

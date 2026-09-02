@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 340" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="1000" height="340" fill="#ffffff" rx="12" />
+  <text x="500" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#1a1a1a">Alur Data: Filebeat &#8594; Logstash &#8594; Elasticsearch</text>
+
+  <defs>
+    <marker id="arrowFb" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#1d4ed8" />
+    </marker>
+    <marker id="arrowFbGreen" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#047857" />
+    </marker>
+  </defs>
+
+  <!-- Box 1: container logs on host -->
+  <rect x="20" y="110" width="180" height="90" rx="8" fill="#f4f4f5" stroke="#71717a" stroke-width="2" />
+  <text x="110" y="138" text-anchor="middle" font-size="13" font-weight="700" fill="#3f3f46">/var/lib/docker/</text>
+  <text x="110" y="154" text-anchor="middle" font-size="13" font-weight="700" fill="#3f3f46">containers/*/*.log</text>
+  <text x="110" y="176" text-anchor="middle" font-size="10.5" fill="#52525b">root-only, di HOST</text>
+
+  <path d="M 200 155 L 250 155" stroke="#1d4ed8" stroke-width="2.5" fill="none" marker-end="url(#arrowFb)" />
+  <text x="225" y="143" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1d4ed8">baca (root)</text>
+
+  <!-- Box 2: Filebeat -->
+  <rect x="255" y="105" width="180" height="100" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
+  <text x="345" y="132" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a">Filebeat</text>
+  <text x="345" y="152" text-anchor="middle" font-size="10.5" fill="#1e3a8a">user: root</text>
+  <text x="345" y="168" text-anchor="middle" font-size="10.5" fill="#1e3a8a">(satu-satunya yang</text>
+  <text x="345" y="182" text-anchor="middle" font-size="10.5" fill="#1e3a8a">boleh baca file host)</text>
+
+  <path d="M 435 155 L 490 155" stroke="#1d4ed8" stroke-width="2.5" fill="none" marker-end="url(#arrowFb)" />
+  <text x="462" y="143" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1d4ed8">port 5044</text>
+  <text x="462" y="175" text-anchor="middle" font-size="9.5" fill="#3f3f46">(network,</text>
+  <text x="462" y="187" text-anchor="middle" font-size="9.5" fill="#3f3f46">bukan file)</text>
+
+  <!-- Box 3: Logstash -->
+  <rect x="495" y="105" width="200" height="100" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
+  <text x="595" y="132" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a">Logstash</text>
+  <text x="595" y="152" text-anchor="middle" font-size="10.5" fill="#1e3a8a">non-root (menolak jalan</text>
+  <text x="595" y="166" text-anchor="middle" font-size="10.5" fill="#1e3a8a">sebagai superuser)</text>
+  <text x="595" y="184" text-anchor="middle" font-size="10.5" fill="#1e3a8a">filter: grok / json per servis</text>
+
+  <path d="M 700 155 L 755 155" stroke="#1d4ed8" stroke-width="2.5" fill="none" marker-end="url(#arrowFb)" />
+  <text x="727" y="143" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1d4ed8">tulis</text>
+
+  <!-- Box 4: Elasticsearch -->
+  <rect x="760" y="105" width="200" height="100" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
+  <text x="860" y="132" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a">Elasticsearch</text>
+  <text x="860" y="152" text-anchor="middle" font-size="10.5" fill="#1e3a8a">single-node (Sesi 1)</text>
+  <text x="860" y="170" text-anchor="middle" font-size="10.5" fill="#1e3a8a">payment/cart/web</text>
+  <text x="860" y="184" text-anchor="middle" font-size="10.5" fill="#1e3a8a">-service-parsed-*</text>
+
+  <!-- explanatory steps -->
+  <rect x="30" y="230" width="940" height="90" rx="10" fill="#f4f4f5" stroke="#d4d4d8" stroke-width="1.5" />
+  <text x="50" y="250" font-size="12" fill="#27272a"><tspan font-weight="700">1. Filebeat (root)</tspan> membaca file log container langsung dari host -- direktori ini hanya bisa DIBACA oleh root.</text>
+  <text x="50" y="268" font-size="12" fill="#27272a"><tspan font-weight="700">2. Logstash (non-root)</tspan> menerima data lewat NETWORK (port beats 5044) -- tidak pernah menyentuh filesystem host sama sekali.</text>
+  <text x="50" y="286" font-size="12" fill="#27272a"><tspan font-weight="700">3. Filter grok/json</tspan> mem-parsing tiap baris sesuai formatnya (plain-text/JSON/Combined Log Format -- lihat bagian c).</text>
+  <text x="50" y="304" font-size="12" fill="#27272a"><tspan font-weight="700">4. Elasticsearch</tspan> menyimpan hasil parsing sebagai index baru, siap dicari lewat Discover/Dev Tools seperti index lain.</text>
+</svg>

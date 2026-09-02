@@ -12,8 +12,10 @@ walau satu node mati.
 
 Sesi ini selesai apabila cluster 3-node Anda berstatus `green`, Anda
 berhasil melakukan snapshot dan restore penuh (data identik
-sebelum/sesudah), dan berhasil mensimulasikan 1 node mati lalu melihat
-cluster tetap tersedia (data tidak hilang, status `yellow` bukan `red`).
+sebelum/sesudah), berhasil mensimulasikan 1 node mati lalu melihat
+cluster tetap tersedia (data tidak hilang, status `yellow` bukan `red`),
+dan mampu membaca kondisi resource cluster (CPU/heap/disk per node,
+distribusi shard) lewat API monitoring TANPA Kibana.
 
 ## c. Teori & Struktur Sistem
 
@@ -58,10 +60,10 @@ kebutuhan storage ≈ (rata-rata data masuk per hari) × (jumlah hari retensi) �
 ```
 
 Index yang tidak pernah dihapus akan tumbuh TANPA BATAS hingga disk
-penuh (lihat catatan `disk_threshold` pada bagian d) — semakin lama
-retensi, semakin besar storage yang dibutuhkan, dan faktor replica
+penuh (lihat catatan `disk_threshold` pada bagian d topik 1) — semakin
+lama retensi, semakin besar storage yang dibutuhkan, dan faktor replica
 (tiap replica adalah salinan penuh data) melipatgandakannya lagi. Inilah
-sebabnya `delete` phase pada ILM (dibahas pada bagian e) bukan fitur
+sebabnya `delete` phase pada ILM (dibahas pada bagian d topik 5) bukan fitur
 opsional untuk data log/metrik/trace bervolume tinggi — tanpa retensi,
 cluster produksi umumnya akan kehabisan disk dalam hitungan
 minggu/bulan, bukan tahun. Kebijakan retensi yang umum digunakan: log
@@ -81,7 +83,9 @@ kembali setelahnya.
 
 ## d. Praktik: Instalasi & Konfigurasi
 
-**[Terminal] Matikan dahulu stack single-node Sesi 1:**
+### 1. Instalasi Cluster 3-Node & Verifikasi Kesehatan
+
+**Contoh Implementasi — matikan dahulu stack single-node Sesi 1:**
 ```bash
 cd lab/day-1-fundamentals/sesi-1-intro-elk
 docker compose down
@@ -157,15 +161,13 @@ Expected Output: 3 baris (`es-node1`, `es-node2`, `es-node3`), salah
 satunya ditandai `*` pada kolom `master` (node yang sedang menjadi
 elected master).
 
-## e. Contoh Implementasi
+Seluruh contoh pada bagian ini dan seterusnya dijalankan lewat
+**[Terminal]** (`curl`) — lihat catatan pada bagian c mengenai Kibana
+yang tidak aktif pada sesi ini.
 
-Seluruh contoh pada bagian ini dijalankan lewat **[Terminal]** (`curl`)
-— lihat catatan pada bagian c mengenai Kibana yang tidak aktif pada
-sesi ini.
+### 2. Snapshot & Restore
 
-### Snapshot & Restore
-
-**Setup repository:**
+**Contoh Implementasi — setup repository:**
 ```bash
 curl -X PUT "http://localhost:9200/_snapshot/lab-fs-repo" \
   -H 'Content-Type: application/json' \
@@ -211,9 +213,9 @@ Expected Output: jumlah dokumen SEBELUM dan SESUDAH restore identik
 (**1** pada kedua sisi) — restore benar-benar mengembalikan data persis
 sama, pada cluster 3-node sekalipun.
 
-### Simulasi Failure (High Availability)
+### 3. Simulasi Failure (High Availability)
 
-**[Terminal]**
+**Contoh Implementasi:**
 ```bash
 docker stop elk-lab-es-node3
 curl "http://localhost:9200/_cluster/health?pretty"
@@ -236,12 +238,80 @@ Tunggu beberapa detik hingga cluster kembali berstatus `green`.
 > `green` setelah node bergabung kembali dan shard terealokasi, tanpa
 > memerlukan perintah tambahan dari Anda.
 
-### ILM (Index Lifecycle Management)
+### 4. Monitoring & Maintenance Cluster
+
+Selama ini Anda memeriksa kesehatan cluster satu-satu lewat
+`_cluster/health`. Untuk pemeliharaan sehari-hari (bukan cuma saat ada
+insiden), Elasticsearch punya beberapa API monitoring lain yang lebih
+spesifik — semuanya lewat `curl` biasa, konsisten dengan catatan di
+bagian c (Kibana tidak aktif pada sesi ini, jadi ini juga cara
+monitoring yang berlaku di server produksi TANPA Kibana sama sekali).
+
+**Contoh Implementasi — resource per node** (CPU, heap JVM, RAM, disk, dalam satu tabel):
+```bash
+curl "http://localhost:9200/_cat/nodes?v&h=name,node.role,master,heap.percent,ram.percent,cpu,load_1m,disk.used_percent"
+```
+Expected Output (angka bergantung beban host Anda saat itu, tapi
+formatnya sama):
+```
+name     node.role   master heap.percent ram.percent cpu load_1m disk.used_percent
+es-node3 cdfhilmrstw *                51          98   1    2.81             87.74
+es-node2 cdfhilmrstw -                17          98   1    2.81             87.74
+es-node1 cdfhilmrstw -                20          98   1    2.81             87.74
+```
+`master` bertanda `*` menunjukkan node yang sedang menjadi elected
+master (lihat bagian d topik 1). `heap.percent` tinggi terus-menerus (>85%)
+adalah tanda node butuh lebih banyak memori JVM atau beban perlu
+disebar ke node tambahan — inilah metrik yang dipakai untuk memutuskan
+KAPAN harus scaling (menambah node), bukan menebak-nebak.
+
+**[Terminal] Distribusi shard & disk per node:**
+```bash
+curl "http://localhost:9200/_cat/allocation?v"
+```
+Expected Output:
+```
+shards shards.undesired write_load.forecast disk.indices.forecast disk.indices disk.used disk.avail disk.total disk.percent host       ip         node       node.role
+     1                0                 0.0                11.5kb       11.5kb    51.2gb      7.1gb     58.3gb           87 172.18.0.3 172.18.0.3 es-node3   cdfhilmrstw
+     1                0                 0.0                11.1kb       11.1kb    51.2gb      7.1gb     58.3gb           87 172.18.0.4 172.18.0.4 es-node2   cdfhilmrstw
+     0                0                 0.0                27.4kb           0b    51.2gb      7.1gb     58.3gb           87 172.18.0.2 172.18.0.2 es-node1   cdfhilmrstw
+```
+> **INFORMATION:** kolom `disk.percent` pada contoh di atas menunjukkan
+> **87%** — SUDAH di atas
+> `cluster.routing.allocation.disk.watermark.low` (85%, lihat catatan
+> `disk_threshold` pada bagian d topik 1). Ini bukti nyata KENAPA pemeriksaan
+> proaktif lewat `_cat/allocation` berguna: angka ini memberi tahu Anda
+> ada risiko shard baru gagal dialokasikan SEBELUM cluster benar-benar
+> `yellow`/gagal, bukan sesudahnya. Apabila angka pada layar Anda juga
+> tinggi, itu bukan kesalahan Anda — lakukan langkah pembersihan yang
+> sama seperti catatan `disk_threshold` sebelumnya.
+
+**[Terminal] Ringkasan cluster secara keseluruhan** (jumlah index,
+dokumen, ukuran data — cek cepat "seberapa besar cluster saya"):
+```bash
+curl "http://localhost:9200/_cluster/stats?human&filter_path=indices.count,indices.docs,indices.store,nodes.count.total"
+```
+Expected Output:
+```json
+{"indices":{"count":2,"docs":{"count":4,"deleted":0,"total_size":"22.2kb"},"store":{"size":"22.6kb"}},"nodes":{"count":{"total":3}}}
+```
+`filter_path` membatasi response HANYA ke field yang diminta — `_cluster/stats`
+tanpa filter menghasilkan JSON yang sangat panjang (statistik JVM, OS,
+filesystem per node, dst.), `filter_path` adalah teknik yang berguna
+kapan pun Anda hanya butuh sebagian kecil dari response API manapun di
+Elasticsearch.
+
+> **INFORMATION:** ketiga API di atas (`_cat/nodes`, `_cat/allocation`,
+> `_cluster/stats`) adalah dasar dari apa yang ditampilkan Kibana Stack
+> Monitoring secara visual — pada sesi ini Anda mengaksesnya langsung
+> lewat API karena Kibana tidak aktif, tapi datanya persis sama.
+
+### 5. ILM (Index Lifecycle Management)
 
 > **INFORMATION:** prinsip ILM sama seperti pada single-node — ILM
 > tidak bergantung pada jumlah node.
 
-Buat policy contoh:
+**Contoh Implementasi — buat policy contoh:**
 ```bash
 curl -X PUT "http://localhost:9200/_ilm/policy/lab-cluster-policy" \
   -H 'Content-Type: application/json' \
@@ -274,6 +344,6 @@ cd lab/day-4-administration-ingestion/sesi-8-administration-scaling
 docker compose down
 ```
 
-## f. Referensi Exercise
+## e. Referensi Exercise
 
 Lanjutkan latihan mandiri pada [`exercise/sesi-8/README.md`](../../../exercise/sesi-8/README.md).

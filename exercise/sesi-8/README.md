@@ -1,5 +1,8 @@
 # Exercise Sesi 8 — Backup Data Nyata di Cluster Multi-Node
 
+**Topik yang dilatih (dari Silabus Sesi 8):** Snapshot and Restore, pada
+skala data nyata dan cluster multi-node.
+
 ## Use Case
 
 Anda telah mempelajari snapshot/restore menggunakan index demo kosong

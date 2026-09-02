@@ -72,6 +72,8 @@ kiri baris, atau `Cmd+Enter`/`Ctrl+Enter`).
 `docker compose up -d` di `lab/day-1-fundamentals/sesi-1-intro-elk/`
 apabila belum.)*
 
+### 1. Mapping: `text` vs `keyword`
+
 **Buat index dengan mapping eksplisit** (2 field berisi teks yang sama, tipe berbeda):
 ```
 PUT lab-mapping-demo
@@ -107,6 +109,8 @@ ketik-jalankan-baca hasil di Console:
 
 *5. Klik ▶ (atau `Cmd+Enter`/`Ctrl+Enter`) — hasil akan muncul di panel kanan: 2 dokumen `lab-mapping-demo`.*
 
+**Contoh Implementasi — `text` vs `keyword`:**
+
 **Query 1** — `match` di field `text` dengan kata `"Security"` (partial match):
 ```
 GET lab-mapping-demo/_search
@@ -133,9 +137,9 @@ GET lab-mapping-demo/_search
 Expected Output: **1 hit** (dokumen `_id: 1`) — kini nilainya persis
 sama, sehingga `term` berhasil melakukan match.
 
-## e. Contoh Implementasi
+### 2. Operasi CRUD Dokumen (INDEX/GET/UPDATE/DELETE)
 
-CRUD dokumen melalui Dev Tools Console, menggunakan index baru `lab-demo`:
+**Contoh Implementasi — CRUD dokumen** melalui Dev Tools Console, menggunakan index baru `lab-demo`:
 
 **1. INDEX (create):**
 ```
@@ -167,13 +171,15 @@ Expected Output: `"result":"deleted"`, `"_version":3`.
 
 **5. GET setelah delete:** Expected Output: HTTP 404, `"found":false`.
 
-### Preview: Lihat & Export Data Lewat Discover
+### 3. Preview: Lihat & Export Data Lewat Discover
 
 Sejauh ini, Anda selalu melihat data melalui Dev Tools Console (respons
 JSON mentah). Kibana juga menyediakan fitur **Discover**, yaitu tampilan
 tabel untuk menjelajahi dokumen tanpa perlu menulis query JSON (fitur ini
-akan digunakan secara penuh mulai Sesi 3). Bagian ini mencoba sekilas
-penggunaannya dengan data `lab-mapping-demo` yang baru saja Anda buat.
+akan digunakan secara penuh mulai Sesi 3).
+
+**Contoh Implementasi — Discover & Export CSV**, memakai data
+`lab-mapping-demo` yang baru saja Anda buat pada topik 1:
 
 **1. Buat Data View**: buka menu ☰ → Discover, klik nama data view aktif
 di kiri atas → **"Create a data view"** → isi **Name** dan **Index
@@ -225,6 +231,6 @@ CSV berisi PERSIS dokumen yang lolos filter — cara ini digunakan apabila
 Anda perlu membagikan hasil pencarian kepada orang lain dalam bentuk
 spreadsheet, tanpa mereka perlu mengakses Kibana.
 
-## f. Referensi Exercise
+## e. Referensi Exercise
 
 Lanjutkan latihan mandiri di [`exercise/sesi-2/README.md`](../../../exercise/sesi-2/README.md).

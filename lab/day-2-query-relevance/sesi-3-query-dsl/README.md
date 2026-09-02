@@ -39,6 +39,8 @@ relevance score memang dibutuhkan.
 
 ## d. Praktik: Instalasi & Konfigurasi
 
+### 1. Empat Jenis Query DSL Dasar (match, match_phrase, term, bool)
+
 **Kibana Sample Data yang tersedia.** Sebelum load data,
 periksa dulu isi katalognya: buka menu ☰ → **Home**, klik **"Try
 sample data"** (atau langsung `http://localhost:5601/app/home#/tutorial_directory/sampleData`):
@@ -61,6 +63,8 @@ Expected Output: `{"elasticsearchIndicesCreated":{"kibana_sample_data_ecommerce"
 
 Field yang relevan: `category` (text), `customer_gender` (keyword),
 `taxful_total_price` (angka), `order_date` (tanggal).
+
+**Contoh Implementasi — match, match_phrase, term, bool:**
 
 **`match`** full-text search (tokenized, partial match):
 ```
@@ -104,7 +108,9 @@ GET kibana_sample_data_ecommerce/_search
 Expected Output: **469 hits** pelanggan FEMALE **dan** total
 belanja > 100.
 
-**Query yang sama, lewat UI Discover** :
+### 2. Eksplorasi & Filter Data Lewat UI Discover
+
+**Contoh Implementasi — query yang sama, lewat UI Discover:**
 
 ![Kibana Discover awal, data view belum dipilih](../../../docs/screenshots/sesi-3/01-discover-awal.png)
 
@@ -204,11 +210,13 @@ memerlukan dashboard, klik **Save and add to library**.*
 berikan, dan search ini dapat dibuka kembali lewat menu ☰ → Discover →
 buka session tersimpan.*
 
-## e. Contoh Implementasi
+### 3. Jebakan: `range` pada Tipe Field Salah
 
 **Jebakan: `range` pada field bertipe salah bukan error, hasilnya kurang tepat.**
 Berbeda dengan `term` di atas yang tegas menolak nilai yang tidak persis, `range`
 **tidak menunjukkan error** apabila digunakan pada field `keyword` dengan operand angka:
+
+**Contoh Implementasi — jebakan `range`:**
 ```
 GET kibana_sample_data_ecommerce/_search
 { "query": { "range": { "customer_gender": { "gt": 100 } } } }
@@ -227,6 +235,6 @@ seluruh dokumen "match" walau query-nya tidak masuk akal secara makna.
 GET kibana_sample_data_ecommerce/_mapping/field/customer_gender
 ```
 
-## f. Referensi Exercise
+## e. Referensi Exercise
 
 Lanjutkan latihan mandiri di [`exercise/sesi-3/README.md`](../../../exercise/sesi-3/README.md).
