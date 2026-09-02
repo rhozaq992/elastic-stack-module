@@ -14,12 +14,12 @@ Sesi ini selesai apabila:
   (`catalogue`, `user`, `cart`, `shipping`, `ratings`, `payment`, `web`)
   berstatus `healthy` pada `docker compose ps` (6 servis pendukung
   `mongodb`, `redis`, `rabbitmq`, `mysql`, `dispatch`, `payment-gateway`
-  tidak memiliki healthcheck sendiri, cukup pastikan statusnya `Up`) dan
-  index `robot-shop-catalogue` di Elasticsearch sudah berisi data produk
-  asli.
+  tidak memiliki healthcheck sendiri, cukup pastikan statusnya `Up`),
+  ditambah 4 servis pendukung observability (`apm-server`, `metricbeat`,
+  `logstash-rs`, `filebeat-rs`) berstatus `Up`/`healthy`, dan index
+  `robot-shop-catalogue` di Elasticsearch sudah berisi data produk asli.
 - Anda berhasil menjalankan alur checkout end-to-end (cart → shipping →
-  payment) dan melihat queue `orders` di RabbitMQ management UI
-  memproses pesan tersebut.
+  payment) tanpa error.
 - Anda berhasil menjalankan query pencarian yang hasilnya berubah urutan
   setelah ditambahkan `function_score`/`boost`, dan dapat menjelaskan
   penyebabnya.
@@ -73,6 +73,8 @@ dokumen.*
 > di depannya) khusus untuk query ke Elasticsearch.
 > Tiap blok di bawah diberi label eksplisit.
 
+### 1. Instalasi Robot Shop & Verifikasi Sistem Terhubung
+
 **[Terminal] Jalankan Robot Shop** (lihat [`robot-shop-structure.md`](robot-shop-structure.md) untuk detail arsitektur):
 ```bash
 cd lab/day-2-query-relevance/sesi-4-relevance-scoring
@@ -91,19 +93,21 @@ docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml up -d
 > lambat & membingungkan apabila tidak diberi tahu terlebih dahulu.
 
 Tunggu servis yang punya healthcheck jadi `healthy` (`docker compose ps`).
+Selain 13 servis Robot Shop, `docker compose ps` juga menampilkan 4 servis
+pendukung: `apm-server`, `metricbeat`, `logstash-rs`, `filebeat-rs`
+(lihat [`robot-shop-structure.md`](robot-shop-structure.md) untuk
+penjelasan singkat masing-masing).
 
 > **INFORMATION:** `catalogue`/`user`/`cart`/`payment`/`web` biasanya
 > cepat, sementara `shipping`/`ratings` butuh waktu lebih lama saat MySQL
-> inisialisasi pertama kali. `mongodb`/`redis`/`rabbitmq`/`mysql`/`dispatch`
-> tidak punya healthcheck sendiri dan akan selalu tampil tanpa status
-> `healthy` di `docker compose ps` — itu normal, cukup pastikan statusnya
-> `Up`.
+> inisialisasi pertama kali. `mongodb`/`redis`/`rabbitmq`/`mysql`/`dispatch`/
+> `payment-gateway`/`metricbeat`/`logstash-rs`/`filebeat-rs` tidak punya
+> healthcheck sendiri dan akan selalu tampil tanpa status `healthy` di
+> `docker compose ps` — itu normal, cukup pastikan statusnya `Up`.
 
-**[Terminal] Coba alur checkout end-to-end** — sebelum masuk ke bagian
-relevance scoring, verifikasi dulu seluruh servis Robot Shop benar-benar
-terhubung satu sama lain (bukan cuma `Up` sendiri-sendiri), sekaligus
-melihat peran `rabbitmq` yang TIDAK terlihat lewat `docker compose ps`
-biasa (statusnya cuma `Up`, tanpa info apa isinya):
+**Contoh Implementasi — verifikasi checkout end-to-end**, memastikan
+seluruh servis Robot Shop benar-benar terhubung satu sama lain (bukan
+cuma `Up` sendiri-sendiri):
 ```bash
 curl -s "http://localhost:8080/api/cart/add/checkout-demo/STAN-1/1" -o /dev/null
 curl -s -X POST "http://localhost:8080/api/cart/shipping/checkout-demo" \
@@ -115,26 +119,7 @@ curl -s -X POST "http://localhost:8080/api/payment/pay/checkout-demo" \
 ```
 Expected Output: `{"orderid":"<uuid acak>"}` — transaksi berhasil.
 
-> **INFORMATION:** urutan panggilan di atas meniru alur checkout Robot
-> Shop yang sesungguhnya: `cart` (isi keranjang) → `cart` lagi (tambah
-> biaya kirim) → `payment` (proses bayar). `payment` TIDAK memproses
-> pesanan secara langsung — ia hanya mempublikasikan pesan ke `rabbitmq`
-> (queue `orders`), dan `dispatch` (consumer asinkron, lihat
-> `robot-shop-structure.md`) yang benar-benar mengambil pesan itu untuk
-> diproses. Inilah peran `rabbitmq`: perantara ANTARA `payment` dan
-> `dispatch`, bukan servis yang Anda panggil langsung lewat `web`.
-
-**[Browser] Lihat antrean pesan secara visual** — buka
-`http://localhost:15672` (login `guest`/`guest`, kredensial default
-RabbitMQ), klik tab **Queues**, klik queue `orders`.
-
-![RabbitMQ management UI menampilkan queue orders, grafik message rates menunjukkan lonjakan publish dan deliver, Consumers: 1](../../../docs/screenshots/sesi-4/04-rabbitmq-queue-orders.png)
-
-*Queue `orders` — grafik "Message rates" menunjukkan lonjakan
-publish/deliver tepat saat perintah `curl` di atas dijalankan (kembali ke
-0 dalam hitungan detik karena `dispatch` memprosesnya nyaris seketika).
-`Consumers: 1` membuktikan `dispatch` benar-benar terhubung dan siap
-menerima pesan dari queue ini.*
+### 2. Persiapan Data — Rating & Index ke Elasticsearch
 
 **[Terminal] Lakukan hal ini terlebih dahulu untuk isi rating awal** —
 jalankan perintah berikut:
@@ -160,7 +145,8 @@ daftar lengkap lewat `GET /api/catalogue/products`.)
 > rating 0 selalu 0), bertentangan dengan Expected Output yang diharapkan
 > dalam modul ini.
 
-**[Terminal] Ambil data produk asli dari Robot Shop, gabung dengan data rating, index ke Elasticsearch:**
+**Contoh Implementasi — ambil data produk asli dari Robot Shop, gabung
+dengan data rating, index ke Elasticsearch:**
 ```bash
 python3 << 'PYEOF'
 import json, urllib.request
@@ -195,6 +181,17 @@ index `robot-shop-catalogue`.
 > atas menyalin data itu ke Elasticsearch supaya dapat digunakan untuk
 > Query DSL/relevance — pola ini mirip proses **ETL
 > (Extract-Transform-Load)** sederhana.
+>
+> **Kenapa bukan lewat agent (Filebeat/Logstash/APM) seperti sesi lain?**
+> Agent ELK dirancang untuk sumber yang bersifat STREAM — file log yang
+> terus bertambah baris (Filebeat, dipakai Sesi 7) atau trace request
+> yang terus mengalir (APM agent, dipakai Sesi 6). Data katalog produk di
+> sini BUKAN stream — ia adalah data referensi di MongoDB milik aplikasi
+> lain (Robot Shop), yang jarang berubah dan tidak punya "log baris baru"
+> untuk diikuti. Pola yang tepat untuk kasus ini justru ETL periodik
+> (tarik lewat API/DB, transformasi, index) — pola yang sama umum dipakai
+> pada sistem pencarian/relevance sungguhan untuk menyinkronkan katalog
+> produk ke search engine.
 
 **[Dev Tools Console] Coba search dulu tanpa scoring khusus** — buka
 `http://localhost:5601/app/dev_tools#/console`, cari produk kategori "Robot":
@@ -207,9 +204,9 @@ hampir semua dokumen dapat skor **SAMA** (`0.262`), karena `match` cuma
 menilai relevansi teks "Robot" di field `categories`, tidak tahu mana
 produk yang sebenarnya lebih baik/populer.
 
-## e. Contoh Implementasi
+### 3. Customizing Scoring dengan `function_score`
 
-**[Dev Tools Console] Boost berdasarkan rating** (`function_score` + `field_value_factor`):
+**Contoh Implementasi — boost berdasarkan rating** (`function_score` + `field_value_factor`):
 ```
 GET robot-shop-catalogue/_search
 {
@@ -231,7 +228,7 @@ tinggi naik ke atas:
 ```
 2.054  Robotic Mining Cyborg     (rating 5)
 1.948  Stan                      (rating 5)
-1.872  High-Powered Travel Droid (rating 4.33)
+1.936  High-Powered Travel Droid (rating 4.33)
 1.361  Ultimate Harvesting Juggernaut (rating 2)
 0.262  ... (sisanya, rating 0 — skor tidak berubah dari baseline)
 ```
@@ -245,7 +242,9 @@ tinggi naik ke atas:
 dibanding rating 4 pola umum untuk field yang skalanya kecil (1-5).
 `missing: 0` menangani produk yang belum punya rating sama sekali.
 
-**[Dev Tools Console] Boosting kategori tertentu** (`bool.should` dengan `boost`):
+### 4. Boosting dengan `bool.should`
+
+**Contoh Implementasi — boosting kategori tertentu** (`bool.should` dengan `boost`):
 ```
 GET robot-shop-catalogue/_search
 {
@@ -270,7 +269,9 @@ tapi yang kategorinya "Artificial Intelligence" melonjak ke atas:
 Ini pola umum e-commerce nyata: "tampilkan semua produk, tapi utamakan
 kategori promosi/prioritas di atas."
 
-**[Kibana UI] Eksplorasi yang sama, lewat Discover** (tanpa menulis
+### 5. Scoring & Boosting Lewat UI Discover (Tanpa Query DSL)
+
+**Contoh Implementasi — eksplorasi yang sama, lewat Discover** (tanpa menulis
 Query DSL sama sekali):
 
 **1. Buat Data View** untuk `robot-shop-catalogue` (index custom, sama
@@ -323,7 +324,9 @@ atas.*
 > itu tetap memerlukan Query DSL lewat Dev Tools Console atau lewat API
 > dari aplikasi.
 
-**[Terminal] Nyalakan traffic berkelanjutan (load generator)** — semua
+### 6. Traffic Berkelanjutan — Load Generator
+
+**Contoh Implementasi — nyalakan load generator.** Semua
 contoh di atas memakai panggilan manual satu-per-satu. Robot Shop
 sebenarnya menyediakan load generator (Locust) yang mensimulasikan banyak
 pengguna sekaligus, secara terus-menerus, menyentuh SEMUA servis yang
@@ -346,11 +349,9 @@ tabel statistik Locust bertambah baris terus (`GET /api/catalogue/...`,
 > (bukti nyata sistem sekarang menerima traffic sungguhan), tapi jangan
 > nyalakan load generator SEBELUM menyelesaikan bagian (d)/(e) kalau
 > ingin mereproduksi angka Expected Output persis seperti di modul ini.
-> Pengaturan yang sama (`NUM_CLIENTS: 6`) dipakai lagi di Sesi 6 lewat
-> `docker-compose.load.yml` MILIK sesi itu sendiri — BUKAN load generator
-> yang sama persis yang terus jalan (ingat, Sesi 6 punya stack Robot Shop
-> terpisah, Sesi 4 harus `docker compose down` dulu sebelum masuk Sesi 6).
+> Biarkan Robot Shop dan load generator ini tetap berjalan setelah sesi
+> ini selesai — akan dipakai lagi langsung pada Sesi 6 dan 7.
 
-## f. Referensi Exercise
+## e. Referensi Exercise
 
 Lanjutkan latihan mandiri di [`exercise/sesi-4/README.md`](../../../exercise/sesi-4/README.md).

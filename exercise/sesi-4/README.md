@@ -1,5 +1,8 @@
 # Exercise Sesi 4 — Boost Ketersediaan Stok
 
+**Topik yang dilatih (dari Silabus Sesi 4):** Customizing Scoring
+(Function Score) dan Boosting.
+
 ## Use Case
 
 Tim marketing Robot Shop ingin hasil pencarian selalu mengutamakan produk
@@ -61,7 +64,7 @@ Discover BISA lakukan: filter + sort tanpa menulis query sama sekali.
 ### Tugas
 
 1. Buka Discover, pastikan data view `robot-shop-catalogue` aktif (buat
-   terlebih dahulu apabila belum ada — lihat lab Sesi 4 bagian e).
+   terlebih dahulu apabila belum ada — lihat lab Sesi 4 bagian d topik 5).
 2. Filter produk yang MASIH ADA stok: ketik KQL `instock > 0` di search bar.
 3. Tambahkan kolom `name`, `price`, `instock` (hover field di sidebar,
    klik ikon **+**).

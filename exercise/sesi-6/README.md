@@ -1,5 +1,9 @@
 # Exercise Sesi 6 — Profiling Aggregation eCommerce + Analisis APM
 
+**Topik yang dilatih (dari Silabus Sesi 6):** Query Profiling, Query &
+Request Caching (Bagian 1), dan Application Performance Monitoring
+(Bagian 2).
+
 Dua bagian: **Bagian 1** menggunakan data eCommerce yang sudah Anda muat
 sejak Sesi 3 untuk latihan aggregation baru (per kategori), kali ini
 fokus pada performanya. **Bagian 2** praktik mengelola data trace APM

@@ -1,5 +1,8 @@
 # Exercise Sesi 1 — Bulk Index & REST API Dasar
 
+**Topik yang dilatih (dari Silabus Sesi 1):** Indexing Data (`_bulk`
+API) dan struktur REST API Elasticsearch dasar.
+
 Dua latihan pada sesi ini: **Latihan 1** menggunakan data yang sudah
 disiapkan (fokus pada cara kerja `_bulk` API), **Latihan 2** Anda susun
 sendiri request-nya dari awal menggunakan bentuk data yang berbeda

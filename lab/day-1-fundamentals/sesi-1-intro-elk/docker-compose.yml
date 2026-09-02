@@ -5,7 +5,7 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "ES_JAVA_OPTS=-Xms1536m -Xmx1536m"
     ports:
       - "9200:9200"
     volumes:
@@ -23,6 +23,7 @@ services:
     container_name: elk-lab-kibana
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - XPACK_GROKDEBUGGER_ENABLED=true
     ports:
       - "5601:5601"
     depends_on:

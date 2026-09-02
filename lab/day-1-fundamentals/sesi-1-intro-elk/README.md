@@ -128,6 +128,8 @@ pojok kiri atas):
 
 ## d. Praktik: Instalasi & Konfigurasi
 
+### 1. Instalasi & Verifikasi Environment ELK Stack
+
 ```bash
 cd lab/day-1-fundamentals/sesi-1-intro-elk
 docker compose up -d
@@ -210,12 +212,11 @@ Periksa **`unassigned_primary_shards`** — nilainya **WAJIB 0**. Apabila
 bukan nol, itu menjadi tanda adanya masalah nyata yang perlu ditelusuri
 sebelum melanjutkan.
 
-## e. Contoh Implementasi
-
-Buka Kibana pada browser: `http://localhost:5601`. Halaman ini akan Anda
-gunakan sepanjang lab untuk eksplorasi data (Discover), membuat
-visualisasi, dan administrasi cluster — mulai digunakan secara aktif dari
-Sesi 2 dan seterusnya.
+**Contoh Implementasi — Instalasi & Verifikasi:** buka Kibana pada
+browser: `http://localhost:5601`. Halaman ini akan Anda gunakan
+sepanjang lab untuk eksplorasi data (Discover), membuat visualisasi, dan
+administrasi cluster — mulai digunakan secara aktif dari Sesi 2 dan
+seterusnya.
 
 ![Kibana halaman utama setelah instalasi berhasil](../../../docs/screenshots/sesi-1/01-kibana-home.png)
 
@@ -223,8 +224,11 @@ Sesi 2 dan seterusnya.
 Observability, Security, Analytics, dan tombol "Add integrations" di
 sidebar kiri bawah.*
 
-**Round-trip API sederhana** — praktikkan langsung tabel method/endpoint
-di atas lewat terminal (Dev Tools Console baru diperkenalkan pada Sesi 2):
+### 2. Operasi Dasar Lewat REST API (PUT/GET/DELETE)
+
+**Contoh Implementasi — Round-trip API sederhana** — praktikkan langsung
+tabel method/endpoint pada bagian (c) lewat terminal (Dev Tools Console
+baru diperkenalkan pada Sesi 2):
 
 ```bash
 # PUT -- simpan satu dokumen dengan ID yang ditentukan sendiri ("1")
@@ -250,6 +254,6 @@ http://host:9200/<index>/_<endpoint>` yang dijelaskan pada bagian (c) —
 pola ini akan terus digunakan (baik lewat `curl` maupun Dev Tools
 Console) hingga sesi terakhir.
 
-## f. Referensi Exercise
+## e. Referensi Exercise
 
 Lanjutkan latihan mandiri pada [`exercise/sesi-1/README.md`](../../../exercise/sesi-1/README.md).

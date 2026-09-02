@@ -1,7 +1,0 @@
-# WAJIB apabila perangkat Anda ARM (Apple Silicon) -- sama seperti override
-# di Sesi 4 (lihat file itu untuk penjelasan lengkap kenapa `mysql` perlu
-# ini). Sesi 6 membawa stack Robot Shop-nya sendiri, sehingga override ini
-# perlu didaftarkan ulang di sini juga.
-services:
-  mysql:
-    platform: linux/amd64

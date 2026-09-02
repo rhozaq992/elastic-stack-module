@@ -12,8 +12,6 @@ services:
     networks: [robot-shop]
   rabbitmq:
     image: rabbitmq:3.8-management-alpine
-    ports:
-      - "15672:15672"
     networks: [robot-shop]
   payment-gateway:
     # Dummy payment gateway lokal -- MENGGANTIKAN pemanggilan nyata ke
@@ -56,8 +54,15 @@ services:
       timeout: 10s
       retries: 3
   cart:
-    image: shirojack/rs-cart:v2
-    depends_on: [redis]
+    image: shirojack/rs-cart:v2-apm
+    depends_on:
+      redis:
+        condition: service_started
+      apm-server:
+        condition: service_healthy
+    environment:
+      ELASTIC_APM_SERVER_URL: http://apm-server:8200
+      ELASTIC_APM_ENVIRONMENT: training
     networks: [robot-shop]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -89,9 +94,17 @@ services:
       timeout: 10s
       retries: 3
   payment:
-    image: shirojack/rs-payment:v2
-    depends_on: [rabbitmq, payment-gateway]
+    image: shirojack/rs-payment:v2-apm
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      apm-server:
+        condition: service_healthy
+      payment-gateway:
+        condition: service_started
     environment:
+      ELASTIC_APM_SERVER_URL: http://apm-server:8200
+      ELASTIC_APM_ENVIRONMENT: training
       PAYMENT_GATEWAY: http://payment-gateway/
     networks: [robot-shop]
     healthcheck:
@@ -105,7 +118,24 @@ services:
     networks: [robot-shop]
   web:
     image: shirojack/rs-web:v2
-    depends_on: [catalogue, user, shipping, payment]
+    depends_on:
+      # cart WAJIB service_healthy -- nginx resolve semua upstream lewat
+      # DNS satu kali saat boot dan TIDAK retry; kalau cart belum listen
+      # di 8080, web langsung crash permanen (nginx: [emerg] host not
+      # found in upstream "cart"). catalogue/user/shipping/payment cukup
+      # service_started -- JANGAN diubah ke service_healthy, shipping/
+      # ratings butuh 1-2 menit untuk sehat (inisialisasi MySQL), lebih
+      # lama dari retry healthcheck web.
+      cart:
+        condition: service_healthy
+      catalogue:
+        condition: service_started
+      user:
+        condition: service_started
+      shipping:
+        condition: service_started
+      payment:
+        condition: service_started
     ports:
       - "8080:8080"
     networks: [robot-shop]
@@ -115,5 +145,61 @@ services:
       timeout: 10s
       retries: 3
 
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:9.5.2
+    container_name: elk-lab-apm-server
+    volumes:
+      - ./apm-server/apm-server.yml:/usr/share/apm-server/apm-server.yml:ro
+    command: >
+      -e --strict.perms=false
+      -E output.elasticsearch.hosts=["elasticsearch:9200"]
+      -E setup.kibana.host=kibana:5601
+    ports:
+      - "8200:8200"
+    networks: [robot-shop, elk-lab-net]
+    healthcheck:
+      # image apm-server tidak punya curl/wget -- pakai bash /dev/tcp
+      # sebagai pengecekan port terbuka (bash ADA di image ini).
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8200' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat:9.5.2
+    container_name: elk-lab-metricbeat-rs
+    user: root
+    volumes:
+      - ./metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro
+    depends_on: [mongodb, mysql, redis, rabbitmq]
+    networks: [robot-shop, elk-lab-net]
+
+  logstash-rs:
+    image: docker.elastic.co/logstash/logstash:9.5.2
+    container_name: elk-lab-logstash-rs
+    environment:
+      - "LS_JAVA_OPTS=-Xms256m -Xmx256m"
+      - xpack.monitoring.enabled=false
+    ports:
+      - "5044:5044"
+      - "9600:9600"
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+    networks: [robot-shop, elk-lab-net]
+
+  filebeat-rs:
+    image: docker.elastic.co/beats/filebeat:9.5.2
+    container_name: elk-lab-filebeat-rs
+    user: root
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - logstash-rs
+    networks: [robot-shop]
+
 networks:
   robot-shop:
+  elk-lab-net:
+    external: true

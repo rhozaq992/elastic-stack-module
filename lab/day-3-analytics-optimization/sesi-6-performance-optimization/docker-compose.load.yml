@@ -1,14 +1,14 @@
 # Load generator Robot Shop -- traffic nyata untuk latihan performance
-# tuning DAN sumber trace APM (lihat README bagian e). NUM_CLIENTS default
+# tuning DAN sumber trace APM (lihat README bagian d topik 1). NUM_CLIENTS default
 # image cuma 1 (terlalu kecil), dinaikkan di sini. ERROR=1 mengaktifkan
 # transaksi anomali bawaan Robot Shop (task `error()` di load generator)
 # -- frekuensinya sudah diatur rendah lewat task weight di dalam image
 # (bukan lewat env var), lihat README sesi ini dan exercise/sesi-7 untuk
 # cara menganalisisnya.
 #
-# File ini di-merge ke docker-compose.yml sesi ini sendiri (bukan
-# nyambung ke Robot Shop Sesi 4 lagi) -- jalankan dengan:
-#   docker compose -f docker-compose.yml -f docker-compose.load.yml up -d
+# File ini di-merge ke docker-compose.yml Sesi 4 (Robot Shop yang sama,
+# berjalan sejak Sesi 4) -- WAJIB dijalankan dari direktori
+# sesi-4-relevance-scoring, lihat README bagian d topik 1 sesi ini.
 services:
   load:
     image: shirojack/rs-load:v2

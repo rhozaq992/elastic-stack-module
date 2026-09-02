@@ -1,7 +1,7 @@
 # WAJIB apabila perangkat Anda ARM (Apple Silicon) -- lihat prerequisites.md
 # langkah 1 untuk cara memeriksa arsitektur perangkat Anda.
 #
-# Kenapa perlu ini: 10 dari 11 image Robot Shop custom-built multi-arch
+# Kenapa perlu ini: 9 dari 10 image Robot Shop custom-built multi-arch
 # (berjalan native di ARM maupun amd64). SATU pengecualian: `mysql` (base
 # image `mysql:5.7`) tidak memiliki varian arm64 sama sekali -- periksa
 # sendiri lewat `docker manifest inspect mysql:5.7` apabila ingin

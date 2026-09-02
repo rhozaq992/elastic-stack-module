@@ -23,13 +23,12 @@ selisihnya.
 
 ## c. Teori & Struktur Sistem
 
-Robot Shop pada sesi ini **BUKAN** reuse dari Sesi 4 — sesi ini memiliki
-stack Robot Shop sendiri (lihat bagian d), di mana dua service (`cart`
-dan `payment`) sudah disisipi **Elastic APM agent**. Traffic dari load
-generator (Locust) yang mengalir ke keduanya kini benar-benar
-**terpakai**: setiap request yang diproses menghasilkan data trace yang
-tersimpan di Elasticsearch dan dapat Anda analisis, bukan sekadar lewat
-di log lalu hilang seperti sebelumnya.
+Robot Shop pada sesi ini adalah **kelanjutan langsung dari Sesi 4** —
+`cart` dan `payment` (image `:v2-apm`) sudah disisipi **Elastic APM
+agent** sejak awal. Traffic dari load generator (Locust) yang mengalir
+ke keduanya kini benar-benar **terpakai**: setiap request yang diproses
+menghasilkan data trace yang tersimpan di Elasticsearch dan dapat Anda
+analisis, bukan sekadar lewat di log lalu hilang seperti sebelumnya.
 
 **Apa itu APM?** Application Performance Monitoring adalah cara mengukur
 seberapa cepat/lambat aplikasi merespons dari DALAM kode aplikasi itu
@@ -56,7 +55,7 @@ penyebabnya `cart`, `payment`, `shipping`, atau kombinasi ketiganya.
 3. **Kibana APM UI** (menu ☰ → Observability → APM) — membaca index-index
    itu, menampilkannya sebagai tabel per-service, grafik latency, dan
    detail per transaksi, tanpa Anda perlu menulis query manual (walaupun
-   datanya tetap bisa di-query manual seperti index lain, lihat bagian e).
+   datanya tetap bisa di-query manual seperti index lain, lihat bagian d topik 3).
 
 **Mengapa hanya `cart` dan `payment`** (bukan seluruh 12 service)? Supaya
 sesi ini tetap fokus dan cepat — dua service ini representatif: `cart`
@@ -68,7 +67,7 @@ cukup untuk menunjukkan konsep "per-service latency" dengan jelas.
 `kibana_sample_data_logs`, dataset besar dan deterministik supaya
 angkanya konsisten untuk mempelajari konsepnya terlebih dahulu, sebelum
 diterapkan pada data trace APM Anda sendiri yang jumlahnya tidak pasti
-di bagian e):
+di bagian d topik 3):
 - **Query profiling** (`_profile` API) — membedah SATU query, menunjukkan
   berapa lama tiap bagian internal (matching, scoring, dst.) memakan
   waktu, dipakai untuk mendiagnosis query yang lambat.
@@ -82,37 +81,34 @@ di bagian e):
 
 ## d. Praktik: Instalasi & Konfigurasi
 
-**[Terminal] Matikan terlebih dahulu Robot Shop Sesi 4** (sesi ini
-membawa stack Robot Shop sendiri dengan 2 service ber-APM — menjalankan
-dua Robot Shop sekaligus hanya membebani resource host tanpa manfaat
-tambahan):
+### 1. Verifikasi Robot Shop & Nyalakan Traffic Anomali
+
+**Prasyarat:** stack Sesi 1 dan Robot Shop Sesi 4 (termasuk
+`apm-server`) masih berjalan. Apabila sudah dimatikan, nyalakan kembali
+sesuai instruksi Sesi 4 bagian (d) topik 1 sebelum melanjutkan.
+
+**[Terminal] Verifikasi servis masih berjalan:**
 ```bash
 cd lab/day-2-query-relevance/sesi-4-relevance-scoring
-docker compose down
+docker compose ps
 ```
+Expected Output: seluruh servis Robot Shop + `apm-server` berstatus
+`Up`/`healthy` (lihat Sesi 4 bagian (b) untuk daftar lengkapnya).
 
-**[Terminal] Jalankan Robot Shop + APM Server milik sesi ini:**
+**[Terminal] Ganti load generator ke mode anomali** (`ERROR=1` —
+mengaktifkan transaksi anomali bawaan Robot Shop, bahan latihan Sesi 7 —
+menggantikan load generator `ERROR=0` yang sudah berjalan sejak Sesi 4,
+BUKAN menambah instance baru):
 ```bash
-cd lab/day-3-analytics-optimization/sesi-6-performance-optimization
-docker compose up -d
+docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml \
+  -f ../../day-3-analytics-optimization/sesi-6-performance-optimization/docker-compose.load.yml \
+  up -d load
 ```
-**Apabila perangkat Anda ARM (Apple Silicon)**, gunakan perintah berikut
-SEBAGAI GANTI perintah di atas (alasannya sama seperti Sesi 4 — base
-image `mysql`):
-```bash
-docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml up -d
-```
-Tunggu semua service berstatus `healthy` (`docker compose ps`) —
-termasuk `shipping`/`ratings` yang membutuhkan waktu lebih lama saat
-inisialisasi MySQL pertama kali (lihat Sesi 4 apabila perlu mengingat
-detailnya).
-
-**[Terminal] Jalankan load generator** (traffic nyata ke Robot Shop, ~4%
-di antaranya transaksi anomali — bahan latihan Sesi 7 — dan sekarang
-sekaligus menjadi sumber data trace APM untuk `cart`/`payment`):
-```bash
-docker compose -f docker-compose.yml -f docker-compose.load.yml up -d load
-```
+*(Tanpa ARM override, cukup hilangkan
+`-f docker-compose.arm64-override.yml` dari perintah di atas. Perintah
+ini WAJIB dijalankan dari direktori `sesi-4-relevance-scoring` — bukan
+dari direktori sesi ini — supaya container `load` yang sudah ada
+di-Recreate, bukan membuat instance kedua yang terpisah.)*
 Expected Output (dari `docker compose logs -f load` setelah
 beberapa menit): traffic asli mengalir ke `/api/user/login`,
 `/api/catalogue/*`, `/api/shipping/confirm/*`, dst.
@@ -141,7 +137,9 @@ beberapa menit): traffic asli mengalir ke `/api/user/login`,
 > yang gagal — Anda akan memeriksanya kembali secara nyata pada Sesi 7
 > setelah pipeline-nya siap.
 
-**[Dev Tools Console] Ukur query TANPA cache (request pertama):**
+### 2. Request Cache & Pengukuran `took`
+
+**Contoh Implementasi — ukur query TANPA cache (request pertama):**
 ```
 GET kibana_sample_data_logs/_search
 { "size": 0, "query": { "bool": { "filter": [ { "range": { "bytes": { "gt": 5000 } } } ] } } }
@@ -166,47 +164,113 @@ diandalkan adalah statistik cache-nya langsung, bukan sekadar `took`:
 ```
 GET kibana_sample_data_logs/_stats/request_cache
 ```
-Expected Output: `hit_count: 1`, `miss_count: 4` (angka `miss`
-lebih dari 1 karena tiap shard memiliki cache-nya sendiri).
+Expected Output: `miss_count: 1` (index ini cuma punya 1 shard pada
+cluster single-node — angka `miss` mengikuti JUMLAH SHARD, karena tiap
+shard punya cache-nya sendiri; kalau index-nya punya N shard, angka ini
+akan jadi N), `hit_count` bertambah 1 setiap kali Anda mengulang query
+yang PERSIS SAMA (nilainya kumulatif sejak index ini pertama kali
+dibuat, jadi tidak selalu mulai dari 0/1 — yang penting `hit_count`
+bertambah setelah query kedua di atas, bukan angka absolutnya).
 
-## e. Contoh Implementasi
+### 3. Melihat Latency per Microservice Lewat APM
 
-### Melihat Latency per Microservice Lewat APM
+**Contoh Implementasi — perubahan NYATA pada source code Robot Shop**
+(bukan kode ilustrasi — ini persis diff yang diterapkan pada source asli
+Robot Shop, SEBELUM di-build menjadi image `:v2-apm` yang Anda pakai):
 
-**Cara install APM agent** (contoh nyata, dua bahasa berbeda):
+Python (Flask) — `payment/payment.py` + `payment/requirements.txt`:
+```diff
+--- a/payment/payment.py
++++ b/payment/payment.py
+@@ -17,10 +17,19 @@ from rabbitmq import Publisher
+ # Prometheus
+ import prometheus_client
+ from prometheus_client import Counter, Histogram
++# Elastic APM
++from elasticapm.contrib.flask import ElasticAPM
 
-> **INFORMATION:** Anda TIDAK perlu menjalankan kode ini sendiri —
-> `cart`/`payment` pada stack sesi ini sudah disiapkan demikian; ini
-> referensi apabila nanti Anda melakukan instrumentasi pada aplikasi Anda
-> sendiri. Pola umumnya SAMA di semua bahasa: agent di-`start()` pada
-> titik paling awal aplikasi, diberi `serverUrl` APM Server tujuan.
+ app = Flask(__name__)
+ app.logger.setLevel(logging.INFO)
 
-Python (Flask) — `payment`:
-```python
-from elasticapm.contrib.flask import ElasticAPM
-
-app = Flask(__name__)
-app.config['ELASTIC_APM'] = {
-    'SERVICE_NAME': 'payment',
-    'SERVER_URL': 'http://apm-server:8200',
-    'ENVIRONMENT': 'training',
-}
-apm = ElasticAPM(app)
++app.config['ELASTIC_APM'] = {
++    'SERVICE_NAME': 'payment',
++    'SERVER_URL': os.getenv('ELASTIC_APM_SERVER_URL', 'http://apm-server:8200'),
++    'ENVIRONMENT': os.getenv('ELASTIC_APM_ENVIRONMENT', 'training'),
++}
++apm = ElasticAPM(app)
++
+ CART = os.getenv('CART_HOST', 'cart')
+ USER = os.getenv('USER_HOST', 'user')
+ PAYMENT_GATEWAY = os.getenv('PAYMENT_GATEWAY', 'https://paypal.com/')
+--- a/payment/requirements.txt
++++ b/payment/requirements.txt
+@@ -5,3 +5,4 @@ pika
+ prometheus_client
+ opentracing
+ instana
++elastic-apm[flask]
 ```
 
-Node.js (Express) — `cart`:
-```javascript
-// WAJIB baris PALING ATAS file, sebelum require() lain
-require('elastic-apm-node').start({
-    serviceName: 'cart',
-    serverUrl: 'http://apm-server:8200',
-    environment: 'training'
-});
-```
+Node.js (Express) — `cart/server.js` + `cart/package.json`:
+```diff
+--- a/cart/server.js
++++ b/cart/server.js
+@@ -7,6 +7,13 @@ instana({
+     }
+ });
 
-Begitu agent aktif, SETIAP request yang masuk ke `cart`/`payment` otomatis
-tercatat sebagai **transaction**, tanpa perlu kode tambahan apa pun di
-tiap endpoint.
++// Elastic APM -- also MUST be required/started before other modules
++require('elastic-apm-node').start({
++    serviceName: 'cart',
++    serverUrl: process.env.ELASTIC_APM_SERVER_URL || 'http://apm-server:8200',
++    environment: process.env.ELASTIC_APM_ENVIRONMENT || 'training'
++});
++
+ const redis = require('redis');
+ const request = require('request');
+ const bodyParser = require('body-parser');
+--- a/cart/package.json
++++ b/cart/package.json
+@@ -17,6 +17,7 @@
+       "express-pino-logger": "^4.0.0",
+       "pino-pretty": "^2.5.0",
+       "@instana/collector": "^1.132.2",
+-      "prom-client": "^11.5.3"
++      "prom-client": "^11.5.3",
++      "elastic-apm-node": "^3.52.0"
+   }
+ }
+```
+Pola yang sama di kedua bahasa: agent di-`start()`/di-inisialisasi pada
+titik PALING AWAL aplikasi (sebelum route/module lain), diberi
+`serviceName` dan `serverUrl` APM Server tujuan. Begitu agent aktif,
+SETIAP request yang masuk ke `cart`/`payment` otomatis tercatat sebagai
+**transaction**, tanpa perlu kode tambahan apa pun di tiap endpoint.
+
+**Kibana juga punya panduan instalasi APM agent bawaan** (generik, bukan
+khusus Robot Shop) — menu ☰ → Observability → APM → tombol **Add data**
+di kanan atas → pilih tab bahasa (mis. **Flask** untuk `payment`):
+
+![Kibana APM Agents onboarding guide untuk Flask, menampilkan perintah pip install elastic-apm[flask] dan contoh kode from elasticapm.contrib.flask import ElasticAPM](../../../docs/screenshots/sesi-6/05-apm-onboarding-flask-agent-guide.png)
+
+*Perhatikan: perintah `pip install elastic-apm[flask]` dan baris kode
+`from elasticapm.contrib.flask import ElasticAPM` pada panduan Kibana ini
+PERSIS sama dengan yang diterapkan pada `payment/requirements.txt` dan
+`payment/payment.py` di atas — panduan ini berguna sebagai referensi
+generik ketika Anda menginstrumentasi aplikasi Anda sendiri, di luar
+Robot Shop.*
+
+**Apa bedanya `trace`, `transaction`, `span`, dan istilah APM lain?**
+
+![Diagram terminologi APM: satu trace berisi transaksi payment yang terdiri dari beberapa span anak, dengan definisi tiap istilah](../../../docs/diagrams/sesi6-trace-span-terminology.svg)
+
+*Berdasarkan trace nyata `POST /pay/<id>` (904ms) dari stack Anda sendiri
+— `trace` adalah SELURUH perjalanan satu request (904ms, garis besar),
+`transaction` adalah unit kerja tingkat-atas yang diukur agent PADA SATU
+service (di sini: request `payment` itu sendiri), dan `span` adalah
+operasi ANAK di dalam transaction itu (di sini: 3 pemanggilan keluar ke
+`payment-gateway`/`cart`/`user`). Satu trace berisi TEPAT SATU transaction
+per service yang dilewati, tapi bisa berisi BANYAK span.*
 
 **Buka Kibana APM** (menu ☰ → Observability → APM → Service inventory):
 
@@ -295,9 +359,9 @@ dengan yang tampil di Service Inventory di atas.
 > **INFORMATION:** ini adalah pola yang diharapkan, bukan angka pasti —
 > angka aktual Anda tergantung berapa lama load generator sudah berjalan.
 
-### Tiga Teknik Optimasi Query (`kibana_sample_data_logs`)
+### 4. Query Profiling, Refresh Interval, & Index Management
 
-**[Dev Tools Console] `_profile` API** — membedah query yang sama, melihat waktu eksekusi internal:
+**Contoh Implementasi — `_profile` API** — membedah query yang sama, melihat waktu eksekusi internal:
 ```
 GET kibana_sample_data_logs/_search
 {
@@ -345,7 +409,7 @@ paling besar/perlu dioptimasi:
 Anda buat sepanjang lab ini (sample data, hasil pipeline, index exercise)
 terlihat sekaligus di sini.*
 
-## f. Referensi Exercise
+## e. Referensi Exercise
 
 Lanjutkan latihan mandiri di [`exercise/sesi-6/README.md`](../../../exercise/sesi-6/README.md)
 — termasuk latihan mendeteksi transaksi anomali dari traffic Robot Shop

@@ -49,6 +49,16 @@ pemanggilan nyata ke situs eksternal (default Robot Shop memanggil
 `PAYMENT_GATEWAY`, supaya lab ini tidak pernah menghubungi internet
 sungguhan untuk mensimulasikan payment gateway pihak ketiga.
 
+Selain itu, `docker-compose.yml` sesi ini juga menyalakan 4 servis
+observability yang membaca/menerima data dari servis-servis di atas:
+
+| Service | Fungsi |
+|---|---|
+| `apm-server` | Menerima data trace APM dari `cart`/`payment` (image `:v2-apm`), menyimpannya ke Elasticsearch. |
+| `metricbeat` | Mengumpulkan metrik `mongodb`, `mysql`, `redis`, `rabbitmq` secara berkala. |
+| `logstash-rs` | Mem-parsing log `payment`/`cart`/`web` (grok/JSON) yang dikirim `filebeat-rs`. |
+| `filebeat-rs` | Membaca log seluruh container Robot Shop, mengirimkannya ke `logstash-rs`. |
+
 ## API yang Dipakai di Lab Ini
 
 Semua lewat `http://localhost:8080` (service `web`):
@@ -79,7 +89,7 @@ untuk penjelasannya):
 docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml up -d
 ```
 
-Semua image sudah pre-built (multi-arch untuk 10 dari 11 service) — Anda
+Semua image sudah pre-built (multi-arch untuk 9 dari 10 service) — Anda
 cukup pull & jalankan, tidak ada proses build/compile.
 
 > **Catatan startup:** `shipping` dan `ratings` connect ke MySQL saat

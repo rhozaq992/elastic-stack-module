@@ -1,5 +1,8 @@
 # Exercise Sesi 2 — CRUD & Mapping Data Inventory
 
+**Topik yang dilatih (dari Silabus Sesi 2):** Fields & Mappings, `text`
+vs `keyword`, dan Document Operations (CRUD).
+
 ## Use Case
 
 Tim gudang **ATK (Alat Tulis Kantor)** hendak mulai mencatat data

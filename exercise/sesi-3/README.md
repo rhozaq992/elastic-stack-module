@@ -1,5 +1,9 @@
 # Exercise Sesi 3 — Query DSL pada Data Penerbangan
 
+**Topik yang dilatih (dari Silabus Sesi 3):** Term Queries, Boolean
+Queries, Full-text Search (`match`/`match_phrase`), dan Advanced Search
+Techniques (relative date math pada `range`).
+
 ## Use Case
 
 Tim operasional maskapai membutuhkan laporan cepat soal penerbangan

@@ -48,7 +48,9 @@ segi-enam/kotak, tiap dokumen masuk ke grid sesuai koordinatnya.
 
 *(Prasyarat: stack Sesi 1 masih berjalan.)*
 
-**Load sample data logs** (dataset access-log web server, memiliki field waktu & geo):
+### 1. Agregasi Dasar Bertingkat (Metric + Bucket)
+
+**Contoh Implementasi — load sample data logs** (dataset access-log web server, memiliki field waktu & geo):
 ```bash
 curl -X POST "http://localhost:5601/api/sample_data/logs" \
   -H "kbn-xsrf: true" -H "x-elastic-internal-origin: kibana"
@@ -78,9 +80,9 @@ Expected Output:
 > — response error biasanya tidak mengirim body, sehingga `bytes`-nya
 > memang bernilai nol, bukan bug.
 
-## e. Contoh Implementasi
+### 2. Pipeline Aggregation & Visualisasi Bar Chart Lewat Kibana Lens
 
-**Pipeline aggregation** — rata-rata total bytes PER HARI (agregasi di
+**Contoh Implementasi — pipeline aggregation**, rata-rata total bytes PER HARI (agregasi di
 atas hasil `date_histogram`, bukan dokumen mentah):
 ```
 GET kibana_sample_data_logs/_search
@@ -114,30 +116,9 @@ bucket `requests_per_day`".
 > memuat datanya, bukan tanggal tetap. Jumlah bucket ~61 dan pola angkanya
 > akan tetap konsisten, hanya tanggal dan totalnya yang bergeser.
 
-**Geo aggregation** — mengelompokkan traffic berdasarkan lokasi (grid geografis):
-```
-GET kibana_sample_data_logs/_search
-{
-  "size": 0,
-  "aggs": {
-    "grid": {
-      "geohash_grid": { "field": "geo.coordinates", "precision": 3 }
-    }
-  }
-}
-```
-Expected Output:
-```
-595 grid cell terisi
-grid terpadat: "c1c" -> 135 dokumen
-```
-`precision: 3` mengatur seberapa detail grid yang dihasilkan — semakin
-besar angkanya, semakin kecil/detail grid tersebut, cocok untuk level zoom
-peta yang berbeda.
-
 **Visualisasi di Kibana.** Hasil agregasi seperti ini adalah dasar dari
-visualisasi Kibana — `geohash_grid` misalnya langsung dipetakan ke
-visualisasi **Maps**, `date_histogram` ke bar chart/line chart time-series.
+visualisasi Kibana — `date_histogram` misalnya langsung dipetakan ke bar
+chart/line chart time-series (`geohash_grid` dibahas pada topik 3).
 
 ![Kibana Visualize Library menampilkan daftar visualisasi tersimpan](../../../docs/screenshots/sesi-5/01-visualize-library.png)
 
@@ -148,7 +129,7 @@ visualisasi **Maps**, `date_histogram` ke bar chart/line chart time-series.
 *2. Klik "Create visualization", lalu pilih tipe "Visualization" (editor
 Lens, point-and-click).*
 
-**Membuat bar chart "Count per day" dari nol** (X-axis: `@timestamp` date
+**Contoh Implementasi — membuat bar chart "Count per day" dari nol** (X-axis: `@timestamp` date
 histogram, Y-axis: Count) — hasilnya nanti langsung mencerminkan angka
 `requests_per_day` yang baru saja Anda hitung melalui query pipeline
 aggregation di atas:
@@ -192,6 +173,29 @@ tercentang:
 *Klik **Save and add to library** — visualisasi ini sekarang dapat dipakai
 kembali di dashboard mana pun tanpa perlu dibuat ulang dari nol.*
 
+### 3. Geo Aggregation & Visualisasi Kibana Maps
+
+**Contoh Implementasi — geo aggregation**, mengelompokkan traffic berdasarkan lokasi (grid geografis):
+```
+GET kibana_sample_data_logs/_search
+{
+  "size": 0,
+  "aggs": {
+    "grid": {
+      "geohash_grid": { "field": "geo.coordinates", "precision": 3 }
+    }
+  }
+}
+```
+Expected Output:
+```
+595 grid cell terisi
+grid terpadat: "c1c" -> 135 dokumen
+```
+`precision: 3` mengatur seberapa detail grid yang dihasilkan — semakin
+besar angkanya, semakin kecil/detail grid tersebut, cocok untuk level zoom
+peta yang berbeda.
+
 **Memvisualisasikan geo aggregation lewat Kibana Maps** — hasil
 `geohash_grid` yang baru saja Anda hitung lewat query dapat divisualisasikan
 langsung di peta:
@@ -214,11 +218,14 @@ jauh dan volume dokumen lebih besar, titik-titik yang berdekatan akan
 otomatis dirender sebagai kumpulan padat — versi visual dari konsep
 `geohash_grid` yang sudah Anda hitung lewat query.*
 
-**Visualisasi dengan filter — breakdown response error.** Selain
-breakdown biasa (seperti bar chart per hari di atas), Kibana Lens juga
-dapat memfilter data SEBELUM membuat breakdown-nya — berguna untuk fokus
-hanya pada subset tertentu (mis. hanya transaksi error, bukan seluruh
-traffic):
+### 4. Filtered Visualization — Breakdown dengan Filter KQL
+
+Selain breakdown biasa (seperti bar chart per hari di atas), Kibana Lens
+juga dapat memfilter data SEBELUM membuat breakdown-nya — berguna untuk
+fokus hanya pada subset tertentu (mis. hanya transaksi error, bukan
+seluruh traffic).
+
+**Contoh Implementasi — breakdown response error terfilter:**
 
 **1. Buat visualisasi baru** (Visualize Library → Create visualization →
 Visualization), atur rentang waktu agar mencakup seluruh data seperti
@@ -233,7 +240,7 @@ pada field `response.keyword`:
 ![Bar chart Lens menampilkan breakdown response error terfilter: 404 dengan 801 dokumen, 503 dengan 441 dokumen](../../../docs/screenshots/sesi-5/12-lens-filtered-response-breakdown.png)
 
 *Hasilnya HANYA menampilkan kode `404` dan `503` (angka pada layar Anda
-mengikuti hasil query breakdown response code pada bagian d di atas) —
+mengikuti hasil query breakdown response code pada topik 1 di atas) —
 `200` tidak muncul sama sekali karena sudah difilter di awal. Pola ini
 (filter dahulu, baru breakdown) berguna untuk visualisasi semacam
 "berapa banyak request per response code TERTENTU" atau "berapa banyak
@@ -247,12 +254,14 @@ itu.*
 > apabila datanya punya field method (mis. log Robot Shop pada Sesi 6/7),
 > tinggal ganti field pada langkah 3 sesuai kebutuhan.
 
-**Recreate mini dashboard eCommerce — implementasi lewat UI, bukan Dev
-Tools.** Sebelum melihat dashboard bawaan Kibana yang sudah jadi
-(referensi di bawah), coba bangun dulu SEBAGIAN kecilnya sendiri lewat
-Lens — 6 visualisasi berikut merepresentasikan pola yang sama dengan
-panel-panel di dashboard aslinya, dibangun dari nol tanpa satu query Dev
-Tools pun:
+### 5. Recreate Mini Dashboard eCommerce
+
+Sebelum melihat dashboard bawaan Kibana yang sudah jadi (referensi di
+bawah), coba bangun dulu SEBAGIAN kecilnya sendiri lewat Lens — 6
+visualisasi berikut merepresentasikan pola yang sama dengan panel-panel
+di dashboard aslinya, dibangun dari nol tanpa satu query Dev Tools pun.
+
+**Contoh Implementasi — 6 visualisasi mini dashboard:**
 
 1. **Metric "Total Revenue"** — Create visualization → Vertical axis:
    fungsi **Sum**, field `taxful_total_price`.
@@ -310,6 +319,6 @@ termasuk **"[eCommerce] Revenue Dashboard"**. Klik untuk membukanya:*
 breakdown kategori, seluruhnya interaktif (klik filter
 Manufacturer/Category di bagian atas).*
 
-## f. Referensi Exercise
+## e. Referensi Exercise
 
 Lanjutkan latihan mandiri di [`exercise/sesi-5/README.md`](../../../exercise/sesi-5/README.md).

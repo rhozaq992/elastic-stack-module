@@ -1,0 +1,32 @@
+metricbeat.modules:
+  - module: mongodb
+    metricsets: ["status", "dbstats"]
+    hosts: ["mongodb://mongodb:27017"]
+    period: 10s
+
+  - module: mysql
+    metricsets: ["status"]
+    hosts: ["root@tcp(mysql:3306)/"]
+    period: 10s
+
+  - module: redis
+    metricsets: ["info"]
+    hosts: ["redis:6379"]
+    period: 10s
+
+  - module: rabbitmq
+    metricsets: ["node", "queue"]
+    hosts: ["rabbitmq:15672"]
+    username: guest
+    password: guest
+    period: 10s
+
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"]
+
+setup.kibana:
+  host: "http://kibana:5601"
+
+setup.template.enabled: true
+
+logging.level: info

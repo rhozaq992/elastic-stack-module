@@ -21,7 +21,9 @@ Linux polos, serta memverifikasi sendiri bahwa data mengalir dari
 Filebeat → Logstash → parsed output — termasuk memperluas Filebeat untuk
 membaca lebih dari satu sumber sekaligus (log akses web, log autentikasi
 SSH, dan command history), menghasilkan dokumen `ssh_login_success`/
-`ssh_login_failed`/`bash_history` yang terpisah sesuai sumbernya.
+`ssh_login_failed`/`bash_history` yang terpisah sesuai sumbernya, serta
+mampu membaca dan mengubah pengaturan throughput pipeline Logstash
+(`pipeline.workers`/`pipeline.batch.size`) lewat API monitoring.
 
 ## c. Teori & Struktur Sistem
 
@@ -34,11 +36,7 @@ Solusinya: **Filebeat (root) membaca file log** → mengirim lewat network
 (port beats 5044) → **Logstash (non-root) yang melakukan parsing** →
 Elasticsearch. Logstash sendiri tidak pernah menyentuh filesystem host.
 
-```
-Filebeat (root, baca /var/lib/docker/containers)
-  --output.logstash-->  Logstash (non-root, port 5044)
-    --filter (grok/json per service)-->  Elasticsearch (single-node Sesi 1)
-```
+![Diagram alur Filebeat (root, baca /var/lib/docker/containers) mengirim lewat port 5044 ke Logstash (non-root, filter grok/json per servis), lalu tersimpan di Elasticsearch](../../../docs/diagrams/sesi7-filebeat-logstash-flow.svg)
 
 **Grok** adalah filter Logstash untuk mengekstrak field terstruktur dari
 teks bebas menggunakan named-pattern (`%{PATTERN:nama_field}`, opsional
@@ -56,28 +54,26 @@ kosong.
 
 ## d. Praktik: Instalasi & Konfigurasi
 
-**Prasyarat:** stack single-node Sesi 1 dan Robot Shop Sesi 6 masih
-berjalan (lanjutan langsung dari Sesi 6, tidak perlu mematikan/
-menyalakan ulang apa pun). Apabila salah satunya sudah Anda matikan,
-nyalakan kembali:
-```bash
-cd lab/day-1-fundamentals/sesi-1-intro-elk && docker compose up -d
-cd ../../day-3-analytics-optimization/sesi-6-performance-optimization && docker compose up -d
-```
-*(Traffic dari load generator Sesi 6 sebaiknya masih mengalir supaya ada
-log untuk di-parsing.)*
+### 1. Verifikasi Pipeline Ingestion (Filebeat → Logstash → Elasticsearch)
 
-```bash
-cd lab/day-4-administration-ingestion/sesi-7-data-ingestion
-docker compose up -d
-```
+**Prasyarat:** stack single-node Sesi 1 dan Robot Shop Sesi 4 (termasuk
+servis `logstash-rs` dan `filebeat-rs`, sudah berjalan sejak Sesi 4)
+masih berjalan. Apabila salah satunya sudah Anda matikan, nyalakan
+kembali sesuai instruksi Sesi 4 bagian (d) topik 1.
 
-**Generate traffic** (apabila load generator Sesi 6 belum berjalan):
+**[Terminal] Verifikasi `logstash-rs`/`filebeat-rs` masih berjalan:**
 ```bash
-docker start sesi-6-performance-optimization-load-1
+cd lab/day-2-query-relevance/sesi-4-relevance-scoring
+docker compose ps logstash-rs filebeat-rs
+```
+Expected Output: keduanya berstatus `Up`.
+
+**Generate traffic** (apabila load generator belum berjalan):
+```bash
+docker start sesi-4-relevance-scoring-load-1
 ```
 
-**Cek data masuk** (tunggu beberapa menit supaya ada cukup log):
+**Contoh Implementasi — cek data masuk** (tunggu beberapa menit supaya ada cukup log):
 ```bash
 curl "http://localhost:9200/payment-service-parsed-*/_count"
 curl "http://localhost:9200/cart-service-parsed-*/_count"
@@ -94,7 +90,54 @@ cart-service-parsed-*: 2206
 web-service-parsed-*: 3138
 ```
 
-### Instalasi Manual Filebeat & Logstash (VM / Bare-Metal)
+### 2. Uji Grok Pattern Interaktif — Kibana Grok Debugger
+
+Sebelum menulis grok pattern langsung ke file `.conf` Logstash (seperti
+`payment-service.conf` yang sudah Anda pakai), Kibana menyediakan tool
+GUI untuk MENCOBA pattern secara interaktif — memasukkan satu baris log
+contoh dan pattern grok, lalu langsung melihat hasil parsing-nya, tanpa
+perlu restart Logstash berkali-kali untuk tiap percobaan.
+
+**[Kibana] Buka Grok Debugger** — menu ☰ → Dev Tools → tab **Grok
+Debugger** (di samping tab Console yang sudah Anda pakai sejak Sesi 2).
+
+**Contoh Implementasi — uji pattern `payment-service.conf` secara
+interaktif.** Isi **Sample Data** dengan satu baris log akses `payment`
+yang nyata, dan **Grok Pattern** dengan pattern yang PERSIS SAMA seperti
+pada `logstash/pipeline/payment-service.conf`:
+
+Sample Data:
+```
+POST /pay/anonymous-4 => generated 51 bytes in 688 msecs (HTTP/1.1 200)
+```
+Grok Pattern:
+```
+POST /pay/%{DATA:payment_user} => generated %{NUMBER:response_bytes} bytes in %{NUMBER:response_time_ms:float} msecs \(HTTP/1\.1 %{NUMBER:http_status:int}\)
+```
+Klik **Simulate**.
+
+![Kibana Grok Debugger menampilkan Sample Data satu baris log payment dan Grok Pattern, hasil Structured Data berupa JSON dengan field payment_user, response_bytes, response_time_ms, http_status](../../../docs/screenshots/sesi-7/01-grok-debugger-payment-pattern.png)
+
+*Panel **Structured Data** menampilkan hasil parsing langsung sebagai
+JSON — `payment_user: "anonymous-4"`, `http_status: 200` (bertipe angka,
+sesuai suffix `:int`), `response_time_ms: 688`, `response_bytes: "51"`
+(TANPA suffix tipe, tetap string). Ini PERSIS field yang Anda temukan
+pada index `payment-service-parsed-*` di topik 1 — Grok Debugger memakai
+mesin grok yang SAMA dengan yang dipakai Logstash, hanya tanpa perlu
+menjalankan pipeline sungguhan.*
+
+> **INFORMATION:** kalau pattern SALAH (mis. lupa tanda `\(` untuk
+> literal kurung buka), **Structured Data** akan menampilkan `{}` kosong
+> atau error parsing — cara tercepat mengetahui pattern Anda salah
+> SEBELUM menulisnya ke file `.conf` dan menunggu Logstash restart.
+> Cocok dipakai untuk menyusun pattern `task-tracker.conf` pada
+> exercise sesi ini (lihat `exercise/sesi-7/README.md` Bagian 2) — uji
+> dulu pattern Anda di sini, baru salin ke file `.conf` setelah hasilnya
+> benar.
+
+### 3. Instalasi Manual Filebeat & Logstash (VM / Bare-Metal)
+
+**Contoh Implementasi — instalasi native di VM:**
 
 > **INFORMATION:** seluruh Filebeat/Logstash yang Anda gunakan sepanjang
 > lab ini berjalan lewat **image Docker resmi Elastic** — praktis untuk
@@ -107,13 +150,23 @@ web-service-parsed-*: 3138
 **Siapkan "VM" percobaan:**
 ```bash
 docker run -d --name native-vm ubuntu:22.04 sleep infinity
-docker exec -it native-vm bash
 ```
 > **INFORMATION:** container Ubuntu polos ini mensimulasikan VM/bare-metal
 > Linux — pada server sungguhan, langkah-langkah di bawah berlaku PERSIS
 > SAMA.
 
-Sisa langkah pada bagian ini dijalankan **DI DALAM** `native-vm` (prompt shell-nya).
+**Buka terminal BARU/TERPISAH** (jangan lanjutkan di terminal yang sama
+dengan langkah-langkah sebelumnya) — Logstash pada langkah 6 nanti perlu
+dijalankan di FOREGROUND agar log-nya terlihat langsung, sehingga masuk
+ke `native-vm` sebaiknya dilakukan dari terminal lain supaya terminal
+pertama tetap bebas dipakai (mis. untuk menjalankan `curl`/perintah lain
+sambil Filebeat/Logstash di terminal kedua tetap berjalan). Pada terminal
+baru ini:
+```bash
+docker exec -it native-vm bash
+```
+
+Sisa langkah pada bagian ini dijalankan **DI DALAM** `native-vm` (prompt shell-nya), pada terminal terpisah tersebut.
 
 **1. Tambahkan repository resmi Elastic** (APT, untuk Debian/Ubuntu):
 ```bash
@@ -182,7 +235,7 @@ output.logstash:
   hosts: ["localhost:5044"]
 EOF
 ```
-> **INFORMATION:** pola arsitekturnya SAMA seperti bagian d di atas —
+> **INFORMATION:** pola arsitekturnya SAMA seperti topik 1 di atas —
 > Filebeat membaca file, mengirim ke Logstash lewat port beats.
 
 **5. Siapkan data contoh** (mensimulasikan log Apache/Nginx access):
@@ -373,9 +426,103 @@ docker rm -f native-vm
 > **INFORMATION:** langkah pembersihan ini bukan bagian dari lab utama,
 > hanya latihan keterampilan instalasi.
 
-## e. Contoh Implementasi
+### 4. Best Practice: Tuning Pipeline Logstash untuk Throughput Tinggi
 
-**Cek hasil parsing payment** (grok manual):
+Konfigurasi default Logstash (dipakai tanpa perubahan sejak awal sesi
+ini) belum tentu optimal untuk volume data besar. Dua pengaturan yang
+paling berpengaruh terhadap throughput:
+
+- **`pipeline.workers`** — jumlah thread paralel yang menjalankan
+  filter+output. Default = jumlah CPU core host. Menaikkannya membantu
+  KALAU tahap filter (grok, dst.) adalah bottleneck (CPU-bound);
+  menurunkannya berguna untuk MEMBATASI pemakaian CPU Logstash pada host
+  yang resource-nya harus dibagi dengan servis lain (persis kasus lab
+  ini — banyak stack berjalan bersamaan).
+- **`pipeline.batch.size`** — jumlah event yang dikumpulkan tiap worker
+  SEBELUM dieksekusi ke filter+output sekaligus (batch). Batch lebih
+  besar = lebih sedikit overhead per-event (terutama untuk output
+  Elasticsearch yang memakai `_bulk` di baliknya), tapi juga lebih
+  banyak memori terpakai per batch.
+
+**[Terminal] Lihat konfigurasi pipeline yang SEDANG berjalan** — API
+monitoring Logstash (port 9600, sudah di-expose di `docker-compose.yml`
+folder Sesi 4):
+```bash
+curl "http://localhost:9600/_node/pipelines?pretty"
+```
+Expected Output (nilai default, belum di-tuning):
+```json
+{
+  "pipeline" : { "workers" : 10, "batch_size" : 125, "batch_delay" : 50 },
+  "pipelines" : { "main" : { "workers" : 10, "batch_size" : 125, "batch_delay" : 50 } }
+}
+```
+> **INFORMATION:** `workers: 10` di atas ADALAH jumlah CPU core yang
+> terdeteksi Logstash pada contoh host di atas — angka pada layar
+> Anda mengikuti jumlah core host Anda sendiri, bukan tetap 10.
+
+**[Terminal] Lihat throughput NYATA yang sudah diproses** (jumlah event
+in/out sejak container ini berjalan — respons `_node/stats/pipelines`
+punya BANYAK blok `events` bersarang per-plugin, jadi ambil KHUSUS
+level pipeline pakai `python3`, bukan `grep` yang akan menangkap blok
+yang salah):
+```bash
+curl -s "http://localhost:9600/_node/stats/pipelines" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+print(json.dumps(d['pipelines']['main']['events'], indent=2))
+"
+```
+Expected Output (satu pengukuran nyata, angka Anda akan berbeda
+tergantung berapa lama container ini sudah berjalan):
+```json
+{
+  "out": 44753,
+  "duration_in_millis": 11416,
+  "in": 44753,
+  "filtered": 44753,
+  "queue_push_duration_in_millis": 240
+}
+```
+`in`, `out`, `filtered` bernilai SAMA — semua event yang masuk berhasil
+keluar, tidak ada yang macet di pipeline. Angkanya naik terus selama
+load generator Sesi 6 berjalan.
+
+**[Terminal] Ubah `pipeline.workers`/`pipeline.batch.size`** — image
+Docker resmi Logstash membaca env var `PIPELINE_WORKERS`/
+`PIPELINE_BATCH_SIZE` (huruf besar, titik jadi underscore) dan
+menerapkannya ke `logstash.yml` otomatis saat container start:
+```yaml
+# tambahkan di service logstash-rs pada docker-compose.yml (folder Sesi 4)
+environment:
+  - "LS_JAVA_OPTS=-Xms256m -Xmx256m"
+  - xpack.monitoring.enabled=false
+  - PIPELINE_WORKERS=2
+  - PIPELINE_BATCH_SIZE=500
+```
+Setelah `docker compose up -d` ulang **dari folder
+`sesi-4-relevance-scoring`**, verifikasi perubahan benar-benar diterapkan
+lewat `curl` yang sama seperti di atas — Expected Output:
+`"workers": 2, "batch_size": 500`.
+
+> **INFORMATION:** TIDAK ada satu angka "benar" untuk `workers`/
+> `batch_size` yang berlaku universal — pengaturan optimal bergantung
+> pada karakteristik beban (CPU-bound vs I/O-bound), jumlah CPU core
+> yang tersedia, dan seberapa banyak servis LAIN yang berbagi resource
+> host yang sama (persis seperti lab ini). Prinsip yang berlaku umum:
+> ukur dulu (`_node/stats/pipelines`) SEBELUM dan SESUDAH mengubah
+> pengaturan, jangan mengubah berdasarkan tebakan.
+>
+> **Sisi Filebeat** juga punya pengaturan setara di sisi pengirim:
+> `queue.mem.events` (kapasitas antrean internal Filebeat sebelum
+> dikirim) dan `output.logstash.bulk_max_size` (jumlah event per batch
+> yang dikirim ke Logstash) — prinsip tuning-nya sama: ukur dulu, jangan
+> menebak, dan pertimbangkan resource host secara keseluruhan, bukan
+> Filebeat/Logstash secara terpisah.
+
+### 5. Analisis Hasil Parsing & Deteksi Anomali
+
+**Contoh Implementasi — cek hasil parsing payment** (grok manual):
 ```
 GET payment-service-parsed-*/_search
 { "query": { "exists": { "field": "http_status" } }, "size": 1 }
@@ -432,7 +579,7 @@ sanggup menampung request secara bersamaan. Dua pola yang sama-sama
 investigasi keamanan, sedangkan 429 (apabila muncul) membutuhkan
 perbaikan kapasitas/scaling.
 
-## f. Referensi Exercise
+## e. Referensi Exercise
 
 Lanjutkan latihan mandiri di [`exercise/sesi-7/README.md`](../../../exercise/sesi-7/README.md)
 — Bagian 1 deteksi transaksi anomali, Bagian 2 menyusun grok pattern

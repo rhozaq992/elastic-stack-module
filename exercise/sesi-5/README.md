@@ -1,5 +1,9 @@
 # Exercise Sesi 5 — Aggregation pada Data eCommerce & Penerbangan
 
+**Topik yang dilatih (dari Silabus Sesi 5):** Using Aggregations for
+Data Analysis, Pipeline Aggregations, Geo-based Aggregations, dan
+Visualisasi geo aggregation dengan Kibana Maps.
+
 ## Use Case
 
 Tim analytics eCommerce ingin mengetahui berapa banyak pelanggan unik yang
@@ -37,7 +41,7 @@ curl -X POST "http://localhost:5601/api/sample_data/ecommerce" \
      -H "kbn-xsrf: true" -H "x-elastic-internal-origin: kibana"
    ```
    Buat KELIMA visualisasi berikut lewat Lens/Maps (lihat lab Sesi 5
-   bagian e untuk cara memakai editor Lens), **beri nama PERSIS diawali
+   bagian d topik 2 untuk cara memakai editor Lens), **beri nama PERSIS diawali
    `sesi-5-`** saat Save, lalu kumpulkan semuanya jadi SATU dashboard:
    - `sesi-5-avg-ticket-price` — Metric, fungsi **Average** pada
      `AvgTicketPrice`.
