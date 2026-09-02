@@ -12,10 +12,14 @@ lebih dahulu) menggunakan `function_score` dan `boost`.
 Sesi ini selesai apabila:
 - Robot Shop berjalan dengan 7 servis yang memiliki healthcheck
   (`catalogue`, `user`, `cart`, `shipping`, `ratings`, `payment`, `web`)
-  berstatus `healthy` pada `docker compose ps` (5 servis pendukung
-  `mongodb`, `redis`, `rabbitmq`, `mysql`, `dispatch` tidak memiliki
-  healthcheck sendiri, cukup pastikan statusnya `Up`) dan index
-  `robot-shop-catalogue` di Elasticsearch sudah berisi data produk asli.
+  berstatus `healthy` pada `docker compose ps` (6 servis pendukung
+  `mongodb`, `redis`, `rabbitmq`, `mysql`, `dispatch`, `payment-gateway`
+  tidak memiliki healthcheck sendiri, cukup pastikan statusnya `Up`) dan
+  index `robot-shop-catalogue` di Elasticsearch sudah berisi data produk
+  asli.
+- Anda berhasil menjalankan alur checkout end-to-end (cart → shipping →
+  payment) dan melihat queue `orders` di RabbitMQ management UI
+  memproses pesan tersebut.
 - Anda berhasil menjalankan query pencarian yang hasilnya berubah urutan
   setelah ditambahkan `function_score`/`boost`, dan dapat menjelaskan
   penyebabnya.
@@ -94,6 +98,43 @@ Tunggu servis yang punya healthcheck jadi `healthy` (`docker compose ps`).
 > tidak punya healthcheck sendiri dan akan selalu tampil tanpa status
 > `healthy` di `docker compose ps` — itu normal, cukup pastikan statusnya
 > `Up`.
+
+**[Terminal] Coba alur checkout end-to-end** — sebelum masuk ke bagian
+relevance scoring, verifikasi dulu seluruh servis Robot Shop benar-benar
+terhubung satu sama lain (bukan cuma `Up` sendiri-sendiri), sekaligus
+melihat peran `rabbitmq` yang TIDAK terlihat lewat `docker compose ps`
+biasa (statusnya cuma `Up`, tanpa info apa isinya):
+```bash
+curl -s "http://localhost:8080/api/cart/add/checkout-demo/STAN-1/1" -o /dev/null
+curl -s -X POST "http://localhost:8080/api/cart/shipping/checkout-demo" \
+  -H 'Content-Type: application/json' \
+  -d '{"distance":10,"cost":5,"location":"Jakarta"}' -o /dev/null
+CART=$(curl -s "http://localhost:8080/api/cart/cart/checkout-demo")
+curl -s -X POST "http://localhost:8080/api/payment/pay/checkout-demo" \
+  -H 'Content-Type: application/json' -d "$CART"
+```
+Expected Output: `{"orderid":"<uuid acak>"}` — transaksi berhasil.
+
+> **INFORMATION:** urutan panggilan di atas meniru alur checkout Robot
+> Shop yang sesungguhnya: `cart` (isi keranjang) → `cart` lagi (tambah
+> biaya kirim) → `payment` (proses bayar). `payment` TIDAK memproses
+> pesanan secara langsung — ia hanya mempublikasikan pesan ke `rabbitmq`
+> (queue `orders`), dan `dispatch` (consumer asinkron, lihat
+> `robot-shop-structure.md`) yang benar-benar mengambil pesan itu untuk
+> diproses. Inilah peran `rabbitmq`: perantara ANTARA `payment` dan
+> `dispatch`, bukan servis yang Anda panggil langsung lewat `web`.
+
+**[Browser] Lihat antrean pesan secara visual** — buka
+`http://localhost:15672` (login `guest`/`guest`, kredensial default
+RabbitMQ), klik tab **Queues**, klik queue `orders`.
+
+![RabbitMQ management UI menampilkan queue orders, grafik message rates menunjukkan lonjakan publish dan deliver, Consumers: 1](../../../docs/screenshots/sesi-4/04-rabbitmq-queue-orders.png)
+
+*Queue `orders` — grafik "Message rates" menunjukkan lonjakan
+publish/deliver tepat saat perintah `curl` di atas dijalankan (kembali ke
+0 dalam hitungan detik karena `dispatch` memprosesnya nyaris seketika).
+`Consumers: 1` membuktikan `dispatch` benar-benar terhubung dan siap
+menerima pesan dari queue ini.*
 
 **[Terminal] Lakukan hal ini terlebih dahulu untuk isi rating awal** —
 jalankan perintah berikut:
@@ -281,6 +322,34 @@ atas.*
 > memiliki konsep `_score`/`boost` numerik gabungan — kombinasi semacam
 > itu tetap memerlukan Query DSL lewat Dev Tools Console atau lewat API
 > dari aplikasi.
+
+**[Terminal] Nyalakan traffic berkelanjutan (load generator)** — semua
+contoh di atas memakai panggilan manual satu-per-satu. Robot Shop
+sebenarnya menyediakan load generator (Locust) yang mensimulasikan banyak
+pengguna sekaligus, secara terus-menerus, menyentuh SEMUA servis yang
+sudah Anda instal (termasuk `rabbitmq`/`dispatch` lewat checkout otomatis):
+```bash
+docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml -f docker-compose.load.yml up -d load
+```
+*(Tanpa ARM override, cukup `-f docker-compose.yml -f docker-compose.load.yml`.)*
+
+Expected Output (dari `docker compose logs -f load` setelah ~30 detik):
+tabel statistik Locust bertambah baris terus (`GET /api/catalogue/...`,
+`POST /api/payment/pay/...`, dst.), kolom `# Fails` tetap `0(0.00%)`.
+
+> **INFORMATION:** load generator ini SENGAJA baru dinyalakan SEKARANG,
+> di akhir sesi — bukan di awal. Salah satu task-nya mengirim RATING ACAK
+> ke produk secara terus-menerus, yang akan MENGUBAH `avg_rating` yang
+> sudah Anda atur manual di bagian (d). Kalau Anda jalankan ulang query
+> `function_score` di atas SETELAH load generator ini menyala beberapa
+> saat, urutannya bisa sedikit berbeda dari Expected Output — itu NORMAL
+> (bukti nyata sistem sekarang menerima traffic sungguhan), tapi jangan
+> nyalakan load generator SEBELUM menyelesaikan bagian (d)/(e) kalau
+> ingin mereproduksi angka Expected Output persis seperti di modul ini.
+> Pengaturan yang sama (`NUM_CLIENTS: 6`) dipakai lagi di Sesi 6 lewat
+> `docker-compose.load.yml` MILIK sesi itu sendiri — BUKAN load generator
+> yang sama persis yang terus jalan (ingat, Sesi 6 punya stack Robot Shop
+> terpisah, Sesi 4 harus `docker compose down` dulu sebelum masuk Sesi 6).
 
 ## f. Referensi Exercise
 

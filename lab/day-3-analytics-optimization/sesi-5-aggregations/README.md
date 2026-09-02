@@ -14,8 +14,10 @@ Sesi ini dinyatakan selesai apabila Anda berhasil menjalankan dan
 menjelaskan hasil dari 4 jenis agregasi: metric+bucket dasar, `terms`+`avg`
 bertingkat, pipeline aggregation (`avg_bucket`), dan geo aggregation
 (`geohash_grid`) — serta berhasil memvisualisasikan hasil geo aggregation
-lewat Kibana Maps dan membuat satu visualisasi Lens dengan filter KQL
-diterapkan sebelum breakdown-nya.
+lewat Kibana Maps, membuat satu visualisasi Lens dengan filter KQL
+diterapkan sebelum breakdown-nya, DAN merakit mini dashboard berisi 6
+visualisasi (recreate sebagian dashboard eCommerce bawaan) seluruhnya
+lewat UI Lens/Dashboard, tanpa Dev Tools.
 
 ## c. Teori & Struktur Sistem
 
@@ -244,6 +246,54 @@ itu.*
 > situs dokumentasi. Pola filter+breakdown di atas berlaku sama persis
 > apabila datanya punya field method (mis. log Robot Shop pada Sesi 6/7),
 > tinggal ganti field pada langkah 3 sesuai kebutuhan.
+
+**Recreate mini dashboard eCommerce — implementasi lewat UI, bukan Dev
+Tools.** Sebelum melihat dashboard bawaan Kibana yang sudah jadi
+(referensi di bawah), coba bangun dulu SEBAGIAN kecilnya sendiri lewat
+Lens — 6 visualisasi berikut merepresentasikan pola yang sama dengan
+panel-panel di dashboard aslinya, dibangun dari nol tanpa satu query Dev
+Tools pun:
+
+1. **Metric "Total Revenue"** — Create visualization → Vertical axis:
+   fungsi **Sum**, field `taxful_total_price`.
+2. **Metric "Median Spending"** — Vertical axis: fungsi **Median**, field
+   `taxful_total_price`.
+3. **Metric "Rata-rata Item per Order"** — Vertical axis: fungsi
+   **Average**, field `total_quantity`.
+4. **Bar chart "Revenue per Day"** — Horizontal axis: **Date histogram**
+   pada `order_date`; Vertical axis: fungsi **Sum**, field
+   `taxful_total_price` (pola yang SAMA PERSIS dengan chart "Count per
+   day" yang sudah Anda buat sebelumnya, hanya field & fungsinya beda).
+5. **Bar chart horizontal "Top 5 Produk Terlaris"** — Horizontal axis:
+   **Top values** pada `products.product_name.keyword` (size 5);
+   Vertical axis: fungsi **Count**.
+6. **Bar chart bertumpuk "Order per Kategori dari Waktu ke Waktu"** —
+   Horizontal axis: **Date histogram** pada `order_date`; Breakdown:
+   **Top values** pada `category.keyword`; Vertical axis: fungsi
+   **Count**.
+
+Simpan keenamnya ke Visualize Library, lalu buat **dashboard baru**
+(menu ☰ → Analytics → Dashboards → **Create dashboard**), tambahkan
+keenam visualisasi tadi (**Add from library**), atur rentang waktu agar
+mencakup seluruh data (dataset ini time-relative, sama seperti
+peringatan sebelumnya), lalu simpan dashboard dengan nama bebas.
+
+![Mini dashboard eCommerce hasil recreate: 3 metric (Total Revenue $350,884.13, Median Spending $64.42, Rata-rata Item 2.2), bar chart Revenue per Day, bar chart horizontal Top 5 Produk Terlaris, bar chart bertumpuk kategori per waktu](../../../docs/screenshots/sesi-5/13-mini-dashboard-ecommerce-recreate.png)
+
+*Hasil recreate — 6 visualisasi tergabung dalam satu dashboard, dibangun
+seluruhnya lewat point-and-click. `Total Revenue` ($350,884.13) dan
+`Median Spending` ($64.42) dapat Anda silang-cek lewat query `sum`/
+`percentiles` pada `taxful_total_price` di Dev Tools apabila ingin
+verifikasi — hasilnya harus identik, sekadar cara menampilkannya yang
+berbeda.*
+
+> **INFORMATION:** ini BUKAN berarti Query DSL/Dev Tools tidak berguna —
+> keduanya membaca DATA YANG SAMA lewat mekanisme aggregation yang sama
+> persis (`sum`, `avg`, `terms`, `date_histogram`). Bedanya cuma cara
+> mengaksesnya: Dev Tools untuk saat Anda perlu kontrol penuh/otomasi
+> lewat kode, dashboard untuk saat hasilnya perlu dilihat berulang kali
+> oleh banyak orang (mis. tim marketing) tanpa perlu menulis query sama
+> sekali.
 
 **Referensi — dashboard eCommerce bawaan Kibana** (contoh dashboard
 lengkap dengan banyak visualisasi tergabung, ikut ter-ship otomatis

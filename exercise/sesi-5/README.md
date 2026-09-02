@@ -1,11 +1,13 @@
-# Exercise Sesi 5 — Aggregation pada Data eCommerce
+# Exercise Sesi 5 — Aggregation pada Data eCommerce & Penerbangan
 
 ## Use Case
 
 Tim analytics eCommerce ingin mengetahui berapa banyak pelanggan unik yang
-pernah berbelanja, serta dari daerah mana saja order tersebut berasal.
-Exercise ini menggunakan `kibana_sample_data_ecommerce` (dataset yang
-berbeda dari latihan lab, yang menggunakan data log web server).
+pernah berbelanja, serta dari daerah mana saja order tersebut berasal
+(langkah 1-3, `kibana_sample_data_ecommerce`). Terpisah dari itu, tim
+operasional maskapai ingin dashboard ringkas soal harga tiket & pola
+keterlambatan penerbangan (langkah 4, `kibana_sample_data_flights`) —
+dataset yang berbeda lagi dari latihan lab (log web server).
 
 **Soal data:** exercise ini menggunakan index `kibana_sample_data_ecommerce`
 yang SAMA dengan yang sudah Anda muat pada lab Sesi 3 — **tidak perlu
@@ -26,13 +28,40 @@ curl -X POST "http://localhost:5601/api/sample_data/ecommerce" \
 3. Kombinasikan: `date_histogram` per hari + `sum` dari `taxful_total_price`
    di tiap bucket-nya (total revenue harian) — lalu tambahkan pipeline
    aggregation `max_bucket` di atasnya untuk mencari HARI dengan revenue tertinggi.
-4. **Visualisasikan hasil langkah 3 di Kibana** (bukan hanya lewat query) —
-   buat bar chart Lens dari nol (lihat lab Sesi 5 bagian e untuk caranya):
-   data view `kibana_sample_data_ecommerce`, Horizontal axis = `order_date`
-   (date histogram), Vertical axis = **Sum** dari `taxful_total_price`.
-   Ambil screenshot hasilnya, dan tunjukkan bar mana yang paling tinggi —
-   harus cocok dengan tanggal yang Anda temukan melalui `max_bucket` pada
-   langkah 3.
+4. **Bangun dashboard 5 visualisasi memakai data PENERBANGAN**
+   (`kibana_sample_data_flights` — dataset berbeda lagi dari langkah 1-3,
+   supaya Anda berlatih pada 3 dataset berbeda dalam satu sesi). Muat
+   dulu apabila belum ada:
+   ```bash
+   curl -X POST "http://localhost:5601/api/sample_data/flights" \
+     -H "kbn-xsrf: true" -H "x-elastic-internal-origin: kibana"
+   ```
+   Buat KELIMA visualisasi berikut lewat Lens/Maps (lihat lab Sesi 5
+   bagian e untuk cara memakai editor Lens), **beri nama PERSIS diawali
+   `sesi-5-`** saat Save, lalu kumpulkan semuanya jadi SATU dashboard:
+   - `sesi-5-avg-ticket-price` — Metric, fungsi **Average** pada
+     `AvgTicketPrice`.
+   - `sesi-5-flights-per-carrier` — Bar chart, Horizontal axis **Top
+     values** pada `Carrier`, Vertical axis **Count**.
+   - `sesi-5-delay-per-carrier` — Bar chart, Horizontal axis **Top
+     values** pada `Carrier`, Vertical axis fungsi **Average** pada
+     `FlightDelayMin` — maskapai mana yang PALING SERING delay?
+   - `sesi-5-flights-per-day` — Bar chart, Horizontal axis **Date
+     histogram** pada `timestamp`, Vertical axis **Count**.
+   - `sesi-5-origin-map` — Kibana Maps, layer **Documents** pada data
+     view Kibana Sample Data Flights, geospatial field `OriginLocation`.
+
+> **INFORMATION:** validasi exercise ini memeriksa Visualize
+> Library/Maps LEWAT NAMA (pola `sesi-5-*`) — bukan screenshot. Pastikan
+> tiap visualisasi benar-benar di-**Save** (bukan cuma dibuat di editor
+> lalu ditinggal), dan nama-nya diawali persis `sesi-5-` (huruf kecil,
+> pakai tanda hubung).
+
+> **INFORMATION:** `kibana_sample_data_flights` JUGA time-relative
+> (sama seperti dataset sample data lain) — atur rentang waktu di kanan
+> atas agar mencakup seluruh data (mis. rentang lebar beberapa bulan ke
+> depan/belakang dari hari ini), supaya chart tidak kosong karena
+> defaultnya cuma "Last 15 minutes".
 
 ## Kriteria Selesai
 
@@ -40,8 +69,11 @@ curl -X POST "http://localhost:5601/api/sample_data/ecommerce" \
 - Anda memiliki area geohash dengan order terbanyak.
 - Anda dapat menyebutkan tanggal dengan revenue harian tertinggi, hasil
   dari pipeline aggregation `max_bucket` (bukan dihitung manual satu per satu).
-- Anda memiliki screenshot bar chart Lens "revenue per hari", dan bar
-  tertingginya cocok dengan tanggal dari `max_bucket`.
+- Ada TEPAT 5 visualisasi/map tersimpan dengan nama berpola `sesi-5-*`,
+  tergabung dalam satu dashboard.
+- Anda dapat menyebutkan maskapai dengan rata-rata `FlightDelayMin`
+  tertinggi, berdasarkan visualisasi `sesi-5-delay-per-carrier` yang
+  sudah Anda buat.
 
 ## Petunjuk (Buka Apabila Mengalami Kendala)
 

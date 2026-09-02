@@ -19,6 +19,30 @@ services:
   rabbitmq:
     image: rabbitmq:3.8-management-alpine
     networks: [robot-shop]
+  payment-gateway:
+    # Dummy payment gateway lokal -- MENGGANTIKAN pemanggilan nyata ke
+    # situs eksternal (default upstream Robot Shop memanggil paypal.com).
+    # Sengaja diberi delay respons ~850ms supaya tetap merepresentasikan
+    # dependency eksternal yang lambat -- inilah dependency yang akan
+    # Anda temukan lewat span.destination.service.resource pada bagian
+    # (e), TANPA benar-benar menghubungi internet. Sama persis dengan
+    # Sesi 4 (reuse definisi).
+    image: python:3.13-alpine
+    networks: [robot-shop]
+    command:
+      - python3
+      - -c
+      - |
+        import http.server, time
+        class H(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                time.sleep(0.85)
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b'OK')
+            def log_message(self, *a):
+                pass
+        http.server.HTTPServer(('0.0.0.0', 80), H).serve_forever()
   catalogue:
     image: shirojack/rs-catalogue:v2
     depends_on: [mongodb]
@@ -84,9 +108,12 @@ services:
         condition: service_started
       apm-server:
         condition: service_healthy
+      payment-gateway:
+        condition: service_started
     environment:
       ELASTIC_APM_SERVER_URL: http://apm-server:8200
       ELASTIC_APM_ENVIRONMENT: training
+      PAYMENT_GATEWAY: http://payment-gateway/
     networks: [robot-shop]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -99,7 +126,33 @@ services:
     networks: [robot-shop]
   web:
     image: shirojack/rs-web:v2
-    depends_on: [catalogue, user, shipping, payment]
+    depends_on:
+      # cart WAJIB service_healthy -- nginx (image ini) resolve semua
+      # upstream lewat DNS satu kali saat boot dan TIDAK retry; kalau
+      # cart belum listen di 8080, web langsung crash permanen
+      # (nginx: [emerg] host not found in upstream "cart"). Ini nyata
+      # terjadi di sesi ini karena cart ikut menunggu apm-server dulu
+      # (lihat definisi service cart di bawah), jadi start-nya lebih
+      # lambat dibanding Sesi 4 (network Robot Shop terpisah, tanpa
+      # apm-server).
+      cart:
+        condition: service_healthy
+      # catalogue/user/shipping/payment: cukup condition service_started
+      # (perilaku ASLI sebelum fix ini) -- JANGAN diubah ke
+      # service_healthy, karena shipping/ratings butuh 1-2 menit untuk
+      # sehat (inisialisasi MySQL, lihat robot-shop-structure.md), lebih
+      # lama dari retry healthcheck web (interval 10s x retries 3) --
+      # kalau dipaksa service_healthy, `docker compose up` akan gagal
+      # total dengan "dependency failed to start: ... is unhealthy"
+      # sebelum shipping sempat benar-benar pulih.
+      catalogue:
+        condition: service_started
+      user:
+        condition: service_started
+      shipping:
+        condition: service_started
+      payment:
+        condition: service_started
     ports:
       - "8080:8080"
     networks: [robot-shop]

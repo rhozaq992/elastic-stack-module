@@ -2,9 +2,19 @@
 
 Mulai sesi ini, Anda akan menggunakan **Robot Shop**, aplikasi e-commerce
 berbasis microservice, sebagai studi kasus data nyata untuk sesi-sesi
-berikutnya (Sesi 4, 6, dan 8). Anda tidak perlu mengetahui bagaimana
+berikutnya (Sesi 4, 6, dan 7). Anda tidak perlu mengetahui bagaimana
 sistem ini dibangun — cukup pahami strukturnya, supaya mengetahui sistem
 apa yang sedang Anda observasi lewat Elasticsearch/Kibana.
+
+> **INFORMATION:** kenapa semua service di bawah ini perlu diinstal
+> sekaligus, padahal query lab ini sendiri cuma menyentuh
+> `robot-shop-catalogue`? Karena Robot Shop adalah SATU aplikasi utuh —
+> `catalogue` bergantung pada `mongodb`, `shipping`/`ratings` bergantung
+> pada `mysql`, dst. (lihat kolom "Backing Store"), tidak bisa dijalankan
+> sebagian. Supaya seluruh service ini benar-benar TERPAKAI (bukan cuma
+> `Up` tanpa traffic), bagian (d) di README lab menyalakan load
+> generator di akhir sesi — traffic nyata yang menyentuh semua service
+> sekaligus, termasuk `rabbitmq`/`dispatch` lewat checkout otomatis.
 
 ## Topologi
 
@@ -32,6 +42,12 @@ perbedaan panggilan sinkron vs asinkron).*
 
 Service pendukung (`mongodb`, `redis`, `mysql`, `rabbitmq`) adalah database/
 message-queue standar, bukan bagian dari aplikasi Robot Shop sendiri.
+Ditambah satu service pendukung buatan modul ini sendiri (bukan bagian
+Robot Shop asli): `payment-gateway`, dummy HTTP server yang menggantikan
+pemanggilan nyata ke situs eksternal (default Robot Shop memanggil
+`https://paypal.com/`) — `payment` diarahkan ke sini lewat env var
+`PAYMENT_GATEWAY`, supaya lab ini tidak pernah menghubungi internet
+sungguhan untuk mensimulasikan payment gateway pihak ketiga.
 
 ## API yang Dipakai di Lab Ini
 
@@ -41,6 +57,13 @@ Semua lewat `http://localhost:8080` (service `web`):
 - `GET /api/catalogue/product/<sku>` — detail satu produk.
 - `GET /api/ratings/api/fetch/<sku>` — rating rata-rata & jumlah rating produk.
 - `PUT /api/ratings/api/rate/<sku>/<1-5>` — kirim rating baru.
+- `GET /api/cart/add/<id>/<sku>/<qty>` — tambah item ke keranjang.
+- `GET /api/cart/cart/<id>` — lihat isi keranjang.
+- `POST /api/cart/shipping/<id>` — tambah biaya kirim ke keranjang (body:
+  `{"distance", "cost", "location"}`).
+- `POST /api/payment/pay/<id>` — proses pembayaran (body: isi keranjang
+  lengkap dari `GET /api/cart/cart/<id>`) — inilah yang memicu pesan ke
+  `rabbitmq`, diproses `dispatch`.
 
 ## Menjalankan
 
