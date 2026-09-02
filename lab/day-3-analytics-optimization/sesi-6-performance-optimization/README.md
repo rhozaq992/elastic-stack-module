@@ -239,6 +239,34 @@ sendiri), optimasi perlu diarahkan ke kode; apabila mayoritas di
 `http`/`db` (panggilan keluar), masalahnya ada pada service/dependency
 lain yang dipanggil, bukan pada `payment` itu sendiri.*
 
+**Telusuri SATU trace spesifik — lihat persis service apa saja yang
+dilewati.** Panel di atas menampilkan agregat (rata-rata banyak
+transaksi) — untuk memahami satu request SECARA UTUH, scroll ke bawah
+ke bagian **Trace samples**, lalu klik salah satu sampel untuk membuka
+**Timeline**-nya:
+
+![Kibana APM Timeline satu trace POST /pay/<id> berdurasi 876ms, menampilkan 3 span anak: GET user:8080 (2.6ms), GET payment-gateway (867ms, mendominasi hampir seluruh lebar timeline), DELETE cart:8080 (2.7ms)](../../../docs/screenshots/sesi-6/04-apm-trace-waterfall.png)
+
+*Satu trace nyata (`POST /pay/<id>`, total 876ms) — Timeline ini
+menjawab "trace ini menyentuh service/dependency apa saja, dan berapa
+lama masing-masing": `GET user:8080` (2.6ms), `GET payment-gateway`
+(867ms — bar teal yang membentang hampir sepanjang timeline, **99% dari
+total durasi**), `DELETE cart:8080` (2.7ms). Tidak perlu menghitung
+manual — panjang bar SUDAH proporsional terhadap durasinya, dan urutan
+dari atas ke bawah mengikuti urutan panggilan sebenarnya di dalam kode
+`payment`.*
+
+> **INFORMATION:** trace ini membuktikan `payment` LAMBAT bukan karena
+> kode `payment` sendiri (panggilan internalnya ke `user`/`cart`
+> sama-sama di bawah 3ms, secepat yang diharapkan), melainkan karena
+> menunggu respons `payment-gateway` — dependency eksternal (dummy,
+> lihat bagian d) yang disengaja lambat untuk mensimulasikan payment
+> gateway pihak ketiga sungguhan. Ini pola yang sama dengan latihan
+> exercise Sesi 6 (lihat `exercise/sesi-6/README.md` Bagian 2) — bedanya
+> di sini Anda melihat SATU trace individual lewat UI, exercise nanti
+> meminta Anda membuktikan pola ini lewat AGREGASI banyak trace
+> (`span.destination.service.resource`) lewat query.
+
 **Query data trace-nya secara langsung**:
 
 > **INFORMATION:** APM Server menyimpan data trace sebagai index

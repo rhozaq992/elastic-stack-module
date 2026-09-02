@@ -67,17 +67,28 @@ Discover BISA lakukan: filter + sort tanpa menulis query sama sekali.
    klik ikon **+**).
 4. **Urutkan berdasarkan `price`**: klik nama kolom `price` di header
    tabel, klik ikon panah yang muncul untuk mengurutkan naik/turun.
+5. **Simpan Discover session ini** — klik **Save** (kanan atas), beri
+   nama **diawali `sesi-4-`** (mis. `sesi-4-instock-price`), klik
+   **Save**.
+
+> **INFORMATION:** validasi exercise ini TIDAK cukup dengan "data sudah
+> ter-load" — yang dinilai adalah Discover session TERSIMPAN dengan nama
+> spesifik berpola `sesi-4-*`, DAN jumlah dokumen hasil filternya (angka
+> "Documents (N)" di atas tabel). Simpan session-nya, bukan cuma
+> screenshot tanpa menyimpan.
 
 ### Kriteria Selesai
 
-- Anda memiliki screenshot Discover yang menampilkan hasil filter
-  `instock > 0` dengan kolom `name`/`price`/`instock`, terurut
+- Ada Discover session tersimpan dengan nama berpola `sesi-4-*`, berisi
+  filter `instock > 0` dan kolom `name`/`price`/`instock` terurut
   berdasarkan `price`.
+- Anda mencatat berapa jumlah dokumen ("Documents (N)") yang muncul untuk
+  session tersimpan itu.
 - Anda dapat menjelaskan KENAPA cara ini (Discover) tidak dapat dipakai
   untuk kasus boost rating seperti di lab (petunjuk: KQL tidak memiliki
   konsep `_score`/`boost` numerik, hanya dapat memfilter benar/salah).
 
-Validasi hasil pekerjaan Anda (Varian A):
+Validasi hasil pekerjaan Anda (Varian A dan B):
 ```bash
 bash exercise/scripts/validate_sesi4.sh
 ```

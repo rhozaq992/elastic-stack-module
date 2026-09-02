@@ -1,5 +1,5 @@
 # Robot Shop -- aplikasi microservice e-commerce contoh, dipakai sebagai
-# studi kasus Sesi 4, 6, dan 8. Semua image di bawah sudah PRE-BUILT
+# studi kasus Sesi 4, 6, dan 7. Semua image di bawah sudah PRE-BUILT
 # (multi-arch: amd64 + arm64) -- Anda HANYA menjalankan `docker compose up`,
 # tidak perlu build/compile apa pun. Lihat robot-shop-structure.md untuk
 # penjelasan arsitekturnya.
@@ -12,7 +12,31 @@ services:
     networks: [robot-shop]
   rabbitmq:
     image: rabbitmq:3.8-management-alpine
+    ports:
+      - "15672:15672"
     networks: [robot-shop]
+  payment-gateway:
+    # Dummy payment gateway lokal -- MENGGANTIKAN pemanggilan nyata ke
+    # situs eksternal (default upstream Robot Shop memanggil paypal.com).
+    # Sengaja diberi delay respons ~850ms supaya tetap merepresentasikan
+    # dependency eksternal yang lambat (dipakai lagi di Sesi 6 untuk
+    # latihan analisis APM), tanpa benar-benar menghubungi internet.
+    image: python:3.13-alpine
+    networks: [robot-shop]
+    command:
+      - python3
+      - -c
+      - |
+        import http.server, time
+        class H(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                time.sleep(0.85)
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b'OK')
+            def log_message(self, *a):
+                pass
+        http.server.HTTPServer(('0.0.0.0', 80), H).serve_forever()
   catalogue:
     image: shirojack/rs-catalogue:v2
     depends_on: [mongodb]
@@ -66,7 +90,9 @@ services:
       retries: 3
   payment:
     image: shirojack/rs-payment:v2
-    depends_on: [rabbitmq]
+    depends_on: [rabbitmq, payment-gateway]
+    environment:
+      PAYMENT_GATEWAY: http://payment-gateway/
     networks: [robot-shop]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]

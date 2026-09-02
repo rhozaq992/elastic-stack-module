@@ -1,0 +1,21 @@
+# Load generator Robot Shop -- traffic nyata supaya seluruh servis yang
+# sudah Anda install (termasuk rabbitmq/dispatch) benar-benar teraliri
+# traffic terus-menerus, bukan cuma dipanggil manual sesekali. NUM_CLIENTS
+# default image cuma 1 (terlalu kecil), dinaikkan di sini. Dipakai lagi
+# dengan pengaturan sama di Sesi 6 (reuse, bukan setup ulang).
+#
+# WAJIB dijalankan SETELAH bagian (d)/(e) relevance scoring selesai --
+# load generator ikut mengirim rating ACAK ke produk (lihat INFORMATION
+# di README), yang akan mengubah avg_rating dari yang sudah Anda-atur
+# manual sebelumnya.
+#
+# Jalankan dengan:
+#   docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml -f docker-compose.load.yml up -d load
+services:
+  load:
+    image: shirojack/rs-load:v2
+    environment:
+      HOST: http://web:8080
+      NUM_CLIENTS: 6
+      ERROR: 0
+    networks: [robot-shop]
