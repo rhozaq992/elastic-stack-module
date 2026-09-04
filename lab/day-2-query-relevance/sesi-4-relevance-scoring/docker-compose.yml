@@ -36,8 +36,11 @@ services:
                 pass
         http.server.HTTPServer(('0.0.0.0', 80), H).serve_forever()
   catalogue:
-    image: shirojack/rs-catalogue:v2
+    image: shirojack/rs-catalogue:v2-apm
     depends_on: [mongodb]
+    environment:
+      ELASTIC_APM_SERVER_URL: http://apm-server:8200
+      ELASTIC_APM_ENVIRONMENT: training
     networks: [robot-shop]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -45,8 +48,11 @@ services:
       timeout: 10s
       retries: 3
   user:
-    image: shirojack/rs-user:v2
+    image: shirojack/rs-user:v2-apm
     depends_on: [mongodb, redis]
+    environment:
+      ELASTIC_APM_SERVER_URL: http://apm-server:8200
+      ELASTIC_APM_ENVIRONMENT: training
     networks: [robot-shop]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -74,8 +80,15 @@ services:
     cap_add: [NET_ADMIN]
     networks: [robot-shop]
   shipping:
-    image: shirojack/rs-shipping:v2
+    image: shirojack/rs-shipping:v2-apm
     depends_on: [mysql]
+    environment:
+      # Elastic APM Java agent (javaagent jar) -- ELASTIC_APM_* env var
+      # sudah di-set default di dalam image (lihat Dockerfile), baris di
+      # bawah cuma restate nilainya secara eksplisit untuk konsistensi
+      # dengan servis lain di file ini.
+      ELASTIC_APM_SERVER_URL: http://apm-server:8200
+      ELASTIC_APM_ENVIRONMENT: training
     networks: [robot-shop]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -83,9 +96,11 @@ services:
       timeout: 10s
       retries: 3
   ratings:
-    image: shirojack/rs-ratings:v2
+    image: shirojack/rs-ratings:v2-apm
     environment:
       APP_ENV: prod
+      ELASTIC_APM_SERVER_URL: http://apm-server:8200
+      ELASTIC_APM_ENVIRONMENT: training
     depends_on: [mysql]
     networks: [robot-shop]
     healthcheck:
@@ -113,8 +128,11 @@ services:
       timeout: 10s
       retries: 3
   dispatch:
-    image: shirojack/rs-dispatch:v2
+    image: shirojack/rs-dispatch:v2-apm
     depends_on: [rabbitmq]
+    environment:
+      ELASTIC_APM_SERVER_URL: http://apm-server:8200
+      ELASTIC_APM_ENVIRONMENT: training
     networks: [robot-shop]
   web:
     image: shirojack/rs-web:v2
@@ -133,6 +151,8 @@ services:
       user:
         condition: service_started
       shipping:
+        condition: service_started
+      ratings:
         condition: service_started
       payment:
         condition: service_started
