@@ -246,10 +246,9 @@ Elasticsearch.
 
 ![Diagram alur data ISO 8583: Generator membuat pesan mentah, Translator decode jadi JSON, lalu Filebeat, Logstash, dan Elasticsearch](../../../docs/diagrams/sesi3-iso8583-pipeline-flow.svg)
 
-*Alur lengkapnya — bandingkan dengan diagram topologi Robot Shop di Sesi 4:
-di sana peserta cuma OBSERVASI sistem yang sudah jalan, di sini peserta
-melihat DATA-nya berpindah dari mentah (hex, tidak terbaca) sampai jadi
-dokumen yang bisa di-query.*
+*Alur lengkapnya — mirip diagram topologi Robot Shop di Sesi 4, hanya saja
+di sini Anda melihat DATA-nya sendiri berpindah dari mentah (hex, tidak
+terbaca) sampai jadi dokumen yang bisa di-query.*
 
 **Bagaimana raw ISO 8583 berubah jadi JSON?** Analogi singkatnya:
 
@@ -257,7 +256,7 @@ dokumen yang bisa di-query.*
 
 *Bitmap-nya berfungsi seperti "daftar isi" — sebelum tahu field apa saja yang
 menyusul, translator baca Bitmap dulu, baru tahu cara memotong sisa
-untaian hex jadi field satu-per-satu (mirip cara kamu baca `_mapping` untuk
+untaian hex jadi field satu-per-satu (mirip cara Anda baca `_mapping` untuk
 tahu tipe field sebelum query, di topik 3).*
 
 **Nyalakan sumber data live** *(prasyarat: stack Sesi 1 masih jalan)*:
@@ -267,16 +266,13 @@ docker compose up -d
 python3 generate_iso8583_stream.py
 ```
 Biarkan terminal generator tetap terbuka — `Ctrl+C` kapan saja untuk
-berhenti. Default: **jam pertama 10 transaksi/menit, jam kedua 2
-transaksi/menit, jam ketiga 10 lagi, jam keempat 2 lagi**, dst. bergantian
-terus tanpa jeda (beda dari pola ON/OFF Robot Shop — di sini traffic-nya
-tetap ada, cuma naik-turun kepadatannya, mensimulasikan jam sibuk vs sepi).
+berhenti. Kepadatan traffic-nya naik-turun mengikuti waktu (mensimulasikan
+jam sibuk vs jam sepi), bukan angka konstan.
 
 > **INFORMATION:** persentase transaksi approve/decline di-random ulang
-> setiap siklus, dan jumlah dokumen terus bertambah selama generator
-> jalan — hasil hits query di bawah **akan berbeda** dari yang tertulis di
-> sini dan dari punya peserta lain, itu normal (pola sama seperti traffic
-> Robot Shop di Sesi 4/6).
+> secara berkala, dan jumlah dokumen terus bertambah selama generator
+> jalan — hasil hits query di bawah pasti berbeda dari yang tertulis di
+> sini, hal ini normal (pola sama seperti traffic Robot Shop di Sesi 4/6).
 
 Field yang relevan:
 
@@ -329,9 +325,9 @@ pattern `iso8583-transactions-*`, timestamp field `@timestamp`.
 
 **Contoh Implementasi — Discover dengan data ISO 8583:**
 
-![Kibana Discover dengan dropdown data view menampilkan pilihan ISO 8583 Transactions](../../../docs/screenshots/sesi-3/13-discover-pilih-data-view-iso8583.png)
+![Kibana Discover dengan dropdown data view, ISO 8583 Transactions tercentang sebagai data view aktif](../../../docs/screenshots/sesi-3/13-discover-pilih-data-view-iso8583.png)
 
-*1. Klik nama data view di kiri atas, pilih data view ISO 8583 yang baru dibuat.*
+*1. Klik nama data view di kiri atas untuk buka dropdown, lalu pilih "ISO 8583 Transactions" — tanda centang menunjukkan data view ini yang aktif.*
 
 ![Kibana Discover menampilkan dokumen transaksi ISO 8583](../../../docs/screenshots/sesi-3/14-discover-data-iso8583.png)
 
