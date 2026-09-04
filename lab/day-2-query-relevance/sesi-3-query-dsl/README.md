@@ -244,14 +244,33 @@ bagian ini memakai simulasi transaksi kartu ATM/EDC (standar pesan
 **ISO 8583**) yang di-generate lalu diterjemahkan otomatis jadi dokumen
 Elasticsearch.
 
+![Diagram alur data ISO 8583: Generator membuat pesan mentah, Translator decode jadi JSON, lalu Filebeat, Logstash, dan Elasticsearch](../../../docs/diagrams/sesi3-iso8583-pipeline-flow.svg)
+
+*Alur lengkapnya — bandingkan dengan diagram topologi Robot Shop di Sesi 4:
+di sana peserta cuma OBSERVASI sistem yang sudah jalan, di sini peserta
+melihat DATA-nya berpindah dari mentah (hex, tidak terbaca) sampai jadi
+dokumen yang bisa di-query.*
+
+**Bagaimana raw ISO 8583 berubah jadi JSON?** Analogi singkatnya:
+
+![Analogi decode ISO 8583: raw hex dipecah pakai Bitmap jadi field-field, lalu diubah jadi JSON](../../../docs/diagrams/sesi3-iso8583-json-analogy.svg)
+
+*Bitmap-nya berfungsi seperti "daftar isi" — sebelum tahu field apa saja yang
+menyusul, translator baca Bitmap dulu, baru tahu cara memotong sisa
+untaian hex jadi field satu-per-satu (mirip cara kamu baca `_mapping` untuk
+tahu tipe field sebelum query, di topik 3).*
+
 **Nyalakan sumber data live** *(prasyarat: stack Sesi 1 masih jalan)*:
 ```bash
 cd lab/day-2-query-relevance/sesi-3-query-dsl/
 docker compose up -d
-python3 generate_iso8583_stream.py --tx-per-minute 2
+python3 generate_iso8583_stream.py
 ```
-Biarkan terminal generator tetap terbuka (2 transaksi/menit, ON 1 jam lalu
-jeda 1 jam, berulang) — `Ctrl+C` kapan saja untuk berhenti.
+Biarkan terminal generator tetap terbuka — `Ctrl+C` kapan saja untuk
+berhenti. Default: **jam pertama 10 transaksi/menit, jam kedua 2
+transaksi/menit, jam ketiga 10 lagi, jam keempat 2 lagi**, dst. bergantian
+terus tanpa jeda (beda dari pola ON/OFF Robot Shop — di sini traffic-nya
+tetap ada, cuma naik-turun kepadatannya, mensimulasikan jam sibuk vs sepi).
 
 > **INFORMATION:** persentase transaksi approve/decline di-random ulang
 > setiap siklus, dan jumlah dokumen terus bertambah selama generator

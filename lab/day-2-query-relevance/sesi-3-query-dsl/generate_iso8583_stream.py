@@ -3,9 +3,11 @@
 Generator + parser ISO 8583 versi STREAMING untuk latihan pipeline:
   sistem generate raw ISO 8583 -> translator parse ke JSON -> Filebeat tail -> ELK
 
-Pola traffic: N transaksi/menit, ON selama X detik, lalu OFF (jeda, tidak ada
-transaksi) selama Y detik, berulang terus (siklus). Tiap siklus ON, persentase
-approve/decline di-random ulang supaya karakter traffic tiap jam berbeda.
+Pola traffic: rate tx/menit BERGANTIAN tiap --cycle-seconds (default 1 jam),
+berputar terus lewat daftar --rates (default "10,2" -> jam pertama 10
+tx/menit, jam kedua 2 tx/menit, jam ketiga 10 lagi, jam keempat 2 lagi, dst.
+tanpa jeda/silence). Tiap pergantian siklus, persentase approve/decline juga
+di-random ulang supaya karakter traffic tiap jam berbeda.
 
 File output di-APPEND terus menerus (bukan ditimpa) supaya bisa langsung
 di-tail Filebeat seperti log yang benar-benar hidup:
@@ -13,9 +15,9 @@ di-tail Filebeat seperti log yang benar-benar hidup:
   parsed_transactions.jsonl  -> hasil terjemahan (satu JSON per baris)
 
 Jalankan:
-  python3 generate_iso8583_stream.py                     # default: 2 tx/menit, ON 1 jam, OFF 1 jam, tanpa batas
-  python3 generate_iso8583_stream.py --demo               # versi cepat buat verifikasi (ON 15s, OFF 8s, 2 siklus)
-  python3 generate_iso8583_stream.py --cycles 3            # berhenti otomatis setelah 3 siklus ON
+  python3 generate_iso8583_stream.py                       # default: gantian 10/menit <-> 2/menit tiap 1 jam, tanpa batas
+  python3 generate_iso8583_stream.py --demo                 # versi cepat buat verifikasi (cycle 15s, rate gantian 60<->20, 4 siklus)
+  python3 generate_iso8583_stream.py --rates 5,1 --cycle-seconds 1800   # custom: gantian 5/menit <-> 1/menit tiap 30 menit
   nohup python3 generate_iso8583_stream.py > stream.out 2>&1 &   # jalan di background beneran
 """
 
@@ -230,7 +232,6 @@ def generate_transaction(seq, tx_time, approve_rate, decline_shares):
 # --- loop streaming utama ---------------------------------------------------
 
 def run_stream(args):
-    interval = 60.0 / args.tx_per_minute
     raw_path = f"{args.out_dir}/raw_switch_capture.log"
     json_path = f"{args.out_dir}/parsed_transactions.jsonl"
 
@@ -238,13 +239,15 @@ def run_stream(args):
     cycle = 0
     try:
         while args.cycles == 0 or cycle < args.cycles:
+            rate = args.rates[cycle % len(args.rates)]
+            interval = 60.0 / rate
             cycle += 1
             approve_rate, decline_shares = roll_cycle_distribution(args.approve_min, args.approve_max)
             dist_str = ", ".join(f"{c}={s:.1%}" for c, s in decline_shares.items())
-            print(f"[{datetime.now().isoformat(timespec='seconds')}] Cycle {cycle} ON selama {args.on_seconds}s "
-                  f"| approve={approve_rate:.1%} | decline: {dist_str}", flush=True)
+            print(f"[{datetime.now().isoformat(timespec='seconds')}] Cycle {cycle} selama {args.cycle_seconds}s "
+                  f"| rate={rate:g} tx/menit | approve={approve_rate:.1%} | decline: {dist_str}", flush=True)
 
-            cycle_end = time.time() + args.on_seconds
+            cycle_end = time.time() + args.cycle_seconds
             with open(raw_path, "a") as rf, open(json_path, "a") as jf:
                 while time.time() < cycle_end:
                     seq += 1
@@ -265,27 +268,24 @@ def run_stream(args):
                     jf.flush()
 
                     time.sleep(interval)
-
-            if args.cycles == 0 or cycle < args.cycles:
-                print(f"[{datetime.now().isoformat(timespec='seconds')}] Cycle {cycle} OFF (jeda) selama {args.off_seconds}s", flush=True)
-                time.sleep(args.off_seconds)
     except KeyboardInterrupt:
         print("\nDihentikan oleh user (Ctrl+C). Total transaksi ter-generate:", seq)
 
 
 def parse_args():
     p = argparse.ArgumentParser(description="Streaming generator sample data ISO 8583")
-    p.add_argument("--tx-per-minute", type=float, default=2)
-    p.add_argument("--on-seconds", type=int, default=3600)
-    p.add_argument("--off-seconds", type=int, default=3600)
+    p.add_argument("--rates", type=str, default="10,2",
+                    help="daftar tx/menit yang bergantian tiap --cycle-seconds, contoh '10,2' = jam ganjil 10/menit, jam genap 2/menit, berulang terus")
+    p.add_argument("--cycle-seconds", type=int, default=3600)
     p.add_argument("--cycles", type=int, default=0, help="0 = tanpa batas (jalan terus sampai di-stop)")
     p.add_argument("--approve-min", type=float, default=0.65)
     p.add_argument("--approve-max", type=float, default=0.95)
     p.add_argument("--out-dir", default=".")
-    p.add_argument("--demo", action="store_true", help="mode cepat buat verifikasi: ON 15s, OFF 8s, 2 siklus, 60 tx/menit")
+    p.add_argument("--demo", action="store_true", help="mode cepat buat verifikasi: cycle 15s, rate gantian 60<->20 tx/menit, 4 siklus")
     args = p.parse_args()
+    args.rates = [float(x) for x in args.rates.split(",")]
     if args.demo:
-        args.on_seconds, args.off_seconds, args.cycles, args.tx_per_minute = 15, 8, 2, 60
+        args.cycle_seconds, args.cycles, args.rates = 15, 4, [60.0, 20.0]
     return args
 
 

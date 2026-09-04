@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="1000" height="300" fill="#ffffff" rx="12" />
+  <text x="500" y="32" text-anchor="middle" font-size="18" font-weight="700" fill="#1a1a1a">Analogi Singkat: Dari Pesan Mentah ke JSON</text>
+
+  <defs>
+    <marker id="arrowJ" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#1d4ed8" />
+    </marker>
+  </defs>
+
+  <!-- Left: raw tape -->
+  <text x="220" y="70" text-anchor="middle" font-size="13" font-weight="700" fill="#3f3f46">Raw ISO 8583 (hex, tidak terbaca manusia)</text>
+
+  <g font-family="monospace" font-size="11" font-weight="700">
+    <rect x="60" y="90" width="60" height="34" fill="#fecaca" stroke="#b91c1c" stroke-width="1.5" />
+    <text x="90" y="111" text-anchor="middle" fill="#7f1d1d">0200</text>
+
+    <rect x="120" y="90" width="130" height="34" fill="#fde68a" stroke="#b45309" stroke-width="1.5" />
+    <text x="185" y="111" text-anchor="middle" fill="#78350f" font-size="9.5">7238040008C0...</text>
+
+    <rect x="250" y="90" width="60" height="34" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="1.5" />
+    <text x="280" y="111" text-anchor="middle" fill="#1e3a8a" font-size="9.5">164001...</text>
+
+    <rect x="310" y="90" width="55" height="34" fill="#bbf7d0" stroke="#047857" stroke-width="1.5" />
+    <text x="337" y="111" text-anchor="middle" fill="#065f46" font-size="9.5">200000</text>
+
+    <rect x="365" y="90" width="55" height="34" fill="#e9d5ff" stroke="#7e22ce" stroke-width="1.5" />
+    <text x="392" y="111" text-anchor="middle" fill="#581c87" font-size="9">0000...</text>
+  </g>
+  <g font-size="9.5" fill="#52525b" font-weight="700">
+    <text x="90" y="138" text-anchor="middle">MTI</text>
+    <text x="185" y="138" text-anchor="middle">Bitmap</text>
+    <text x="280" y="138" text-anchor="middle">DE2 (PAN)</text>
+    <text x="337" y="138" text-anchor="middle">DE3</text>
+    <text x="392" y="138" text-anchor="middle">DE4 dst.</text>
+  </g>
+  <text x="220" y="165" text-anchor="middle" font-size="10.5" fill="#71717a">satu untaian panjang, field-nya menempel</text>
+  <text x="220" y="180" text-anchor="middle" font-size="10.5" fill="#71717a">tanpa pemisah &#8212; panjang tiap field HARUS dihafal/dilihat dari kamus DE</text>
+
+  <!-- Arrow -->
+  <path d="M 445 130 L 545 130" stroke="#1d4ed8" stroke-width="3" fill="none" marker-end="url(#arrowJ)" />
+  <text x="495" y="112" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1d4ed8">baca Bitmap</text>
+  <text x="495" y="150" text-anchor="middle" font-size="9.5" fill="#1d4ed8">&#8594; tahu field mana yang ada</text>
+
+  <!-- Right: JSON box -->
+  <text x="775" y="70" text-anchor="middle" font-size="13" font-weight="700" fill="#065f46">JSON (terbaca, siap masuk Elasticsearch)</text>
+  <rect x="570" y="85" width="410" height="150" rx="8" fill="#f0fdf4" stroke="#047857" stroke-width="1.5" />
+  <g font-family="monospace" font-size="11.5" fill="#065f46">
+    <text x="585" y="106">{</text>
+    <text x="600" y="124">"mti": "0200",</text>
+    <text x="600" y="142">"transaction_type": "purchase",</text>
+    <text x="600" y="160">"amount": 150000,</text>
+    <text x="600" y="178">"pan_masked": "400123******6001",</text>
+    <text x="600" y="196">"approved": true</text>
+    <text x="585" y="214">}</text>
+  </g>
+
+  <rect x="20" y="255" width="960" height="35" rx="10" fill="#f4f4f5" stroke="#d4d4d8" stroke-width="1.5" />
+  <text x="500" y="277" text-anchor="middle" font-size="11.5" fill="#27272a">Nomor kartu (PAN) di raw message masih LENGKAP &#8212; translator yang men-mask-nya sebelum masuk JSON/Elasticsearch.</text>
+</svg>
