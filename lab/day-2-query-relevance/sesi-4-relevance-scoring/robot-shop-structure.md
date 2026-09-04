@@ -54,7 +54,7 @@ observability yang membaca/menerima data dari servis-servis di atas:
 
 | Service | Fungsi |
 |---|---|
-| `apm-server` | Menerima data trace APM dari `cart`/`payment` (image `:v2-apm`), menyimpannya ke Elasticsearch. |
+| `apm-server` | Menerima data trace APM dari `cart`/`payment`/`catalogue`/`user`/`shipping`/`ratings`/`dispatch` (image `:v2-apm`), menyimpannya ke Elasticsearch. |
 | `metricbeat` | Mengumpulkan metrik `mongodb`, `mysql`, `redis`, `rabbitmq` secara berkala. |
 | `logstash-rs` | Mem-parsing log `payment`/`cart`/`web` (grok/JSON) yang dikirim `filebeat-rs`. |
 | `filebeat-rs` | Membaca log seluruh container Robot Shop, mengirimkannya ke `logstash-rs`. |

@@ -13,21 +13,24 @@
   <rect x="70" y="158" width="860" height="34" rx="6" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
   <text x="500" y="180" text-anchor="middle" font-size="12" font-weight="600" fill="#1e3a8a">POST /pay/&lt;id&gt; — 904ms</text>
 
-  <!-- Row 3: spans (proportional to real duration/offset within the transaction) -->
+  <!-- Row 3: spans (proportional to real duration/offset within the transaction).
+       Drawing order matters here: the dominant payment-gateway bar is drawn
+       FIRST (bottom layer) so the two tiny span rects/labels stay visible on
+       top of it instead of being painted over. -->
   <text x="70" y="216" font-size="12" font-weight="700" fill="#065f46">span (operasi anak di dalam transaction)</text>
 
-  <!-- span: GET user:8080 -- offset 0.75ms, duration 3.1ms (drawn at min width for visibility) -->
-  <rect x="71" y="224" width="6" height="28" rx="3" fill="#a7f3d0" stroke="#047857" stroke-width="1.5" />
-  <line x1="77" y1="238" x2="140" y2="238" stroke="#047857" stroke-width="1" stroke-dasharray="2,2" />
-  <text x="144" y="242" font-size="11" fill="#065f46">GET user:8080 — 3.1ms</text>
-
-  <!-- span: GET payment-gateway -- offset 4.2ms, duration 856.8ms (dominant, ~95%) -->
+  <!-- span: GET payment-gateway, offset 4.2ms, duration 856.8ms (dominant, ~95%) -->
   <rect x="74" y="224" width="815" height="28" rx="3" fill="#fde68a" stroke="#b45309" stroke-width="2" />
   <text x="481" y="243" text-anchor="middle" font-size="12" font-weight="700" fill="#78350f">GET payment-gateway — 856.8ms (95% durasi trace)</text>
 
-  <!-- span: DELETE cart:8080 -- offset 863.4ms, duration 39ms -->
+  <!-- span: GET user:8080, offset 0.75ms, duration 3.1ms (drawn at min width for visibility) -->
+  <rect x="71" y="224" width="6" height="28" rx="3" fill="#a7f3d0" stroke="#047857" stroke-width="1.5" />
+  <line x1="74" y1="252" x2="74" y2="266" stroke="#047857" stroke-width="1" stroke-dasharray="2,2" />
+  <text x="78" y="278" font-size="11" fill="#065f46">GET user:8080 — 3.1ms</text>
+
+  <!-- span: DELETE cart:8080, offset 863.4ms, duration 39ms -->
   <rect x="891" y="224" width="37" height="28" rx="3" fill="#a7f3d0" stroke="#047857" stroke-width="1.5" />
-  <line x1="891" y1="238" x2="830" y2="266" stroke="#047857" stroke-width="1" stroke-dasharray="2,2" />
+  <line x1="909" y1="252" x2="830" y2="266" stroke="#047857" stroke-width="1" stroke-dasharray="2,2" />
   <text x="700" y="278" font-size="11" fill="#065f46">DELETE cart:8080 — 39ms</text>
 
   <!-- explanatory legend -->

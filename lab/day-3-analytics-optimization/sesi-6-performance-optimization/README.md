@@ -16,19 +16,22 @@ Sesi ini dianggap selesai apabila Anda berhasil mengukur dan
 membandingkan `took` (waktu eksekusi) query sebelum/sesudah cache aktif,
 menjalankan `_profile` API untuk membedah waktu eksekusi query, mengubah
 `refresh_interval` index lalu mengembalikannya ke semula, serta melihat di
-Kibana APM **Service Inventory** bahwa service `cart` dan `payment`
-tampil dengan angka latency yang jauh berbeda, sehingga Anda dapat
-menyebutkan service mana yang lebih lambat dan berapa kira-kira
-selisihnya.
+Kibana APM **Service Inventory** bahwa beberapa service (mis. `payment`
+dan `shipping`) tampil dengan angka latency yang jauh berbeda dari
+service lain (mis. `cart`, `user`), sehingga Anda dapat menyebutkan
+service mana yang lebih lambat dan berapa kira-kira selisihnya.
 
 ## c. Teori & Struktur Sistem
 
 Robot Shop pada sesi ini adalah **kelanjutan langsung dari Sesi 4** —
-`cart` dan `payment` (image `:v2-apm`) sudah disisipi **Elastic APM
-agent** sejak awal. Traffic dari load generator (Locust) yang mengalir
-ke keduanya kini benar-benar **terpakai**: setiap request yang diproses
-menghasilkan data trace yang tersimpan di Elasticsearch dan dapat Anda
-analisis, bukan sekadar lewat di log lalu hilang seperti sebelumnya.
+tujuh service (`cart`, `payment`, `catalogue`, `user`, `shipping`,
+`ratings`, `dispatch`) sudah disisipi **Elastic APM agent** sejak awal
+(image `:v2-apm`), masing-masing dengan cara yang sesuai bahasa/framework-nya
+sendiri (lihat bagian d topik 3). Traffic dari load generator (Locust)
+yang mengalir ke semuanya kini benar-benar **terpakai**: setiap request
+yang diproses menghasilkan data trace yang tersimpan di Elasticsearch dan
+dapat Anda analisis, bukan sekadar lewat di log lalu hilang seperti
+sebelumnya.
 
 **Apa itu APM?** Application Performance Monitoring adalah cara mengukur
 seberapa cepat/lambat aplikasi merespons dari DALAM kode aplikasi itu
@@ -41,7 +44,7 @@ penyebabnya `cart`, `payment`, `shipping`, atau kombinasi ketiganya.
 
 **Cara kerja APM di stack ini:**
 
-![Diagram cara kerja APM: cart/payment mengirim trace ke apm-server, disimpan ke Elasticsearch, dibaca oleh Kibana APM UI](../../../docs/diagrams/sesi6-apm-architecture.svg)
+![Diagram cara kerja APM: 7 servis Robot Shop mengirim trace ke apm-server, disimpan ke Elasticsearch, dibaca oleh Kibana APM UI](../../../docs/diagrams/sesi6-apm-architecture.svg)
 
 1. **APM agent** — library kecil yang di-install DI DALAM kode aplikasi
    (satu per bahasa pemrograman: Python, Node.js, Java, dst.). Tugasnya
@@ -57,11 +60,18 @@ penyebabnya `cart`, `payment`, `shipping`, atau kombinasi ketiganya.
    detail per transaksi, tanpa Anda perlu menulis query manual (walaupun
    datanya tetap bisa di-query manual seperti index lain, lihat bagian d topik 3).
 
-**Mengapa hanya `cart` dan `payment`** (bukan seluruh 12 service)? Supaya
-sesi ini tetap fokus dan cepat — dua service ini representatif: `cart`
-(Node.js, operasi ringan ke Redis) berbanding `payment` (Python, operasi
-lebih berat termasuk panggilan HTTP keluar). Perbandingan keduanya sudah
-cukup untuk menunjukkan konsep "per-service latency" dengan jelas.
+**Mengapa BUKAN seluruh 12 servis Robot Shop?** Tujuh service aplikasi
+(`cart`, `payment`, `catalogue`, `user`, `shipping`, `ratings`,
+`dispatch`) sudah ber-APM — mencakup 5 bahasa/framework berbeda (Node.js,
+Python, Java, PHP, Go), jadi Anda tetap bisa membandingkan latency LINTAS
+BAHASA, bukan cuma dua titik data. Sisanya SENGAJA tidak diberi APM
+agent:
+- `web` — reverse proxy Nginx, bukan kode aplikasi yang bisa disisipi
+  agent APM (observability untuk Nginx pakai pendekatan lain, mis. modul
+  Metricbeat, di luar cakupan sesi ini).
+- `mongodb`/`mysql`/`redis`/`rabbitmq` — database/message-queue pihak
+  ketiga, sudah dipantau lewat `metricbeat` (Sesi 4) yang mengukur
+  metrik server DB-nya sendiri, bukan trace request aplikasi.
 
 **Tiga teknik optimasi lain yang tetap dibahas pada sesi ini** (memakai
 `kibana_sample_data_logs`, dataset besar dan deterministik supaya
@@ -174,11 +184,83 @@ bertambah setelah query kedua di atas, bukan angka absolutnya).
 
 ### 3. Melihat Latency per Microservice Lewat APM
 
-**Contoh Implementasi — perubahan NYATA pada source code Robot Shop**
-(bukan kode ilustrasi — ini persis diff yang diterapkan pada source asli
-Robot Shop, SEBELUM di-build menjadi image `:v2-apm` yang Anda pakai):
+**Contoh Implementasi — coba pasang sendiri APM agent-nya.** Berikut
+potongan ASLI `cart/server.js` SEBELUM disisipi Elastic APM (persis versi
+upstream Robot Shop, sebelum di-build menjadi image `:v2-apm` yang Anda
+pakai) — baris kosong yang ditandai adalah tempat kode APM agent
+seharusnya berada:
 
-Python (Flask) — `payment/payment.py` + `payment/requirements.txt`:
+```javascript
+const instana = require('@instana/collector');
+// init tracing
+// MUST be done before loading anything else!
+instana({
+    tracing: {
+        enabled: true
+    }
+});
+
+// <-- TULIS INISIALISASI ELASTIC APM AGENT DI SINI (lihat petunjuk di bawah)
+
+const redis = require('redis');
+const request = require('request');
+const bodyParser = require('body-parser');
+```
+
+**Tulis sendiri** kode yang seharusnya mengisi baris kosong di atas,
+menggunakan petunjuk berikut (JANGAN lihat jawaban di bawah dulu):
+- Package Node.js resmi Elastic bernama `elastic-apm-node`, dipanggil
+  lewat method `.start({...})`.
+- Sama seperti Instana di atasnya, agent ini WAJIB di-`require()`/`start()`
+  di baris PALING AWAL file — SEBELUM `require()` lain — supaya bisa
+  meng-instrument module yang di-load setelahnya.
+- Config yang dibutuhkan: `serviceName` (nama servis ini di Kibana APM,
+  isi `'cart'`), `serverUrl` (alamat `apm-server`, port `8200` — lihat
+  `docker-compose.yml` Sesi 4), `environment` (bebas, mis. `'training'`).
+
+<details>
+<summary>Jawaban (klik untuk membuka — cocokkan dengan tulisan Anda)</summary>
+
+```diff
+--- a/cart/server.js
++++ b/cart/server.js
+@@ -7,6 +7,13 @@ instana({
+     }
+ });
+
++// Elastic APM -- also MUST be required/started before other modules
++require('elastic-apm-node').start({
++    serviceName: 'cart',
++    serverUrl: process.env.ELASTIC_APM_SERVER_URL || 'http://apm-server:8200',
++    environment: process.env.ELASTIC_APM_ENVIRONMENT || 'training'
++});
++
+ const redis = require('redis');
+ const request = require('request');
+ const bodyParser = require('body-parser');
+--- a/cart/package.json
++++ b/cart/package.json
+@@ -17,6 +17,7 @@
+       "express-pino-logger": "^4.0.0",
+       "pino-pretty": "^2.5.0",
+       "@instana/collector": "^1.132.2",
+-      "prom-client": "^11.5.3"
++      "prom-client": "^11.5.3",
++      "elastic-apm-node": "^3.52.0"
+   }
+ }
+```
+Ini persis diff yang diterapkan ke source asli Robot Shop untuk
+menghasilkan image `:v2-apm` yang sedang Anda pakai — kalau tulisan Anda
+di atas berbeda TAPI polanya sama (`require().start({...})` di baris
+paling awal, tiga config key yang sama), itu tetap benar; tidak harus
+identik karakter demi karakter.
+</details>
+
+**Bandingkan dengan bahasa lain — Python (Flask), `payment/payment.py`**
+(pola instrumentasinya beda: pakai class `ElasticAPM(app)`, bukan
+`require().start()`, karena Flask instrumented lewat middleware, bukan
+hook global seperti Express):
 ```diff
 --- a/payment/payment.py
 +++ b/payment/payment.py
@@ -210,42 +292,29 @@ Python (Flask) — `payment/payment.py` + `payment/requirements.txt`:
  instana
 +elastic-apm[flask]
 ```
-
-Node.js (Express) — `cart/server.js` + `cart/package.json`:
-```diff
---- a/cart/server.js
-+++ b/cart/server.js
-@@ -7,6 +7,13 @@ instana({
-     }
- });
-
-+// Elastic APM -- also MUST be required/started before other modules
-+require('elastic-apm-node').start({
-+    serviceName: 'cart',
-+    serverUrl: process.env.ELASTIC_APM_SERVER_URL || 'http://apm-server:8200',
-+    environment: process.env.ELASTIC_APM_ENVIRONMENT || 'training'
-+});
-+
- const redis = require('redis');
- const request = require('request');
- const bodyParser = require('body-parser');
---- a/cart/package.json
-+++ b/cart/package.json
-@@ -17,6 +17,7 @@
-       "express-pino-logger": "^4.0.0",
-       "pino-pretty": "^2.5.0",
-       "@instana/collector": "^1.132.2",
--      "prom-client": "^11.5.3"
-+      "prom-client": "^11.5.3",
-+      "elastic-apm-node": "^3.52.0"
-   }
- }
-```
-Pola yang sama di kedua bahasa: agent di-`start()`/di-inisialisasi pada
-titik PALING AWAL aplikasi (sebelum route/module lain), diberi
-`serviceName` dan `serverUrl` APM Server tujuan. Begitu agent aktif,
-SETIAP request yang masuk ke `cart`/`payment` otomatis tercatat sebagai
+Meski caranya beda per bahasa/framework, TIGA hal ini selalu sama: agent
+diinisialisasi SEDINI mungkin, diberi `serviceName`/`SERVICE_NAME`, dan
+diberi `serverUrl`/`SERVER_URL` menunjuk ke `apm-server`. Begitu agent
+aktif, SETIAP request yang masuk otomatis tercatat sebagai
 **transaction**, tanpa perlu kode tambahan apa pun di tiap endpoint.
+
+**Tiga servis lain, tiga pola instrumentasi lain lagi** (`catalogue`/`user`
+memakai pola Node.js yang PERSIS sama seperti `cart` di atas — tidak
+diulang):
+
+| Servis | Bahasa | Pola instrumentasi | Perlu ubah source code? |
+|---|---|---|---|
+| `shipping` | Java (Spring Boot) | `-javaagent:elastic-apm-agent.jar` di flag start JVM (`CMD` pada `Dockerfile`) | TIDAK — javaagent meng-instrument bytecode saat runtime |
+| `ratings` | PHP (Apache) | Extension `.so` resmi Elastic + installer resmi, dimuat via `php.ini` | TIDAK — extension level, bukan kode aplikasi |
+| `dispatch` | Go | Transaction/span dibuat MANUAL lewat `go.elastic.co/apm/v2` di sekitar kode consumer RabbitMQ | YA — Go tidak punya auto-instrumentation, satu-satunya servis di sini yang butuh perubahan kode nyata |
+
+> **INFORMATION:** `dispatch` butuh perubahan kode manual karena Go APM
+> agent Elastic TIDAK melakukan auto-instrumentation seperti agent
+> Node.js/Python/Java/PHP di atas (keterbatasan bahasa Go sendiri, bukan
+> keterbatasan Elastic) — transaction & span harus dibuat eksplisit lewat
+> `tracer.StartTransaction()`/`apm.StartSpan()` di titik yang relevan
+> (dalam kasus `dispatch`: sekitar fungsi yang memproses pesan dari
+> `rabbitmq`, bukan HTTP handler seperti servis lain).
 
 **Kibana juga punya panduan instalasi APM agent bawaan** (generik, bukan
 khusus Robot Shop) — menu ☰ → Observability → APM → tombol **Add data**
@@ -274,15 +343,24 @@ per service yang dilewati, tapi bisa berisi BANYAK span.*
 
 **Buka Kibana APM** (menu ☰ → Observability → APM → Service inventory):
 
-![Kibana APM Service inventory menampilkan service cart dan payment dengan kolom latency, throughput, failed transaction rate](../../../docs/screenshots/sesi-6/01-apm-service-inventory.png)
+![Kibana APM Service inventory menampilkan tujuh servis Robot Shop dengan kolom latency, throughput, failed transaction rate, masing-masing dengan ikon bahasa pemrogramannya](../../../docs/screenshots/sesi-6/01-apm-service-inventory.png)
 
-*Dua service muncul otomatis — `cart` (ikon Node.js) dan `payment` (ikon
-Python) — kolom **Latency (avg.)** menunjukkan `payment` jauh lebih
-lambat dari `cart` (bedanya bisa puluhan hingga ratusan kali lipat,
-tergantung berapa lama load generator sudah berjalan pada perangkat
-Anda — coba refresh setelah beberapa menit apabila baru mulai). Ini
-PERSIS pertanyaan "servis mana yang lambat" yang tidak bisa dijawab
-hanya dari log biasa.*
+*Ketujuh service muncul otomatis, masing-masing dengan ikon bahasa yang
+benar (Node.js untuk `cart`/`catalogue`/`user`, PHP untuk `ratings`,
+Python untuk `payment`, Java untuk `shipping`, Go untuk `dispatch`) —
+kolom **Latency (avg.)** menunjukkan dua pola berbeda: `payment` dan
+`dispatch` jauh lebih lambat dari `cart`/`catalogue`/`user` (bedanya bisa
+puluhan hingga ratusan kali lipat), sementara `shipping` cuma sedikit
+lebih lambat (beberapa kali lipat saja, BUKAN puluhan/ratusan kali —
+jangan asumsikan semua service "berat" polanya sama). Perhatikan juga
+kolom **Failed transaction rate** pada `ratings` — angka yang jauh dari
+0% di kolom itu adalah sinyal masalah yang BERBEDA dari sekadar latency
+tinggi, dan patut diselidiki terpisah. Angka pasti pada layar Anda akan
+berbeda (tergantung berapa lama load generator sudah berjalan — coba
+refresh setelah beberapa menit apabila baru mulai), tapi POLA relatifnya
+(servis mana yang menonjol, dan MENGAPA — lambat vs sering gagal) akan
+konsisten. Ini PERSIS pertanyaan "servis mana yang bermasalah, dan
+bermasalah dengan cara apa" yang tidak bisa dijawab hanya dari log biasa.*
 
 **Klik salah satu service** (mis. `payment`) untuk melihat detail:
 
@@ -352,9 +430,12 @@ GET traces-apm-default/_search
   }
 }
 ```
-Expected Output: dua bucket, `cart` dengan `avg_duration_ms` di kisaran
-satuan milidetik, `payment` di kisaran ratusan milidetik — konsisten
-dengan yang tampil di Service Inventory di atas.
+Expected Output: TUJUH bucket (satu per servis ber-APM) — `cart`/`user`/
+`catalogue`/`shipping` dengan `avg_duration_ms` di kisaran satuan
+milidetik, `ratings` di kisaran belasan milidetik, `payment` di kisaran
+ratusan milidetik, `dispatch` juga di kisaran ratusan milidetik (delay
+`time.Sleep` yang sengaja ditanam di kode simulasi pemrosesan order) —
+konsisten dengan yang tampil di Service Inventory di atas.
 
 > **INFORMATION:** ini adalah pola yang diharapkan, bukan angka pasti —
 > angka aktual Anda tergantung berapa lama load generator sudah berjalan.
