@@ -355,6 +355,20 @@ sama seperti pola "filter langsung dari nilai dokumen" di topik 2.*
 *5. Klik **+** pada `false` — filter pill `approved: false` langsung
 terbentuk, menampilkan transaksi yang ditolak saja.*
 
+**Simpan hasil filter jadi Saved Search** — sama seperti langkah di topik
+2: klik **Save** di kanan atas, kasih nama:
+
+![Modal Save Discover session dengan title Transaksi Ditolak - ISO 8583](../../../docs/screenshots/sesi-3/18-save-search-modal-iso8583.png)
+
+*6. Isi **Title**, biarkan "Add to dashboard" = **None** apabila belum
+memerlukan dashboard, klik **Save and add to library**.*
+
+![Discover session tersimpan, breadcrumb menampilkan nama Transaksi Ditolak - ISO 8583](../../../docs/screenshots/sesi-3/19-save-search-selesai-iso8583.png)
+
+*Tersimpan — breadcrumb di kiri atas sekarang menampilkan nama yang Anda
+berikan, dan search ini dapat dibuka kembali lewat menu ☰ → Discover →
+buka session tersimpan.*
+
 ## e. Referensi Exercise
 
 Lanjutkan latihan mandiri di [`exercise/sesi-3/README.md`](../../../exercise/sesi-3/README.md).
