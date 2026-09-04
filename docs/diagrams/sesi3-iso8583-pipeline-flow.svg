@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 360" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="1000" height="360" fill="#ffffff" rx="12" />
+  <text x="500" y="34" text-anchor="middle" font-size="19" font-weight="700" fill="#1a1a1a">Alur Data ISO 8583: Generator &#8594; Translator &#8594; Filebeat &#8594; Logstash &#8594; Elasticsearch</text>
+
+  <defs>
+    <marker id="arrowP1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#1d4ed8" />
+    </marker>
+    <marker id="arrowP2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#b45309" />
+    </marker>
+  </defs>
+
+  <!-- dashed grouping box around Generator+Translator: same Python script -->
+  <rect x="12" y="95" width="364" height="120" rx="10" fill="none" stroke="#a1a1aa" stroke-width="1.5" stroke-dasharray="6 4" />
+  <text x="194" y="228" text-anchor="middle" font-size="10.5" font-weight="700" fill="#71717a">satu script yang sama: generate_iso8583_stream.py</text>
+
+  <!-- Box 1: Generator -->
+  <rect x="20" y="105" width="168" height="100" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
+  <text x="104" y="130" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1e3a8a">Generator</text>
+  <text x="104" y="150" text-anchor="middle" font-size="10.5" fill="#1e3a8a">raw ISO 8583 (hex)</text>
+  <text x="104" y="166" text-anchor="middle" font-size="10.5" fill="#1e3a8a">MTI + Bitmap + DE</text>
+  <text x="104" y="186" text-anchor="middle" font-size="9.5" fill="#3f3f46">tidak terbaca manusia</text>
+
+  <path d="M 188 155 L 218 155" stroke="#1d4ed8" stroke-width="2" fill="none" marker-end="url(#arrowP1)" />
+
+  <!-- Box 2: Translator/Parser -->
+  <rect x="222" y="105" width="154" height="100" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
+  <text x="299" y="127" text-anchor="middle" font-size="13" font-weight="700" fill="#1e3a8a">Translator</text>
+  <text x="299" y="146" text-anchor="middle" font-size="10" fill="#1e3a8a">decode bitmap</text>
+  <text x="299" y="161" text-anchor="middle" font-size="10" fill="#1e3a8a">&#8594; JSON</text>
+  <text x="299" y="180" text-anchor="middle" font-size="9.5" fill="#3f3f46">PAN di-mask</text>
+
+  <path d="M 376 155 L 424 155" stroke="#1d4ed8" stroke-width="2.5" fill="none" marker-end="url(#arrowP1)" />
+  <text x="400" y="143" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1d4ed8">tulis .jsonl</text>
+
+  <!-- Box 3: Filebeat -->
+  <rect x="428" y="105" width="150" height="100" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
+  <text x="503" y="132" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1e3a8a">Filebeat</text>
+  <text x="503" y="154" text-anchor="middle" font-size="10" fill="#1e3a8a">baca baris JSON</text>
+  <text x="503" y="170" text-anchor="middle" font-size="10" fill="#1e3a8a">kirim apa adanya</text>
+
+  <path d="M 578 155 L 626 155" stroke="#1d4ed8" stroke-width="2.5" fill="none" marker-end="url(#arrowP1)" />
+  <text x="602" y="143" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1d4ed8">port 5044</text>
+
+  <!-- Box 4: Logstash -->
+  <rect x="630" y="105" width="150" height="100" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
+  <text x="705" y="132" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1e3a8a">Logstash</text>
+  <text x="705" y="154" text-anchor="middle" font-size="10" fill="#1e3a8a">filter: json</text>
+  <text x="705" y="170" text-anchor="middle" font-size="9.5" fill="#3f3f46">(bukan grok)</text>
+
+  <path d="M 780 155 L 828 155" stroke="#1d4ed8" stroke-width="2.5" fill="none" marker-end="url(#arrowP1)" />
+  <text x="804" y="143" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1d4ed8">tulis</text>
+
+  <!-- Box 5: Elasticsearch -->
+  <rect x="832" y="105" width="150" height="100" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
+  <text x="907" y="132" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1e3a8a">Elasticsearch</text>
+  <text x="907" y="154" text-anchor="middle" font-size="9.5" fill="#1e3a8a">index iso8583-</text>
+  <text x="907" y="169" text-anchor="middle" font-size="9.5" fill="#1e3a8a">transactions-*</text>
+
+  <!-- legend -->
+  <rect x="20" y="245" width="960" height="100" rx="10" fill="#f4f4f5" stroke="#d4d4d8" stroke-width="1.5" />
+  <text x="40" y="266" font-size="12" fill="#27272a"><tspan font-weight="700">1. Generator</tspan> (generate_iso8583_stream.py) bikin pesan ISO 8583 mentah, translator langsung decode jadi JSON (PAN di-mask) &#8594; <tspan font-family="monospace">parsed_transactions.jsonl</tspan>.</text>
+  <text x="40" y="286" font-size="12" fill="#27272a"><tspan font-weight="700">2. Filebeat</tspan> baca file JSON baris per baris, kirim apa adanya ke Logstash lewat port beats 5044.</text>
+  <text x="40" y="306" font-size="12" fill="#27272a"><tspan font-weight="700">3. Logstash</tspan> pakai filter <tspan font-family="monospace">json</tspan> (bukan grok) &#8212; datanya sudah terstruktur sejak dari translator, beda dengan log Robot Shop Sesi 8.</text>
+  <text x="40" y="326" font-size="12" fill="#27272a"><tspan font-weight="700">4. Elasticsearch</tspan> simpan hasil parsing sebagai index <tspan font-family="monospace">iso8583-transactions-*</tspan>, siap dicari lewat Discover/Dev Tools.</text>
+</svg>
