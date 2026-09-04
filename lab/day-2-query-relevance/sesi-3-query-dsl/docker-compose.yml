@@ -1,7 +1,7 @@
-# Bonus (opsional): pipeline data live ISO 8583 -- praktik tambahan Sesi 3,
-# BUKAN pengganti materi Query DSL utama di README.md. Reuse teori Query DSL
-# yang sudah dijelaskan di sana (section c) -- di sini cuma sumber data yang
-# beda (live streaming, bukan kibana_sample_data_ecommerce yang statis).
+# Pipeline data live ISO 8583 -- dipakai di topik 3 & 4 README.md (lanjutan
+# setelah praktik Query DSL dengan kibana_sample_data_ecommerce). Reuse
+# teori Query DSL yang sudah dijelaskan di section c -- di sini cuma sumber
+# data yang beda (live streaming, bukan sample data statis).
 #
 # Asumsi: stack Sesi 1 (elasticsearch+kibana, network elk-lab-net) SUDAH
 # jalan -- pola reuse yang sama dipakai Sesi 8 (Data Ingestion), TIDAK ada

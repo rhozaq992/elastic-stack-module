@@ -13,7 +13,7 @@ di-tail Filebeat seperti log yang benar-benar hidup:
   parsed_transactions.jsonl  -> hasil terjemahan (satu JSON per baris)
 
 Jalankan:
-  python3 generate_iso8583_stream.py                     # default: 10 tx/menit, ON 1 jam, OFF 1 jam, tanpa batas
+  python3 generate_iso8583_stream.py                     # default: 2 tx/menit, ON 1 jam, OFF 1 jam, tanpa batas
   python3 generate_iso8583_stream.py --demo               # versi cepat buat verifikasi (ON 15s, OFF 8s, 2 siklus)
   python3 generate_iso8583_stream.py --cycles 3            # berhenti otomatis setelah 3 siklus ON
   nohup python3 generate_iso8583_stream.py > stream.out 2>&1 &   # jalan di background beneran
@@ -275,7 +275,7 @@ def run_stream(args):
 
 def parse_args():
     p = argparse.ArgumentParser(description="Streaming generator sample data ISO 8583")
-    p.add_argument("--tx-per-minute", type=float, default=10)
+    p.add_argument("--tx-per-minute", type=float, default=2)
     p.add_argument("--on-seconds", type=int, default=3600)
     p.add_argument("--off-seconds", type=int, default=3600)
     p.add_argument("--cycles", type=int, default=0, help="0 = tanpa batas (jalan terus sampai di-stop)")
