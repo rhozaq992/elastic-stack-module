@@ -1,0 +1,18 @@
+# Filebeat baca file hasil TERJEMAHAN (JSON) dari generator/translator ISO
+# 8583 -- BUKAN raw_switch_capture.log yang masih hex mentah (translator
+# sudah menerjemahkan itu duluan, lihat generate_iso8583_stream.py di folder
+# induk). Baris dikirim APA ADANYA (bukan di-parse JSON di sini) supaya JSON
+# parsing diajarkan di sisi Logstash (filter `json`, lihat
+# logstash/pipeline/10-iso8583-transactions.conf) -- konsisten dengan pola
+# project ini: Filebeat cuma "shipper", parsing selalu di Logstash.
+filebeat.inputs:
+  - type: filestream
+    id: iso8583-parsed-transactions
+    paths:
+      - "/data/parsed_transactions.jsonl"
+
+output.logstash:
+  hosts: ["logstash-sesi3:5044"]
+
+logging.level: info
+logging.to_stderr: true

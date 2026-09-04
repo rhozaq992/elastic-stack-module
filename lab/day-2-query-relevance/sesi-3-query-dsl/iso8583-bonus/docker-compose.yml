@@ -1,0 +1,40 @@
+# Bonus (opsional): pipeline data live ISO 8583 -- praktik tambahan Sesi 3,
+# BUKAN pengganti materi Query DSL utama di README.md. Reuse teori Query DSL
+# yang sudah dijelaskan di sana (section c) -- di sini cuma sumber data yang
+# beda (live streaming, bukan kibana_sample_data_ecommerce yang statis).
+#
+# Asumsi: stack Sesi 1 (elasticsearch+kibana, network elk-lab-net) SUDAH
+# jalan -- pola reuse yang sama dipakai Sesi 8 (Data Ingestion), TIDAK ada
+# Elasticsearch/Kibana baru di sini.
+services:
+  logstash-sesi3:
+    image: docker.elastic.co/logstash/logstash:9.5.2
+    container_name: elk-lab-logstash-sesi3
+    environment:
+      - "LS_JAVA_OPTS=-Xms256m -Xmx256m"
+      - xpack.monitoring.enabled=false
+    ports:
+      - "5044:5044"
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+    networks:
+      - default
+      - elk-lab-net
+
+  filebeat-sesi3:
+    image: docker.elastic.co/beats/filebeat:9.5.2
+    container_name: elk-lab-filebeat-sesi3
+    user: root
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - .:/data:ro   # folder ini sendiri -- tempat generate_iso8583_stream.py menulis parsed_transactions.jsonl
+    depends_on:
+      - logstash-sesi3
+    networks:
+      - default
+
+networks:
+  default:
+    name: elk-lab-sesi3-net
+  elk-lab-net:
+    external: true

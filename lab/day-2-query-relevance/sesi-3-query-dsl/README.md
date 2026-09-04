@@ -238,3 +238,9 @@ GET kibana_sample_data_ecommerce/_mapping/field/customer_gender
 ## e. Referensi Exercise
 
 Lanjutkan latihan mandiri di [`exercise/sesi-3/README.md`](../../../exercise/sesi-3/README.md).
+
+---
+
+**Mau praktik lebih jauh dengan data live streaming?** Lihat
+[`iso8583-bonus/`](iso8583-bonus/) — praktik opsional Query DSL yang sama
+pakai data transaksi kartu ISO 8583 yang mengalir live (bukan sample data statis).
