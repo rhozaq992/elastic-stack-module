@@ -235,12 +235,111 @@ seluruh dokumen "match" walau query-nya tidak masuk akal secara makna.
 GET kibana_sample_data_ecommerce/_mapping/field/customer_gender
 ```
 
+### 4. Query DSL dengan Data Live (Transaksi Kartu ISO 8583)
+
+Seluruh contoh di atas memakai `kibana_sample_data_ecommerce` — data yang
+**statis**, jumlahnya tidak berubah. Query DSL yang sama juga berlaku untuk
+data yang **mengalir live** (terus bertambah selagi sumbernya jalan) —
+bagian ini memakai simulasi transaksi kartu ATM/EDC (standar pesan
+**ISO 8583**) yang di-generate lalu diterjemahkan otomatis jadi dokumen
+Elasticsearch.
+
+**Nyalakan sumber data live** *(prasyarat: stack Sesi 1 masih jalan)*:
+```bash
+cd lab/day-2-query-relevance/sesi-3-query-dsl/
+docker compose up -d
+python3 generate_iso8583_stream.py --tx-per-minute 2
+```
+Biarkan terminal generator tetap terbuka (2 transaksi/menit, ON 1 jam lalu
+jeda 1 jam, berulang) — `Ctrl+C` kapan saja untuk berhenti.
+
+> **INFORMATION:** persentase transaksi approve/decline di-random ulang
+> setiap siklus, dan jumlah dokumen terus bertambah selama generator
+> jalan — hasil hits query di bawah **akan berbeda** dari yang tertulis di
+> sini dan dari punya peserta lain, itu normal (pola sama seperti traffic
+> Robot Shop di Sesi 4/6).
+
+Field yang relevan:
+
+| Field | Tipe | Contoh nilai |
+|---|---|---|
+| `message_type` | keyword | `request` atau `response` |
+| `transaction_type` | keyword | `purchase`, `cash_withdrawal`, `refund` |
+| `amount` | float | `28243.26` |
+| `response_code` | keyword | `00` (approved), `05`/`14`/`51`/`91` (decline) — cuma ada di `message_type: response` |
+| `approved` | boolean | `true`/`false` — cuma ada di `message_type: response` |
+
+**Contoh Implementasi — match, term, bool pada data ISO 8583:**
+
+**`term`** — cari transaksi dengan kode approve tertentu:
+```
+GET iso8583-transactions-*/_search
+{ "query": { "term": { "response_code": "00" } } }
+```
+
+**`match`** — cari berdasarkan jenis transaksi:
+```
+GET iso8583-transactions-*/_search
+{ "query": { "match": { "transaction_type": "cash_withdrawal" } } }
+```
+
+**`bool`** — transaksi ditolak dengan nominal besar (kombinasi `must` +
+`filter`, sama strukturnya dengan contoh `bool` di topik 1):
+```
+GET iso8583-transactions-*/_search
+{
+  "query": {
+    "bool": {
+      "must": [ { "term": { "approved": false } } ],
+      "filter": [ { "range": { "amount": { "gt": 1000000 } } } ]
+    }
+  }
+}
+```
+Expected Output: HTTP 200, tiap dokumen hasilnya punya `approved: false`
+DAN `amount` di atas 1.000.000 — verifikasi manual isi beberapa dokumen
+untuk cek logika query-nya benar (lihat catatan di atas: jumlah hits TIDAK
+dipakai sebagai patokan seperti pada sample data statis).
+
+### 5. Eksplorasi Data ISO 8583 Lewat UI Discover
+
+**Buat Data View baru** (sekali saja, mirip langkah pilih data view di
+topik 2 tapi bikin baru karena index-nya belum pernah ada di Kibana):
+menu ☰ → **Stack Management → Data Views → Create data view** — index
+pattern `iso8583-transactions-*`, timestamp field `@timestamp`.
+
+**Contoh Implementasi — Discover dengan data ISO 8583:**
+
+![Kibana Discover dengan dropdown data view menampilkan pilihan ISO 8583 Transactions](../../../docs/screenshots/sesi-3/13-discover-pilih-data-view-iso8583.png)
+
+*1. Klik nama data view di kiri atas, pilih data view ISO 8583 yang baru dibuat.*
+
+![Kibana Discover menampilkan dokumen transaksi ISO 8583](../../../docs/screenshots/sesi-3/14-discover-data-iso8583.png)
+
+*2. Tabel dokumen terupdate — data ISO 8583 tampil, bukan lagi eCommerce.*
+
+> **INFORMATION:** karena data ini live (baru saja dibuat, bukan tanggal
+> lampau seperti Kibana Sample Data), atur rentang waktu ke **"Last 15
+> minutes"** atau **"Today"**, BUKAN "Last 90 days" seperti di topik 2 —
+> kalau rentang waktu terlalu sempit padahal generator belum lama jalan,
+> tabel akan tampil kosong.
+
+![Kibana Discover dengan filter KQL response_code : 00, menampilkan hasil dan histogram](../../../docs/screenshots/sesi-3/15-discover-kql-filter-iso8583.png)
+
+*3. Ketik filter KQL `response_code : "00"` di search bar, tekan Enter —
+histogram & daftar dokumen ter-update, sama seperti filter KQL di topik 2.*
+
+![Detail dokumen menampilkan ikon filter for/out saat hover di baris approved](../../../docs/screenshots/sesi-3/16-doc-flyout-filter-approved-false.png)
+
+*4. Klik ikon perbesar (⤢) di kiri baris dokumen untuk buka detail, hover
+baris `approved` — muncul ikon **+** (filter for) dan **–** (filter out),
+sama seperti pola "filter langsung dari nilai dokumen" di topik 2.*
+
+![Filter approved: false otomatis terbentuk setelah klik ikon +](../../../docs/screenshots/sesi-3/17-filter-approved-false-hasil.png)
+
+*5. Klik **+** pada `false` — filter pill `approved: false` langsung
+terbentuk, menampilkan transaksi yang ditolak saja.*
+
 ## e. Referensi Exercise
 
 Lanjutkan latihan mandiri di [`exercise/sesi-3/README.md`](../../../exercise/sesi-3/README.md).
-
----
-
-**Mau praktik lebih jauh dengan data live streaming?** Lihat
-[`iso8583-bonus/`](iso8583-bonus/) — praktik opsional Query DSL yang sama
-pakai data transaksi kartu ISO 8583 yang mengalir live (bukan sample data statis).
