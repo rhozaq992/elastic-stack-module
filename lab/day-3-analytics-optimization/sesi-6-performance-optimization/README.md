@@ -184,150 +184,123 @@ bertambah setelah query kedua di atas, bukan angka absolutnya).
 
 ### 3. Melihat Latency per Microservice Lewat APM
 
-**Contoh Implementasi — coba pasang sendiri APM agent-nya.** Berikut
-potongan ASLI `cart/server.js` SEBELUM disisipi Elastic APM (persis versi
-upstream Robot Shop, sebelum di-build menjadi image `:v2-apm` yang Anda
-pakai) — baris kosong yang ditandai adalah tempat kode APM agent
-seharusnya berada:
+**Di mana source code `payment.py`?** Robot Shop pada lab ini berjalan
+dari image jadi (`:v2-apm`) — sama seperti seluruh servis lain, Anda TIDAK
+pernah men-download/membuka/meng-edit source code `payment.py` atau
+servis manapun secara langsung (lihat prinsip "Robot Shop = subjek
+observasi" di `docs/prerequisites.md`). Instrumentasi APM sudah
+disisipkan instruktur SEKALI ke dalam image ini sebelum lab dimulai.
+Bagian ini menunjukkan BUKTI NYATA bahwa APM sedang aktif — dengan cara
+mematikannya lalu menyalakannya kembali di depan mata Anda — bukan
+meminta Anda menulis kode ke file yang memang tidak bisa Anda akses.
 
-```javascript
-const instana = require('@instana/collector');
-// init tracing
-// MUST be done before loading anything else!
-instana({
-    tracing: {
-        enabled: true
-    }
-});
+**Buktikan Sendiri: APM Bisa Dimatikan/Dinyalakan Tanpa Mengubah Kode**
 
-// <-- TULIS INISIALISASI ELASTIC APM AGENT DI SINI (lihat petunjuk di bawah)
+Ingat env var `ELASTIC_APM_SERVER_URL` dan `ELASTIC_APM_ENVIRONMENT` pada
+`payment` di `docker-compose.yml` Sesi 4 (bagian d topik 1)? Agent APM
+membaca konfigurasinya dari env var itu SAAT CONTAINER START — termasuk
+satu env var lagi yang belum dipakai: `ELASTIC_APM_ENABLED`. Ini
+membuktikan bahwa "memasang APM" pada level operasional cukup soal
+konfigurasi container, bukan menulis ulang kode aplikasi setiap kali.
 
-const redis = require('redis');
-const request = require('request');
-const bodyParser = require('body-parser');
+**[Terminal] Matikan APM `payment`** (dari direktori `sesi-4-relevance-scoring`):
+```bash
+docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml \
+  -f ../../day-3-analytics-optimization/sesi-6-performance-optimization/docker-compose.load.yml \
+  -f ../../day-3-analytics-optimization/sesi-6-performance-optimization/docker-compose.apm-toggle.yml \
+  up -d payment
+```
+Tunggu 3-5 menit (supaya jendela waktu "Last 5 minutes" di Kibana bersih
+dari data lama saat `payment` masih ber-APM), lalu buka **Kibana → ☰ →
+Observability → APM → Service inventory**, atur rentang waktu ke **Last 5
+minutes**:
+
+![Kibana APM Service inventory menampilkan hanya 6 servis (catalogue, cart, shipping, ratings, user, dispatch) -- payment tidak muncul sama sekali karena APM-nya dimatikan](../../../docs/screenshots/sesi-6/06-apm-toggle-before-payment-off.png)
+
+*`payment` HILANG TOTAL dari daftar — bukan menunjukkan angka nol/error,
+tapi benar-benar tidak terdaftar, karena APM Server tidak menerima data
+apa pun darinya. Servis-nya sendiri tetap hidup dan tetap melayani
+request (coba `docker compose ps payment` — statusnya tetap `healthy`) —
+yang mati hanya laporan datanya ke APM, bukan servisnya.*
+
+**[Terminal] Nyalakan lagi** (jalankan ulang TANPA file
+`docker-compose.apm-toggle.yml` — otomatis kembali ke config normal Sesi 4):
+```bash
+docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml \
+  -f ../../day-3-analytics-optimization/sesi-6-performance-optimization/docker-compose.load.yml \
+  up -d payment
+```
+Tunggu 1-2 menit supaya traffic baru sempat masuk, refresh halaman yang
+sama (tetap **Last 5 minutes**):
+
+![Kibana APM Service inventory menampilkan 7 servis, payment sudah muncul kembali dengan latency 623ms dan failed transaction rate 14%](../../../docs/screenshots/sesi-6/07-apm-toggle-after-payment-on.png)
+
+*`payment` MUNCUL KEMBALI, lengkap dengan angka latency dan failed
+transaction rate — persis sama seperti sebelum dimatikan. Inilah yang
+sebenarnya terjadi tiap kali instrumentasi APM "dipasang" pada servis
+baru: bukan mendadak ada di mana-mana, tapi mulai terdaftar begitu agent
+aktif mengirim data.*
+
+> **INFORMATION:** angka `failed transaction rate` pada layar Anda boleh
+> berbeda (bisa 0%, bisa lebih tinggi dari contoh) — itu bergantung
+> apakah `payment` sedang mengembalikan HTTP 429 akibat `NUM_CLIENTS`
+> (lihat INFORMATION di bagian d topik 1), bukan indikasi ada yang salah
+> dengan toggle APM-nya.
+
+**Kalau Diterapkan ke Aplikasi Anda Sendiri (referensi, bukan latihan)**
+
+Yang baru saja Anda lihat adalah TOGGLE config -- bukan proses pemasangan
+awalnya. Pemasangan awal (dilakukan SEKALI oleh instruktur ke
+`payment.py`, sebelum image `:v2-apm` ini di-build) mengikuti panduan
+bawaan Kibana sendiri (generik, bukan khusus Robot Shop) -- menu ☰ →
+Observability → APM → tombol **Add data** di kanan atas → pilih tab
+bahasa (mis. **Flask**, bahasa yang dipakai `payment`):
+
+![Kibana APM Agents onboarding guide untuk Flask, menampilkan perintah pip install elastic-apm[flask] dan contoh kode from elasticapm.contrib.flask import ElasticAPM](../../../docs/screenshots/sesi-6/05-apm-onboarding-flask-agent-guide.png)
+
+*Kibana menyediakan perintah install DAN potongan kode siap-pakai untuk
+setiap bahasa -- begini alurnya kalau Anda menginstrumentasi aplikasi
+Flask Anda SENDIRI (bukan Robot Shop): salin potongan kode dari layar ini
+persis apa adanya, tempel ke file utama aplikasi Anda, SEDINI mungkin
+(sebelum baris lain memakai `app`):*
+
+```python
+# app.py -- kerangka aplikasi Flask Anda sendiri
+from flask import Flask
+
+# <-- 1. tempel baris import agent dari panduan Kibana di atas, di sini
+#     (untuk Flask: from elasticapm.contrib.flask import ElasticAPM)
+
+app = Flask(__name__)
+
+# <-- 2. tempel konfigurasi + inisialisasi agent dari panduan Kibana, di sini
+#     (untuk Flask: app.config['ELASTIC_APM'] = {...}; ElasticAPM(app))
+#     WAJIB sedini mungkin -- sebelum route/kode lain memakai `app`
 ```
 
-**Tulis sendiri** kode yang seharusnya mengisi baris kosong di atas,
-menggunakan petunjuk berikut (JANGAN lihat jawaban di bawah dulu):
-- Package Node.js resmi Elastic bernama `elastic-apm-node`, dipanggil
-  lewat method `.start({...})`.
-- Sama seperti Instana di atasnya, agent ini WAJIB di-`require()`/`start()`
-  di baris PALING AWAL file — SEBELUM `require()` lain — supaya bisa
-  meng-instrument module yang di-load setelahnya.
-- Config yang dibutuhkan: `serviceName` (nama servis ini di Kibana APM,
-  isi `'cart'`), `serverUrl` (alamat `apm-server`, port `8200` — lihat
-  `docker-compose.yml` Sesi 4), `environment` (bebas, mis. `'training'`).
+*Anda tidak perlu menghafal atau menulis ulang kode ini dari nol -- salin
+persis dari panduan Kibana, cukup ganti `SERVICE_NAME` sesuai nama
+aplikasi Anda. Begitu agent aktif, SETIAP request yang masuk otomatis
+tercatat sebagai **transaction**, tanpa kode tambahan di tiap endpoint.
 
-<details>
-<summary>Jawaban (klik untuk membuka — cocokkan dengan tulisan Anda)</summary>
-
-```diff
---- a/cart/server.js
-+++ b/cart/server.js
-@@ -7,6 +7,13 @@ instana({
-     }
- });
-
-+// Elastic APM -- also MUST be required/started before other modules
-+require('elastic-apm-node').start({
-+    serviceName: 'cart',
-+    serverUrl: process.env.ELASTIC_APM_SERVER_URL || 'http://apm-server:8200',
-+    environment: process.env.ELASTIC_APM_ENVIRONMENT || 'training'
-+});
-+
- const redis = require('redis');
- const request = require('request');
- const bodyParser = require('body-parser');
---- a/cart/package.json
-+++ b/cart/package.json
-@@ -17,6 +17,7 @@
-       "express-pino-logger": "^4.0.0",
-       "pino-pretty": "^2.5.0",
-       "@instana/collector": "^1.132.2",
--      "prom-client": "^11.5.3"
-+      "prom-client": "^11.5.3",
-+      "elastic-apm-node": "^3.52.0"
-   }
- }
-```
-Ini persis diff yang diterapkan ke source asli Robot Shop untuk
-menghasilkan image `:v2-apm` yang sedang Anda pakai — kalau tulisan Anda
-di atas berbeda TAPI polanya sama (`require().start({...})` di baris
-paling awal, tiga config key yang sama), itu tetap benar; tidak harus
-identik karakter demi karakter.
-</details>
-
-**Bandingkan dengan bahasa lain — Python (Flask), `payment/payment.py`**
-(pola instrumentasinya beda: pakai class `ElasticAPM(app)`, bukan
-`require().start()`, karena Flask instrumented lewat middleware, bukan
-hook global seperti Express):
-```diff
---- a/payment/payment.py
-+++ b/payment/payment.py
-@@ -17,10 +17,19 @@ from rabbitmq import Publisher
- # Prometheus
- import prometheus_client
- from prometheus_client import Counter, Histogram
-+# Elastic APM
-+from elasticapm.contrib.flask import ElasticAPM
-
- app = Flask(__name__)
- app.logger.setLevel(logging.INFO)
-
-+app.config['ELASTIC_APM'] = {
-+    'SERVICE_NAME': 'payment',
-+    'SERVER_URL': os.getenv('ELASTIC_APM_SERVER_URL', 'http://apm-server:8200'),
-+    'ENVIRONMENT': os.getenv('ELASTIC_APM_ENVIRONMENT', 'training'),
-+}
-+apm = ElasticAPM(app)
-+
- CART = os.getenv('CART_HOST', 'cart')
- USER = os.getenv('USER_HOST', 'user')
- PAYMENT_GATEWAY = os.getenv('PAYMENT_GATEWAY', 'https://paypal.com/')
---- a/payment/requirements.txt
-+++ b/payment/requirements.txt
-@@ -5,3 +5,4 @@ pika
- prometheus_client
- opentracing
- instana
-+elastic-apm[flask]
-```
-Meski caranya beda per bahasa/framework, TIGA hal ini selalu sama: agent
-diinisialisasi SEDINI mungkin, diberi `serviceName`/`SERVICE_NAME`, dan
-diberi `serverUrl`/`SERVER_URL` menunjuk ke `apm-server`. Begitu agent
-aktif, SETIAP request yang masuk otomatis tercatat sebagai
-**transaction**, tanpa perlu kode tambahan apa pun di tiap endpoint.
-
-**Tiga servis lain, tiga pola instrumentasi lain lagi** (`catalogue`/`user`
-memakai pola Node.js yang PERSIS sama seperti `cart` di atas — tidak
-diulang):
+**Servis lain di Robot Shop pakai bahasa berbeda, jadi caranya juga
+sedikit berbeda** -- sekadar referensi (bukan sesuatu yang Anda
+praktikkan, sudah terpasang di image `:v2-apm`):
 
 | Servis | Bahasa | Pola instrumentasi | Perlu ubah source code? |
 |---|---|---|---|
-| `shipping` | Java (Spring Boot) | `-javaagent:elastic-apm-agent.jar` di flag start JVM (`CMD` pada `Dockerfile`) | TIDAK — javaagent meng-instrument bytecode saat runtime |
-| `ratings` | PHP (Apache) | Extension `.so` resmi Elastic + installer resmi, dimuat via `php.ini` | TIDAK — extension level, bukan kode aplikasi |
-| `dispatch` | Go | Transaction/span dibuat MANUAL lewat `go.elastic.co/apm/v2` di sekitar kode consumer RabbitMQ | YA — Go tidak punya auto-instrumentation, satu-satunya servis di sini yang butuh perubahan kode nyata |
+| `cart`/`catalogue`/`user` | Node.js | `require('elastic-apm-node').start({...})` di baris PALING AWAL file | TIDAK -- sekali require di entry point |
+| `shipping` | Java (Spring Boot) | `-javaagent:elastic-apm-agent.jar` di flag start JVM (`CMD` pada `Dockerfile`) | TIDAK -- javaagent meng-instrument bytecode saat runtime |
+| `ratings` | PHP (Apache) | Extension `.so` resmi Elastic + installer resmi, dimuat via `php.ini` | TIDAK -- extension level, bukan kode aplikasi |
+| `dispatch` | Go | Transaction/span dibuat MANUAL lewat `go.elastic.co/apm/v2` di sekitar kode consumer RabbitMQ | YA -- Go tidak punya auto-instrumentation, satu-satunya servis di sini yang butuh perubahan kode nyata |
 
 > **INFORMATION:** `dispatch` butuh perubahan kode manual karena Go APM
 > agent Elastic TIDAK melakukan auto-instrumentation seperti agent
 > Node.js/Python/Java/PHP di atas (keterbatasan bahasa Go sendiri, bukan
-> keterbatasan Elastic) — transaction & span harus dibuat eksplisit lewat
+> keterbatasan Elastic) -- transaction & span harus dibuat eksplisit lewat
 > `tracer.StartTransaction()`/`apm.StartSpan()` di titik yang relevan
 > (dalam kasus `dispatch`: sekitar fungsi yang memproses pesan dari
 > `rabbitmq`, bukan HTTP handler seperti servis lain).
-
-**Kibana juga punya panduan instalasi APM agent bawaan** (generik, bukan
-khusus Robot Shop) — menu ☰ → Observability → APM → tombol **Add data**
-di kanan atas → pilih tab bahasa (mis. **Flask** untuk `payment`):
-
-![Kibana APM Agents onboarding guide untuk Flask, menampilkan perintah pip install elastic-apm[flask] dan contoh kode from elasticapm.contrib.flask import ElasticAPM](../../../docs/screenshots/sesi-6/05-apm-onboarding-flask-agent-guide.png)
-
-*Perhatikan: perintah `pip install elastic-apm[flask]` dan baris kode
-`from elasticapm.contrib.flask import ElasticAPM` pada panduan Kibana ini
-PERSIS sama dengan yang diterapkan pada `payment/requirements.txt` dan
-`payment/payment.py` di atas — panduan ini berguna sebagai referensi
-generik ketika Anda menginstrumentasi aplikasi Anda sendiri, di luar
-Robot Shop.*
 
 **Apa bedanya `trace`, `transaction`, `span`, dan istilah APM lain?**
 
@@ -409,7 +382,9 @@ dari atas ke bawah mengikuti urutan panggilan sebenarnya di dalam kode
 > meminta Anda membuktikan pola ini lewat AGREGASI banyak trace
 > (`span.destination.service.resource`) lewat query.
 
-**Query data trace-nya secara langsung**:
+**(Opsional) Verifikasi Angka Ini Lewat Query** — Service Inventory di
+atas sudah cukup untuk menjawab "servis mana yang lambat", bagian ini
+HANYA untuk yang penasaran ingin membuktikannya lewat query juga:
 
 > **INFORMATION:** APM Server menyimpan data trace sebagai index
 > Elasticsearch biasa — dapat di-query seperti index lain, inilah yang
