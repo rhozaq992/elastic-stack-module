@@ -13,6 +13,7 @@ alert:
   - "telegram"
 telegram_bot_token: "GANTI_DENGAN_TOKEN_BOT_ANDA"
 telegram_room_id: "GANTI_DENGAN_CHAT_ID_ANDA"
+telegram_thread_id: 3
 
 alert_text_type: alert_text_only
 alert_text: |

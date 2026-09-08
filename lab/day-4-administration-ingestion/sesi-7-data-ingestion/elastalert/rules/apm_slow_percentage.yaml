@@ -1,0 +1,36 @@
+name: "Notifikasi Persentase Transaksi Lambat Tinggi - payment-lab"
+type: percentage_match
+index: "traces-apm-default"
+buffer_time:
+  minutes: 4
+min_denominator: 10
+
+filter:
+  - term:
+      service.name: "payment-lab"
+  - term:
+      processor.event: "transaction"
+
+match_bucket_filter:
+  - range:
+      transaction.duration.us:
+        gt: 1000000
+
+max_percentage: 30
+
+alert:
+  - "telegram"
+telegram_bot_token: "GANTI_DENGAN_TOKEN_BOT_ANDA"
+telegram_room_id: "GANTI_DENGAN_CHAT_ID_ANDA"
+telegram_thread_id: 2
+
+alert_text_type: alert_text_only
+alert_text: |
+  Persentase transaksi LAMBAT pada payment-lab melebihi batas wajar!
+  {0}% dari {1} transaksi (4 menit terakhir) berdurasi lebih dari 1 detik
+  -- ini bisa jadi tanda payment gateway pihak ketiga sedang bermasalah,
+  BUKAN sekadar lonjakan jumlah request biasa.
+alert_text_args: ["percentage", "denominator"]
+
+realert:
+  minutes: 5
