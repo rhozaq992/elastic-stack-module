@@ -1,0 +1,26 @@
+name: "Notifikasi Load APM Tinggi - payment-lab"
+type: frequency
+index: "traces-apm-default"
+num_events: 15
+timeframe:
+  minutes: 2
+
+filter:
+  - term:
+      service.name: "payment-lab"
+  - term:
+      processor.event: "transaction"
+
+alert:
+  - "telegram"
+telegram_bot_token: "GANTI_DENGAN_TOKEN_BOT_ANDA"
+telegram_room_id: "GANTI_DENGAN_CHAT_ID_ANDA"
+
+alert_text_type: alert_text_only
+alert_text: |
+  Load APM tinggi terdeteksi pada service payment-lab!
+  Lebih dari 15 request masuk dalam 2 menit terakhir -- kemungkinan
+  sedang terjadi lonjakan traffic.
+
+realert:
+  minutes: 5

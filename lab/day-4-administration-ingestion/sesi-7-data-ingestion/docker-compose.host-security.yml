@@ -1,0 +1,43 @@
+# Stack mandiri untuk ingest log keamanan host (SSH auth + bash history)
+# secara PERSISTEN ke Elasticsearch -- semua file ada di folder Sesi 7 ini
+# sendiri (host-security/), tidak bergantung folder sesi lain. Satu-satunya
+# ketergantungan ke luar: jaringan Docker `elk-lab-net` (dibuat Sesi 1),
+# supaya logstash-host bisa menjangkau `elasticsearch:9200`.
+#
+# log-generator terus-menerus menulis baris auth.log/bash_history palsu
+# (mayoritas aktivitas normal, sesekali anomali: percobaan brute-force SSH,
+# pembuatan user baru, akses file sensitif) ke volume bersama yang dibaca
+# filebeat-host, lalu di-parsing logstash-host ke index
+# host-security-parsed-*. Lihat README bagian d topik 6.
+services:
+  log-generator:
+    build: ./host-security/log-generator
+    volumes:
+      - host-security-logs:/var/log/host-security
+
+  logstash-host:
+    image: docker.elastic.co/logstash/logstash:9.5.2
+    environment:
+      - "LS_JAVA_OPTS=-Xms256m -Xmx256m"
+      - xpack.monitoring.enabled=false
+    volumes:
+      - ./host-security/logstash/pipeline:/usr/share/logstash/pipeline:ro
+    networks: [elk-lab-net]
+
+  filebeat-host:
+    image: docker.elastic.co/beats/filebeat:9.5.2
+    user: root
+    volumes:
+      - ./host-security/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - host-security-logs:/var/log/host-security:ro
+    depends_on:
+      - logstash-host
+      - log-generator
+    networks: [elk-lab-net]
+
+volumes:
+  host-security-logs:
+
+networks:
+  elk-lab-net:
+    external: true
