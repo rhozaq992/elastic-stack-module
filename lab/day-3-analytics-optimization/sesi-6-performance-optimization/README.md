@@ -12,14 +12,17 @@ permukaan.
 
 ## b. Output yang Diharapkan
 
-Sesi ini dianggap selesai apabila Anda berhasil mengukur dan
-membandingkan `took` (waktu eksekusi) query sebelum/sesudah cache aktif,
-menjalankan `_profile` API untuk membedah waktu eksekusi query, mengubah
-`refresh_interval` index lalu mengembalikannya ke semula, serta melihat di
-Kibana APM **Service Inventory** bahwa beberapa service (mis. `payment`
-dan `shipping`) tampil dengan angka latency yang jauh berbeda dari
-service lain (mis. `cart`, `user`), sehingga Anda dapat menyebutkan
-service mana yang lebih lambat dan berapa kira-kira selisihnya.
+Sesi ini dianggap selesai apabila Anda berhasil: memasang Elastic APM
+agent sendiri pada service `payment-lab` (edit kode, build ulang, jalankan
+ulang) hingga service itu muncul di Kibana APM **Service Inventory**
+(sebelumnya tidak ada sama sekali); mengukur dan membandingkan `took`
+(waktu eksekusi) query sebelum/sesudah cache aktif; menjalankan `_profile`
+API untuk membedah waktu eksekusi query; mengubah `refresh_interval`
+index lalu mengembalikannya ke semula; serta melihat di Service Inventory
+yang sama bahwa beberapa service Robot Shop (mis. `payment` dan
+`shipping`) tampil dengan angka latency yang jauh berbeda dari service
+lain (mis. `cart`, `user`), sehingga Anda dapat menyebutkan service mana
+yang lebih lambat dan berapa kira-kira selisihnya.
 
 ## c. Teori & Struktur Sistem
 
@@ -97,10 +100,18 @@ di bagian d topik 3):
 `apm-server`) masih berjalan. Apabila sudah dimatikan, nyalakan kembali
 sesuai instruksi Sesi 4 bagian (d) topik 1 sebelum melanjutkan.
 
+**Semua perintah di sesi ini dijalankan dari direktori sesi ini sendiri**
+(`lab/day-3-analytics-optimization/sesi-6-performance-optimization`) — Anda
+tidak perlu `cd` atau membuka folder sesi lain manapun. Stack Robot Shop
+sendiri (image, service, dst.) tetap "milik" Sesi 4 dan sudah berjalan
+sejak sesi itu; perintah di bawah ini cuma menunjuk ke file
+`docker-compose.yml`-nya lewat path relatif.
+
 **[Terminal] Verifikasi servis masih berjalan:**
 ```bash
-cd lab/day-2-query-relevance/sesi-4-relevance-scoring
-docker compose ps
+docker compose -f ../../day-2-query-relevance/sesi-4-relevance-scoring/docker-compose.yml \
+  -f ../../day-2-query-relevance/sesi-4-relevance-scoring/docker-compose.arm64-override.yml \
+  ps
 ```
 Expected Output: seluruh servis Robot Shop + `apm-server` berstatus
 `Up`/`healthy` (lihat Sesi 4 bagian (b) untuk daftar lengkapnya).
@@ -110,15 +121,17 @@ mengaktifkan transaksi anomali bawaan Robot Shop, bahan latihan Sesi 7 —
 menggantikan load generator `ERROR=0` yang sudah berjalan sejak Sesi 4,
 BUKAN menambah instance baru):
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml \
-  -f ../../day-3-analytics-optimization/sesi-6-performance-optimization/docker-compose.load.yml \
+docker compose -f ../../day-2-query-relevance/sesi-4-relevance-scoring/docker-compose.yml \
+  -f ../../day-2-query-relevance/sesi-4-relevance-scoring/docker-compose.arm64-override.yml \
+  -f ./docker-compose.load.yml \
   up -d load
 ```
 *(Tanpa ARM override, cukup hilangkan
-`-f docker-compose.arm64-override.yml` dari perintah di atas. Perintah
-ini WAJIB dijalankan dari direktori `sesi-4-relevance-scoring` — bukan
-dari direktori sesi ini — supaya container `load` yang sudah ada
-di-Recreate, bukan membuat instance kedua yang terpisah.)*
+`-f ../../day-2-query-relevance/sesi-4-relevance-scoring/docker-compose.arm64-override.yml`
+dari perintah di atas. Boleh dijalankan dari direktori manapun selama
+ketiga path `-f` di atas tetap benar relatif terhadap direktori Anda saat
+itu — Compose meng-Recreate container `load` yang sudah ada, bukan
+membuat instance kedua yang terpisah.)*
 Expected Output (dari `docker compose logs -f load` setelah
 beberapa menit): traffic asli mengalir ke `/api/user/login`,
 `/api/catalogue/*`, `/api/shipping/confirm/*`, dst.
@@ -182,125 +195,158 @@ yang PERSIS SAMA (nilainya kumulatif sejak index ini pertama kali
 dibuat, jadi tidak selalu mulai dari 0/1 — yang penting `hit_count`
 bertambah setelah query kedua di atas, bukan angka absolutnya).
 
-### 3. Melihat Latency per Microservice Lewat APM
+### 3. Memasang APM Sendiri pada Service Baru
 
-**Di mana source code `payment.py`?** Robot Shop pada lab ini berjalan
-dari image jadi (`:v2-apm`) — sama seperti seluruh servis lain, Anda TIDAK
-pernah men-download/membuka/meng-edit source code `payment.py` atau
-servis manapun secara langsung (lihat prinsip "Robot Shop = subjek
-observasi" di `docs/prerequisites.md`). Instrumentasi APM sudah
-disisipkan instruktur SEKALI ke dalam image ini sebelum lab dimulai.
-Bagian ini menunjukkan BUKTI NYATA bahwa APM sedang aktif — dengan cara
-mematikannya lalu menyalakannya kembali di depan mata Anda — bukan
-meminta Anda menulis kode ke file yang memang tidak bisa Anda akses.
+**Kenapa bukan `payment` asli Robot Shop?** Seluruh servis Robot Shop
+(termasuk `payment`) berjalan dari image jadi (`:v2-apm`) -- source
+code-nya tidak ada di repo ini, jadi tidak bisa Anda edit langsung. Supaya
+Anda tetap dapat pengalaman memasang APM ke sebuah service dengan tangan
+Anda sendiri (bukan cuma membaca teori), sesi ini menyediakan service demo
+kecil bernama `payment-lab` -- sengaja dibuat kecil, dan sengaja BELUM
+di-build sampai Anda yang melakukannya sendiri.
 
-**Buktikan Sendiri: APM Bisa Dimatikan/Dinyalakan Tanpa Mengubah Kode**
+Semua yang dibutuhkan sudah ada di folder `payment-lab/` di sesi ini:
+`app.py` (source code), `requirements.txt` (dependency), `Dockerfile`.
+Anda tidak perlu membuka folder sesi lain manapun untuk topik ini.
 
-Ingat env var `ELASTIC_APM_SERVER_URL` dan `ELASTIC_APM_ENVIRONMENT` pada
-`payment` di `docker-compose.yml` Sesi 4 (bagian d topik 1)? Agent APM
-membaca konfigurasinya dari env var itu SAAT CONTAINER START — termasuk
-satu env var lagi yang belum dipakai: `ELASTIC_APM_ENABLED`. Ini
-membuktikan bahwa "memasang APM" pada level operasional cukup soal
-konfigurasi container, bukan menulis ulang kode aplikasi setiap kali.
-
-**[Terminal] Matikan APM `payment`** (dari direktori `sesi-4-relevance-scoring`):
+**Langkah 1 -- Build & jalankan TANPA APM dulu (kondisi awal):**
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml \
-  -f ../../day-3-analytics-optimization/sesi-6-performance-optimization/docker-compose.load.yml \
-  -f ../../day-3-analytics-optimization/sesi-6-performance-optimization/docker-compose.apm-toggle.yml \
-  up -d payment
+docker compose -f docker-compose.payment-lab.yml up -d --build
 ```
-Tunggu 3-5 menit (supaya jendela waktu "Last 5 minutes" di Kibana bersih
-dari data lama saat `payment` masih ber-APM), lalu buka **Kibana → ☰ →
-Observability → APM → Service inventory**, atur rentang waktu ke **Last 5
-minutes**:
+*(Prasyarat: jaringan Docker `robot-shop` harus sudah ada -- otomatis
+terbentuk selama stack Sesi 4 masih berjalan, lihat topik 1 di atas.)*
 
-![Kibana APM Service inventory menampilkan hanya 6 servis (catalogue, cart, shipping, ratings, user, dispatch) -- payment tidak muncul sama sekali karena APM-nya dimatikan](../../../docs/screenshots/sesi-6/06-apm-toggle-before-payment-off.png)
-
-*`payment` HILANG TOTAL dari daftar — bukan menunjukkan angka nol/error,
-tapi benar-benar tidak terdaftar, karena APM Server tidak menerima data
-apa pun darinya. Servis-nya sendiri tetap hidup dan tetap melayani
-request (coba `docker compose ps payment` — statusnya tetap `healthy`) —
-yang mati hanya laporan datanya ke APM, bukan servisnya.*
-
-**[Terminal] Nyalakan lagi** (jalankan ulang TANPA file
-`docker-compose.apm-toggle.yml` — otomatis kembali ke config normal Sesi 4):
+Verifikasi jalan normal:
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.arm64-override.yml \
-  -f ../../day-3-analytics-optimization/sesi-6-performance-optimization/docker-compose.load.yml \
-  up -d payment
+curl -X POST http://localhost:8090/pay/1
 ```
-Tunggu 1-2 menit supaya traffic baru sempat masuk, refresh halaman yang
-sama (tetap **Last 5 minutes**):
+Expected Output: `{"order_id":"1","status":"approved"}` (perlu waktu
+~0.6 detik sebelum respons muncul -- simulasi payment gateway yang lambat,
+sengaja ditanam di kode, lihat isi `app.py`).
 
-![Kibana APM Service inventory menampilkan 7 servis, payment sudah muncul kembali dengan latency 623ms dan failed transaction rate 14%](../../../docs/screenshots/sesi-6/07-apm-toggle-after-payment-on.png)
+Buka **Kibana -> menu ☰ -> Observability -> APM -> Service inventory**,
+atur rentang waktu ke **Last 5 minutes**:
 
-*`payment` MUNCUL KEMBALI, lengkap dengan angka latency dan failed
-transaction rate — persis sama seperti sebelum dimatikan. Inilah yang
-sebenarnya terjadi tiap kali instrumentasi APM "dipasang" pada servis
-baru: bukan mendadak ada di mana-mana, tapi mulai terdaftar begitu agent
-aktif mengirim data.*
+![Kibana APM Service inventory sebelum payment-lab dipasangi APM -- servis payment-lab tidak muncul di daftar](../../../docs/screenshots/sesi-6/08-payment-lab-before-apm.png)
 
-> **INFORMATION:** angka `failed transaction rate` pada layar Anda boleh
-> berbeda (bisa 0%, bisa lebih tinggi dari contoh) — itu bergantung
-> apakah `payment` sedang mengembalikan HTTP 429 akibat `NUM_CLIENTS`
-> (lihat INFORMATION di bagian d topik 1), bukan indikasi ada yang salah
-> dengan toggle APM-nya.
+*`payment-lab` TIDAK ada di daftar -- service-nya hidup dan bisa dipanggil
+(baru saja Anda buktikan lewat curl di atas), tapi APM Server belum
+menerima data apa pun darinya karena memang belum ada satu baris kode
+instrumentasi pun di `app.py`.*
 
-**Kalau Diterapkan ke Aplikasi Anda Sendiri (referensi, bukan latihan)**
+**Langkah 2 -- Matikan service, pasang APM pada kodenya:**
+```bash
+docker compose -f docker-compose.payment-lab.yml stop payment-lab
+```
 
-Yang baru saja Anda lihat adalah TOGGLE config -- bukan proses pemasangan
-awalnya. Pemasangan awal (dilakukan SEKALI oleh instruktur ke
-`payment.py`, sebelum image `:v2-apm` ini di-build) mengikuti panduan
-bawaan Kibana sendiri (generik, bukan khusus Robot Shop) -- menu ☰ →
-Observability → APM → tombol **Add data** di kanan atas → pilih tab
-bahasa (mis. **Flask**, bahasa yang dipakai `payment`):
-
-![Kibana APM Agents onboarding guide untuk Flask, menampilkan perintah pip install elastic-apm[flask] dan contoh kode from elasticapm.contrib.flask import ElasticAPM](../../../docs/screenshots/sesi-6/05-apm-onboarding-flask-agent-guide.png)
-
-*Kibana menyediakan perintah install DAN potongan kode siap-pakai untuk
-setiap bahasa -- begini alurnya kalau Anda menginstrumentasi aplikasi
-Flask Anda SENDIRI (bukan Robot Shop): salin potongan kode dari layar ini
-persis apa adanya, tempel ke file utama aplikasi Anda, SEDINI mungkin
-(sebelum baris lain memakai `app`):*
+Buka `payment-lab/app.py` dengan editor teks apa pun. Ini isinya SEBELUM
+diubah:
 
 ```python
-# app.py -- kerangka aplikasi Flask Anda sendiri
-from flask import Flask
+import time
 
-# <-- 1. tempel baris import agent dari panduan Kibana di atas, di sini
-#     (untuk Flask: from elasticapm.contrib.flask import ElasticAPM)
+from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-# <-- 2. tempel konfigurasi + inisialisasi agent dari panduan Kibana, di sini
-#     (untuk Flask: app.config['ELASTIC_APM'] = {...}; ElasticAPM(app))
-#     WAJIB sedini mungkin -- sebelum route/kode lain memakai `app`
+
+@app.route("/pay/<order_id>", methods=["POST"])
+def pay(order_id):
+    # Simulasi pemanggilan payment gateway pihak ketiga yang lambat.
+    time.sleep(0.6)
+    return jsonify({"order_id": order_id, "status": "approved"})
+
+
+@app.route("/health")
+def health():
+    return "OK"
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8080)
 ```
 
-*Anda tidak perlu menghafal atau menulis ulang kode ini dari nol -- salin
-persis dari panduan Kibana, cukup ganti `SERVICE_NAME` sesuai nama
-aplikasi Anda. Begitu agent aktif, SETIAP request yang masuk otomatis
-tercatat sebagai **transaction**, tanpa kode tambahan di tiap endpoint.
+Ubah jadi seperti ini (baris bertanda `+` yang perlu ditambahkan -- pola
+instrumentasi Flask ini persis sama seperti servis `payment` asli Robot
+Shop: import agent di paling atas file, satu config dict, lalu bungkus
+`app` dengan `ElasticAPM()`):
 
-**Servis lain di Robot Shop pakai bahasa berbeda, jadi caranya juga
-sedikit berbeda** -- sekadar referensi (bukan sesuatu yang Anda
-praktikkan, sudah terpasang di image `:v2-apm`):
+```diff
+ import time
++import os
+
+ from flask import Flask, jsonify
++from elasticapm.contrib.flask import ElasticAPM
+
+ app = Flask(__name__)
++app.config["ELASTIC_APM"] = {
++    "SERVICE_NAME": "payment-lab",
++    "SERVER_URL": os.getenv("ELASTIC_APM_SERVER_URL", "http://apm-server:8200"),
++    "ENVIRONMENT": os.getenv("ELASTIC_APM_ENVIRONMENT", "training"),
++}
++apm = ElasticAPM(app)
+
+
+ @app.route("/pay/<order_id>", methods=["POST"])
+ def pay(order_id):
+     # Simulasi pemanggilan payment gateway pihak ketiga yang lambat.
+     time.sleep(0.6)
+     return jsonify({"order_id": order_id, "status": "approved"})
+```
+
+Tambahkan juga satu baris ke `payment-lab/requirements.txt`:
+```diff
+ flask
++elastic-apm[flask]
+```
+
+> **INFORMATION:** `ELASTIC_APM_SERVER_URL`/`ELASTIC_APM_ENVIRONMENT` yang
+> dibaca lewat `os.getenv(...)` di atas SUDAH ada dari awal di
+> `docker-compose.payment-lab.yml` -- sengaja dipasang duluan supaya
+> begitu kode Anda membacanya, tidak ada file compose yang perlu diubah
+> lagi.
+
+**Langkah 3 -- Build ulang & jalankan lagi:**
+```bash
+docker compose -f docker-compose.payment-lab.yml up -d --build payment-lab
+```
+Docker akan build image BARU (kali ini memuat `elastic-apm[flask]` yang
+baru ditambahkan) dan menjalankannya. Panggil endpoint-nya beberapa kali
+supaya ada data yang terkirim ke APM Server:
+```bash
+curl -X POST http://localhost:8090/pay/1
+curl -X POST http://localhost:8090/pay/2
+curl -X POST http://localhost:8090/pay/3
+```
+
+**Tunggu 2-3 menit** (APM Server butuh waktu untuk mengagregasi metrik),
+lalu refresh halaman Kibana yang sama (tetap **Last 5 minutes**):
+
+![Kibana APM Service inventory sesudah payment-lab dipasangi APM -- servis payment-lab muncul dengan latency 607ms](../../../docs/screenshots/sesi-6/09-payment-lab-after-apm.png)
+
+*`payment-lab` sekarang MUNCUL di daftar, lengkap dengan ikon Python,
+latency (~600ms -- angka ini masuk akal, cocok dengan `time.sleep(0.6)`
+yang Anda lihat di kode), throughput, dan failed transaction rate. Tidak
+ada konfigurasi tambahan di sisi Kibana/Elasticsearch yang Anda perlu
+lakukan -- begitu agent aktif dan mengirim data, service itu otomatis
+terdaftar di sini.*
+
+**Bandingkan dengan bahasa lain** -- servis lain di Robot Shop pakai
+bahasa berbeda, jadi caranya juga sedikit berbeda (referensi, Anda tidak
+perlu mempraktikkannya, sudah terpasang di image `:v2-apm` masing-masing):
 
 | Servis | Bahasa | Pola instrumentasi | Perlu ubah source code? |
 |---|---|---|---|
 | `cart`/`catalogue`/`user` | Node.js | `require('elastic-apm-node').start({...})` di baris PALING AWAL file | TIDAK -- sekali require di entry point |
 | `shipping` | Java (Spring Boot) | `-javaagent:elastic-apm-agent.jar` di flag start JVM (`CMD` pada `Dockerfile`) | TIDAK -- javaagent meng-instrument bytecode saat runtime |
 | `ratings` | PHP (Apache) | Extension `.so` resmi Elastic + installer resmi, dimuat via `php.ini` | TIDAK -- extension level, bukan kode aplikasi |
-| `dispatch` | Go | Transaction/span dibuat MANUAL lewat `go.elastic.co/apm/v2` di sekitar kode consumer RabbitMQ | YA -- Go tidak punya auto-instrumentation, satu-satunya servis di sini yang butuh perubahan kode nyata |
+| `dispatch` | Go | Transaction/span dibuat MANUAL lewat `go.elastic.co/apm/v2` di sekitar kode consumer RabbitMQ | YA -- Go tidak punya auto-instrumentation |
 
 > **INFORMATION:** `dispatch` butuh perubahan kode manual karena Go APM
 > agent Elastic TIDAK melakukan auto-instrumentation seperti agent
 > Node.js/Python/Java/PHP di atas (keterbatasan bahasa Go sendiri, bukan
 > keterbatasan Elastic) -- transaction & span harus dibuat eksplisit lewat
-> `tracer.StartTransaction()`/`apm.StartSpan()` di titik yang relevan
-> (dalam kasus `dispatch`: sekitar fungsi yang memproses pesan dari
-> `rabbitmq`, bukan HTTP handler seperti servis lain).
+> `tracer.StartTransaction()`/`apm.StartSpan()` di titik yang relevan.
 
 **Apa bedanya `trace`, `transaction`, `span`, dan istilah APM lain?**
 

@@ -1,0 +1,24 @@
+# Service demo mandiri untuk latihan memasang APM secara langsung (build
+# sendiri, BUKAN image pre-built seperti servis Robot Shop lain) -- lihat
+# README bagian d topik 3. Source code & Dockerfile ada di folder
+# payment-lab/ di SESI INI SENDIRI, tidak perlu membuka folder sesi lain.
+#
+# Satu-satunya ketergantungan ke luar: jaringan Docker `robot-shop` (dibuat
+# otomatis oleh docker-compose.yml Sesi 4 saat stack itu dijalankan) --
+# supaya container ini bisa menjangkau `apm-server:8200` dengan hostname
+# yang sama seperti servis Robot Shop lain. Jaringan itu HARUS sudah ada
+# (artinya stack Sesi 4 masih berjalan) sebelum menjalankan file ini.
+services:
+  payment-lab:
+    build: ./payment-lab
+    environment:
+      ELASTIC_APM_SERVER_URL: http://apm-server:8200
+      ELASTIC_APM_ENVIRONMENT: training
+    ports:
+      - "8090:8080"
+    networks: [robot-shop]
+
+networks:
+  robot-shop:
+    external: true
+    name: sesi-4-relevance-scoring_robot-shop
