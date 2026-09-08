@@ -722,17 +722,17 @@ tertukar dengan 5 langkah pembuatan bot di atas):
 **Alur data end-to-end** — penting dipahami SEBELUM mengutak-atik rule,
 supaya jelas bagian mana yang benar-benar perlu diubah:
 
-![Diagram sequence PlantUML: ElastAlert2 melakukan loop tiap 30 detik, untuk tiap rule query Elasticsearch, mencocokkan hasil ke kondisi rule, menyusun pesan, mengecek realert, lalu POST ke Telegram Bot API dan mencatat status ke index elastalert_status](../../../docs/diagrams/sesi7-elastalert-dataflow.svg)
+![Diagram alur ElastAlert2 mengirim notifikasi ke Telegram: ElastAlert2 query Elasticsearch tiap 30 detik per rule, kalau kondisi terpenuhi kirim POST ke Telegram Bot API, dan setiap siklus mencatat status ke index elastalert_status terpisah](../../../docs/diagrams/sesi7-elastalert-dataflow.svg)
 
-*Dua loop bersarang: loop luar tiap 30 detik (`run_every`), loop dalam
-untuk setiap rule di `rules/*.yaml`. Elasticsearch HANYA di-query (panah
-putus-putus = respons), tidak pernah ditulis oleh ElastAlert2 kecuali ke
-index miliknya sendiri (`elastalert_status*`, dipakai untuk mencatat
-hasil tiap siklus — inilah yang saya baca untuk memverifikasi pengiriman
-berhasil tanpa perlu akses Telegram langsung). Percabangan `alt` kedua
-(`realert`) adalah pengaman anti-spam: kalau rule yang sama baru saja
-mengirim alert, siklus berikutnya cuma mencatat status tanpa mengirim
-ulang ke Telegram.*
+*ElastAlert2 berjalan sebagai loop tiap 30 detik (`run_every`), mengecek
+setiap rule di `rules/*.yaml` satu per satu. Elasticsearch HANYA di-query
+(panah biru), tidak pernah ditulis oleh ElastAlert2 kecuali ke index
+miliknya sendiri (panah hijau kembali ke `elastalert_status*`, dipakai
+untuk mencatat hasil tiap siklus — inilah yang saya baca untuk
+memverifikasi pengiriman berhasil tanpa perlu akses Telegram langsung).
+Ada pengaman anti-spam (realert) di balik layar: kalau rule yang sama
+baru saja mengirim alert, siklus berikutnya cuma mencatat status tanpa
+mengirim ulang ke Telegram.*
 
 **Poin paling penting dari diagram ini:** ElastAlert2 **TIDAK mengubah
 atau menyentuh data** di Elasticsearch sama sekali — dia cuma
