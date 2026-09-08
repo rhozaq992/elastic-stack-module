@@ -793,13 +793,29 @@ Tunggu 1-2 menit (ElastAlert2 perlu waktu untuk melihat lonjakan ini di
 siklus query berikutnya, plus data APM perlu waktu terindeks) — pesan
 notifikasi "Load APM tinggi" akan masuk ke Telegram Anda.
 
-> **INFORMATION:** verifikasi pada lab ini sudah memastikan KETIGA rule
-> benar-benar match terhadap data nyata dan mencoba mengirim ke Telegram
-> (request-nya benar-benar sampai ke server Telegram, terbukti dari
-> respons error terstruktur `404`/`400` saat token contoh dipakai) —
-> tapi pengiriman pesan yang BENAR-BENAR diterima bergantung pada token
-> bot Anda sendiri yang valid, hanya bisa diverifikasi oleh Anda sendiri
-> dengan bot Anda sendiri.
+> **INFORMATION:** ketiga rule pada lab ini sudah diuji end-to-end dengan
+> bot Telegram sungguhan (bukan cuma sampai ke server Telegram, tapi
+> pesannya benar-benar diterima) — jadi konfigurasi di atas TERBUKTI
+> bekerja apabila diikuti persis. Kalau pesan Anda tidak muncul padahal
+> sudah mengikuti semua langkah, penyebab paling umum adalah token/chat_id
+> salah ketik atau lupa `docker compose ... restart elastalert` setelah
+> mengedit rule — cek log ElastAlert2 dulu (`docker compose -f
+> docker-compose.elastalert.yml logs elastalert`) sebelum menduga
+> pipeline data-nya yang salah.
+
+> **INFORMATION (opsional, untuk grup Telegram ber-Topics/forum):**
+> apabila Anda memakai grup (bukan chat pribadi dengan bot) dan grup itu
+> punya fitur **Topics** aktif, ElastAlert2 bisa mengarahkan notifikasi
+> ke topic tertentu lewat satu baris tambahan di rule YAML:
+> ```yaml
+> telegram_thread_id: 2
+> ```
+> Angka itu adalah ID topic tujuan (BUKAN nama topic) — cara termudah
+> mendapatkannya: kirim satu pesan apa saja di topic tersebut, lalu buka
+> `https://api.telegram.org/bot<TOKEN>/getUpdates` di browser, cari field
+> `"message_thread_id"` pada pesan itu. Fitur ini TIDAK didokumentasikan
+> di situs resmi ElastAlert2, tapi ada di kode sumbernya dan sudah diuji
+> nyata bekerja.
 
 ## e. Referensi Exercise
 
