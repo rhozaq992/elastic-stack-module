@@ -118,6 +118,13 @@ cd lab/day-4-administration-ingestion/sesi-8-administration-scaling
 docker compose up -d
 ```
 
+> **INFORMATION (Windows/amd64 vs Mac Apple Silicon/arm64):** BERBEDA
+> dari Robot Shop di Sesi 4 (yang butuh `docker-compose.arm64-override.yml`
+> untuk `mysql`), seluruh image pada sesi ini (`elasticsearch:9.5.2`,
+> `alpine:3.20`) sudah multi-arch — tidak ada file override apa pun yang
+> perlu ditambahkan, perintah di atas sudah final untuk Windows maupun
+> Mac Apple Silicon.
+
 **[Terminal] Periksa cluster health:**
 ```bash
 curl "http://localhost:9200/_cluster/health?pretty"

@@ -107,6 +107,14 @@ sendiri (image, service, dst.) tetap "milik" Sesi 4 dan sudah berjalan
 sejak sesi itu; perintah di bawah ini cuma menunjuk ke file
 `docker-compose.yml`-nya lewat path relatif.
 
+> **INFORMATION (Windows/amd64 vs Mac Apple Silicon/arm64):** KEDUA
+> perintah `docker compose` di topik ini menyertakan
+> `docker-compose.arm64-override.yml` dari Sesi 4 secara default — file
+> itu aman disertakan di perangkat manapun (termasuk Windows/amd64, lihat
+> Sesi 4 bagian d topik 1), jadi Anda TIDAK PERLU menghapusnya kecuali
+> mau lebih ringkas. Kalau Anda sudah tahu perangkat Anda amd64 (mayoritas
+> laptop Windows) dan ingin perintah yang lebih pendek, boleh dihilangkan.
+
 **[Terminal] Verifikasi servis masih berjalan:**
 ```bash
 docker compose -f ../../day-2-query-relevance/sesi-4-relevance-scoring/docker-compose.yml \
@@ -126,12 +134,10 @@ docker compose -f ../../day-2-query-relevance/sesi-4-relevance-scoring/docker-co
   -f ./docker-compose.load.yml \
   up -d load
 ```
-*(Tanpa ARM override, cukup hilangkan
-`-f ../../day-2-query-relevance/sesi-4-relevance-scoring/docker-compose.arm64-override.yml`
-dari perintah di atas. Boleh dijalankan dari direktori manapun selama
-ketiga path `-f` di atas tetap benar relatif terhadap direktori Anda saat
-itu — Compose meng-Recreate container `load` yang sudah ada, bukan
-membuat instance kedua yang terpisah.)*
+*(Boleh dijalankan dari direktori manapun selama ketiga path `-f` di atas
+tetap benar relatif terhadap direktori Anda saat itu — Compose
+meng-Recreate container `load` yang sudah ada, bukan membuat instance
+kedua yang terpisah.)*
 Expected Output (dari `docker compose logs -f load` setelah
 beberapa menit): traffic asli mengalir ke `/api/user/login`,
 `/api/catalogue/*`, `/api/shipping/confirm/*`, dst.
@@ -208,6 +214,13 @@ di-build sampai Anda yang melakukannya sendiri.
 Semua yang dibutuhkan sudah ada di folder `payment-lab/` di sesi ini:
 `app.py` (source code), `requirements.txt` (dependency), `Dockerfile`.
 Anda tidak perlu membuka folder sesi lain manapun untuk topik ini.
+
+> **INFORMATION (Windows/amd64 vs Mac Apple Silicon/arm64):** berbeda
+> dari servis Robot Shop lain (image jadi, perlu `arm64-override.yml`
+> untuk `mysql`), `payment-lab` di-build LANGSUNG di komputer Anda lewat
+> `docker build` — otomatis menghasilkan image sesuai arsitektur
+> perangkat Anda sendiri. Tidak ada override apa pun yang perlu
+> ditambahkan di sini, pada Windows maupun Mac.
 
 **Langkah 1 — Build & jalankan TANPA APM dulu (kondisi awal):**
 
