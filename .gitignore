@@ -9,10 +9,5 @@ Silabus_ELK_Training_V2.xlsx
 ~$*.xlsx
 ~$*.docx
 *.swp
-
-# Sesi 3 (ISO 8583, topik 3-4) -- data hasil generate, bukan source code.
-# Peserta generate sendiri lewat generate_iso8583_stream.py, tidak perlu
-# ikut ke-commit (beda tiap kali dijalankan, lihat catatan non-deterministik
-# di README.md topik 3).
 lab/day-2-query-relevance/sesi-3-query-dsl/parsed_transactions.jsonl
 lab/day-2-query-relevance/sesi-3-query-dsl/raw_switch_capture.log
