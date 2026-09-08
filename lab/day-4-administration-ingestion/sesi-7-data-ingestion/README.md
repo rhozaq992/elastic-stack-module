@@ -8,7 +8,12 @@ Logstash, termasuk melakukan parsing terhadap tiga format log yang berbeda
 (grok manual, JSON, dan format standar industri), serta memahami cara
 **menginstal Filebeat & Logstash langsung di Linux (VM/bare-metal)**,
 sehingga keterampilan ini dapat diterapkan pada server nyata di luar
-lingkungan lab ini.
+lingkungan lab ini. Anda juga akan membangun **notifikasi otomatis ke
+Telegram** dari data yang sudah masuk ke Elasticsearch — baik anomali
+level aplikasi (lonjakan load pada APM `payment-lab`, lihat Sesi 6) maupun
+anomali level host (pembuatan user baru, akses ke file/data sensitif) —
+menggunakan rule engine open source, bukan menulis kode pengiriman pesan
+dari nol.
 
 ## b. Output yang Diharapkan
 
@@ -23,7 +28,14 @@ membaca lebih dari satu sumber sekaligus (log akses web, log autentikasi
 SSH, dan command history), menghasilkan dokumen `ssh_login_success`/
 `ssh_login_failed`/`bash_history` yang terpisah sesuai sumbernya, serta
 mampu membaca dan mengubah pengaturan throughput pipeline Logstash
-(`pipeline.workers`/`pipeline.batch.size`) lewat API monitoring.
+(`pipeline.workers`/`pipeline.batch.size`) lewat API monitoring. Sesi ini
+JUGA dinyatakan selesai apabila index `host-security-parsed-*` terisi
+dokumen NYATA secara terus-menerus (bukan demo sekali jalan), Anda
+berhasil membuat bot Telegram sendiri lewat BotFather, dan ElastAlert2
+berhasil mendeteksi ketiga kondisi berikut lalu mencoba mengirim
+notifikasi (terkonfirmasi lewat log ElastAlert2, terlepas dari apakah
+token bot Anda sudah valid atau belum): pembuatan user baru, akses ke
+data/file sensitif, dan lonjakan load pada `payment-lab`.
 
 ## c. Teori & Struktur Sistem
 
@@ -51,6 +63,19 @@ kosong.
 - `cart-service.conf` — log sudah berbentuk JSON dari aplikasinya sendiri → **JSON filter**.
 - `web-service.conf` — log format standar Apache/Nginx Combined Log Format
   → **grok pattern bawaan** (`%{COMBINEDAPACHELOG}`), tidak perlu menulis regex sendiri.
+
+**Apa itu alerting, dan kenapa tidak menulis kode pengiriman pesan
+sendiri?** Data yang sudah masuk ke Elasticsearch baru berguna sebagai
+notifikasi apabila ADA YANG MEMANTAU-nya terus-menerus dan mengabari
+Anda saat kondisi tertentu terjadi — mengecek Kibana manual setiap
+beberapa menit tidak realistis. **ElastAlert2** (open source, Apache 2.0,
+`github.com/jertel/elastalert2`) adalah rule engine yang menjalankan
+query Elasticsearch secara berkala (mis. tiap 30 detik), membandingkan
+hasilnya terhadap kondisi yang Anda tentukan di file YAML ("rule"), dan
+memanggil salah satu dari puluhan **alerter** bawaannya (email, Slack,
+webhook, **Telegram**, dst.) begitu kondisi itu terpenuhi. Anda tidak
+menulis satu baris kode HTTP request pun — cukup mendeskripsikan
+query + threshold + tujuan notifikasi dalam YAML, lihat bagian d topik 7.
 
 ## d. Praktik: Instalasi & Konfigurasi
 
@@ -578,6 +603,203 @@ sanggup menampung request secara bersamaan. Dua pola yang sama-sama
 "tidak normal" ini membutuhkan respons yang berbeda — 500 membutuhkan
 investigasi keamanan, sedangkan 429 (apabila muncul) membutuhkan
 perbaikan kapasitas/scaling.
+
+### 6. Ingest Log Keamanan Host Secara Persisten
+
+Topik 3 mendemonstrasikan parsing `auth.log`/`bash_history` di container
+sekali-pakai (`native-vm`) — output-nya cuma tampil di terminal, langsung
+hilang begitu container dihapus. Supaya bisa dipakai untuk notifikasi
+otomatis (topik 8), data itu perlu benar-benar tersimpan di Elasticsearch,
+terus-menerus. Folder `host-security/` di sesi ini (mandiri, tidak
+bergantung folder sesi lain kecuali jaringan Docker `elk-lab-net` dari
+Sesi 1) berisi:
+- `log-generator/` — script Python yang terus menghasilkan baris
+  `auth.log`/`bash_history` PALSU, mayoritas aktivitas normal (login SSH
+  berhasil, command sehari-hari), sesekali anomali: percobaan brute-force
+  SSH, **pembuatan user baru** (`useradd`), dan **akses ke file
+  sensitif** (`/etc/shadow`, `/etc/passwd`, `id_rsa`, `.env`, dst.).
+- `filebeat/filebeat.yml` — membaca dua file itu dari volume bersama.
+- `logstash/pipeline/` — grok pattern yang SAMA seperti topik 3 (plus
+  tambahan pattern `useradd` dan deteksi command sensitif), outputnya
+  kali ini benar-benar ke index `host-security-parsed-*`.
+
+**[Terminal] Jalankan (dari direktori sesi ini):**
+```bash
+docker compose -f docker-compose.host-security.yml up -d --build
+```
+Tunggu 1-2 menit supaya generator sempat menghasilkan beberapa baris,
+lalu verifikasi datanya masuk:
+```bash
+curl -s "http://localhost:9200/host-security-parsed-*/_count"
+```
+Expected Output: `count` bertambah terus setiap kali perintah ini
+diulang (generator berjalan terus di background).
+
+**Buat Data View di Kibana** (☰ → Stack Management → Data Views → Create
+data view, isi `host-security-parsed-*`, time field `@timestamp`), lalu
+buka **Discover**, filter `log_type : bash_history_sensitive`:
+
+![Kibana Discover pada index host-security-parsed-* difilter log_type bash_history_sensitive, menampilkan command seperti cat /etc/shadow, cat ~/.ssh/id_rsa, mysql -u root -p](../../../docs/screenshots/sesi-7/02-discover-host-security-sensitive.png)
+
+*Setiap baris `command` di sini adalah perintah yang cocok dengan pola
+sensitif (`/etc/shadow`, `/etc/passwd`, `id_rsa`, `.env`, `mysql -u
+root`) — dideteksi Logstash lewat regex pada filter `host-security.conf`,
+ditandai `log_type: bash_history_sensitive` supaya mudah di-query
+terpisah dari command normal.*
+
+Filter `log_type : user_created`:
+
+![Kibana Discover pada index host-security-parsed-* difilter log_type user_created, menampilkan auth_message new user: name=svc-XXXX, UID=..., home=/home/svc-XXXX](../../../docs/screenshots/sesi-7/03-discover-host-security-new-user.png)
+
+*Baris `useradd[PID]: new user: name=..., UID=..., home=...` pada
+`auth.log` asli (Debian/Ubuntu) memang berformat seperti ini setiap kali
+akun baru dibuat lewat perintah `useradd` — pola yang sama berlaku pada
+server sungguhan, bukan cuma simulasi di sini.*
+
+> **INFORMATION:** field `log_type` bertipe `text` dengan sub-field
+> `.keyword` (mapping dinamis default Elasticsearch) — untuk `terms`
+> aggregation atau exact-match filter di Dev Tools, gunakan
+> `log_type.keyword`, BUKAN `log_type` biasa (akan gagal dengan error
+> "Fielddata is disabled"). Filter KQL di Discover (seperti contoh di
+> atas) tidak terpengaruh soal ini.
+
+### 7. Buat Bot Telegram Sendiri Lewat BotFather
+
+Setiap peserta membuat bot Telegram MASING-MASING (bukan berbagi satu
+bot) — supaya notifikasi yang Anda terima benar-benar dari data Anda
+sendiri, dan token bot tidak perlu dibagikan ke siapa pun.
+
+1. Buka aplikasi Telegram, cari akun **@BotFather** (akun resmi Telegram
+   untuk membuat bot, tercentang biru), mulai chat dengannya.
+2. Kirim perintah `/newbot`.
+3. BotFather menanyakan **nama tampilan** bot (bebas, bisa diisi apa
+   saja, mis. "Lab ELK Stack Notifier N" — ganti N dengan nomor peserta
+   Anda).
+4. BotFather menanyakan **username** bot — ini yang harus mengikuti
+   format `lab-elk-stack-modul-student-N`, TAPI username Telegram HANYA
+   boleh berisi huruf/angka/underscore dan WAJIB diakhiri kata `bot` —
+   tanda hubung (`-`) TIDAK diperbolehkan. Sesuaikan jadi:
+   ```
+   lab_elk_stack_modul_student_N_bot
+   ```
+   (ganti `N` dengan nomor Anda, mis. `lab_elk_stack_modul_student_7_bot`).
+   Apabila username itu sudah dipakai peserta lain, tambahkan angka acak
+   di akhir sebelum `_bot`.
+5. BotFather membalas dengan **token** bot, formatnya
+   `123456789:AAHdqT-contoh-token-anda-sendiri`. **Simpan baik-baik**,
+   token ini setara password penuh ke bot Anda.
+
+**Dapatkan `chat_id` Anda** (dibutuhkan topik 8, ID numerik tujuan pesan):
+1. Klik link `t.me/lab_elk_stack_modul_student_N_bot` dari balasan
+   BotFather, tekan **Start** (kirim minimal satu pesan apa saja ke bot
+   Anda sendiri — bot belum bisa mengirim pesan ke Anda sebelum ini).
+2. Buka URL berikut di browser (ganti `<TOKEN>` dengan token dari
+   langkah 5):
+   ```
+   https://api.telegram.org/bot<TOKEN>/getUpdates
+   ```
+3. Expected Output — JSON berisi `"chat":{"id": 123456789, ...}` — angka
+   itu adalah `chat_id` Anda.
+
+> **INFORMATION:** apabila responsnya `{"ok":true,"result":[]}` (kosong),
+> berarti Anda belum mengirim pesan apa pun ke bot — ulangi langkah 1.
+
+### 8. Pasang ElastAlert2 & Hubungkan ke Telegram
+
+Folder `elastalert/` di sesi ini berisi:
+- `config.yaml` — pengaturan umum (alamat Elasticsearch, seberapa sering
+  query dijalankan, dst.) — tidak perlu diubah.
+- `rules/*.yaml` — TIGA rule notifikasi, satu file per kondisi:
+  `new_user.yaml` (pembuatan user baru), `sensitive_access.yaml` (akses
+  data sensitif), `apm_load.yaml` (lonjakan load `payment-lab`, lihat
+  Sesi 6).
+
+**Buka masing-masing file di `elastalert/rules/`**, ganti placeholder
+`GANTI_DENGAN_TOKEN_BOT_ANDA` dengan token dari topik 7 langkah 5, dan
+`GANTI_DENGAN_CHAT_ID_ANDA` dengan `chat_id` dari topik 7 langkah 3 (di
+KETIGA file).
+
+**Contoh isi `new_user.yaml`** (dua rule lain memakai struktur serupa,
+cuma beda `filter` dan `index`):
+```yaml
+name: "Notifikasi Pembuatan User Baru"
+type: frequency
+index: "host-security-parsed-*"
+num_events: 1
+timeframe:
+  minutes: 1
+
+filter:
+  - term:
+      log_type.keyword: "user_created"
+
+alert:
+  - "telegram"
+telegram_bot_token: "GANTI_DENGAN_TOKEN_BOT_ANDA"
+telegram_room_id: "GANTI_DENGAN_CHAT_ID_ANDA"
+
+alert_text_type: alert_text_only
+alert_text: |
+  User baru terdeteksi di server!
+  Username: {0}
+  UID: {1}
+  Home directory: {2}
+alert_text_args: ["new_username", "new_uid", "new_home"]
+
+realert:
+  minutes: 5
+```
+*`type: frequency`, `num_events: 1`, `timeframe: 1 menit` berarti: SATU
+kejadian saja dalam 1 menit sudah cukup memicu alert (cocok untuk
+kejadian yang harus SELALU diperhatikan, beda dengan `apm_load.yaml`
+yang butuh 15 kejadian dalam 2 menit — baru dianggap "lonjakan"). `realert`
+mencegah Telegram Anda dibanjiri notifikasi identik berulang-ulang dalam
+5 menit yang sama.*
+
+**[Terminal] Jalankan ElastAlert2** (dari direktori sesi ini):
+```bash
+docker compose -f docker-compose.elastalert.yml up -d
+```
+Lihat log-nya:
+```bash
+docker compose -f docker-compose.elastalert.yml logs -f elastalert
+```
+Expected Output pada percobaan PERTAMA (`New index elastalert_status
+created`), lalu setiap ±30 detik ElastAlert2 mengevaluasi ketiga rule.
+Karena `log-generator` (topik 6) sudah berjalan sejak tadi dan pasti
+menghasilkan `user_created`/`bash_history_sensitive` beberapa kali dalam
+1-2 menit terakhir, Anda akan melihat baris log pengiriman ke Telegram
+dalam waktu singkat — **apabila token & chat_id Anda benar, pesan
+langsung muncul di Telegram**. Apabila salah satu placeholder belum
+diganti atau salah ketik, log akan menunjukkan error dari Telegram API
+(mis. `404 Not Found` untuk token tidak valid, `400 Bad Request` untuk
+`chat_id` salah) — perbaiki lalu `docker compose -f
+docker-compose.elastalert.yml restart elastalert`.
+
+**Uji rule `apm_load.yaml`** (butuh `payment-lab` yang SUDAH dipasangi
+APM dari Sesi 6 — lihat README Sesi 6 bagian d topik 3):
+```bash
+docker compose -f ../../day-3-analytics-optimization/sesi-6-performance-optimization/docker-compose.payment-lab.yml up -d
+```
+Tunggu 2-3 detik supaya Flask selesai start (lihat catatan serupa di
+README Sesi 6 bagian d topik 3 — curl yang dijalankan tepat setelah
+container baru saja `Started` bisa gagal diam-diam), baru kirim burst
+request-nya:
+```bash
+for i in $(seq 1 20); do curl -s -X POST http://localhost:8090/pay/$i > /dev/null & done
+wait
+```
+Tunggu 1-2 menit (ElastAlert2 perlu waktu untuk melihat lonjakan ini di
+siklus query berikutnya, plus data APM perlu waktu terindeks) — pesan
+notifikasi "Load APM tinggi" akan masuk ke Telegram Anda.
+
+> **INFORMATION:** verifikasi pada lab ini sudah memastikan KETIGA rule
+> benar-benar match terhadap data nyata dan mencoba mengirim ke Telegram
+> (request-nya benar-benar sampai ke server Telegram, terbukti dari
+> respons error terstruktur `404`/`400` saat token contoh dipakai) —
+> tapi pengiriman pesan yang BENAR-BENAR diterima bergantung pada token
+> bot Anda sendiri yang valid, hanya bisa diverifikasi oleh Anda sendiri
+> dengan bot Anda sendiri.
 
 ## e. Referensi Exercise
 

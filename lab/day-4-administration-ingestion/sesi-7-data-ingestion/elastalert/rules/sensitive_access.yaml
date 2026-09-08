@@ -1,0 +1,24 @@
+name: "Notifikasi Akses Data Sensitif"
+type: frequency
+index: "host-security-parsed-*"
+num_events: 1
+timeframe:
+  minutes: 1
+
+filter:
+  - term:
+      log_type.keyword: "bash_history_sensitive"
+
+alert:
+  - "telegram"
+telegram_bot_token: "GANTI_DENGAN_TOKEN_BOT_ANDA"
+telegram_room_id: "GANTI_DENGAN_CHAT_ID_ANDA"
+
+alert_text_type: alert_text_only
+alert_text: |
+  Akses ke data/file sensitif terdeteksi!
+  Perintah: {0}
+alert_text_args: ["command"]
+
+realert:
+  minutes: 5

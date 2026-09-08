@@ -1,0 +1,16 @@
+# ElastAlert2 -- rule engine alerting Elasticsearch open source
+# (github.com/jertel/elastalert2, Apache 2.0). Membaca rule dari
+# elastalert/rules/, mengevaluasi query ke Elasticsearch tiap 30 detik
+# (config.yaml), dan mengirim notifikasi ke Telegram lewat alerter
+# bawaannya sendiri. Lihat README bagian d topik 7.
+services:
+  elastalert:
+    image: jertel/elastalert2:2.31.0
+    volumes:
+      - ./elastalert/config.yaml:/opt/elastalert/config.yaml:ro
+      - ./elastalert/rules:/opt/elastalert/rules:ro
+    networks: [elk-lab-net]
+
+networks:
+  elk-lab-net:
+    external: true

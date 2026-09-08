@@ -1,0 +1,25 @@
+# Filebeat khusus log-generator/ (Sesi 7) -- membaca dua sumber log host
+# palsu (auth.log, bash_history) dari generator, mengirim ke Logstash
+# instance-nya sendiri (logstash-host), TERPISAH dari filebeat-rs/logstash-rs
+# milik Sesi 4 -- supaya folder Sesi 7 tetap mandiri.
+filebeat.inputs:
+  - type: filestream
+    id: host-auth-log
+    paths:
+      - /var/log/host-security/auth.log
+    fields:
+      log_source: ssh_auth
+    fields_under_root: true
+  - type: filestream
+    id: host-bash-history
+    paths:
+      - /var/log/host-security/bash_history
+    fields:
+      log_source: bash_history
+    fields_under_root: true
+
+output.logstash:
+  hosts: ["logstash-host:5044"]
+
+logging.level: info
+logging.to_stderr: true

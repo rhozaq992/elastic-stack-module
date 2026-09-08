@@ -1,0 +1,26 @@
+name: "Notifikasi Pembuatan User Baru"
+type: frequency
+index: "host-security-parsed-*"
+num_events: 1
+timeframe:
+  minutes: 1
+
+filter:
+  - term:
+      log_type.keyword: "user_created"
+
+alert:
+  - "telegram"
+telegram_bot_token: "GANTI_DENGAN_TOKEN_BOT_ANDA"
+telegram_room_id: "GANTI_DENGAN_CHAT_ID_ANDA"
+
+alert_text_type: alert_text_only
+alert_text: |
+  User baru terdeteksi di server!
+  Username: {0}
+  UID: {1}
+  Home directory: {2}
+alert_text_args: ["new_username", "new_uid", "new_home"]
+
+realert:
+  minutes: 5
