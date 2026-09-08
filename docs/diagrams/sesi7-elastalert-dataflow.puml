@@ -1,0 +1,44 @@
+@startuml sesi7-elastalert-dataflow
+skinparam backgroundColor #ffffff
+skinparam defaultFontName Helvetica
+skinparam sequence {
+  ArrowColor #1d4ed8
+  ActorBorderColor #3f3f46
+  LifeLineBorderColor #a1a1aa
+  ParticipantBorderColor #3f3f46
+  ParticipantBackgroundColor #f4f4f5
+  ParticipantFontStyle bold
+  BoxBorderColor #a1a1aa
+}
+
+title Alur Data: ElastAlert2 -> Telegram
+
+participant "Elasticsearch\n(host-security-parsed-*,\ntraces-apm-default)" as ES
+box "ElastAlert2 (container terpisah)" #f0f9ff
+  participant "Rule engine\n(rules/*.yaml)" as EA
+end box
+participant "Telegram\nBot API" as TG
+
+loop tiap 30 detik (run_every, config.yaml)
+  loop untuk SETIAP rule di rules_folder
+    EA -> ES : query (index + filter rule,\njendela waktu buffer_time = 5 menit)
+    ES --> EA : dokumen yang cocok
+
+    alt jumlah dokumen memenuhi kondisi rule\n(mis. num_events dalam timeframe)
+      EA -> EA : susun isi pesan\n(alert_text / alert_text_args)
+
+      alt rule ini baru saja mengirim alert\n(masih dalam jendela realert)
+        EA -> ES : catat status siklus\n(matches, TANPA kirim ulang)
+      else belum pernah / sudah lewat realert
+        EA -> TG : POST /sendMessage\n(telegram_bot_token, telegram_room_id,\ntelegram_thread_id opsional)
+        TG --> EA : respons HTTP (200 OK / error)
+        EA -> ES : catat status + hasil kirim\n(index elastalert_status*)
+        TG -> TG : pesan tampil di chat/topic Anda
+      end
+    else tidak ada dokumen yang cocok
+      EA -> ES : catat status siklus (matches: 0)
+    end
+  end
+end
+
+@enduml

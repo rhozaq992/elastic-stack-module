@@ -714,54 +714,17 @@ tertukar dengan 5 langkah pembuatan bot di atas):
 **Alur data end-to-end** — penting dipahami SEBELUM mengutak-atik rule,
 supaya jelas bagian mana yang benar-benar perlu diubah:
 
-```
-Elasticsearch                ElastAlert2                    Telegram
-(data SUDAH ada,        (proses TERPISAH, jalan       (cuma menerima HTTP
- dari topik 6/Sesi 6)    terus di container-nya)        POST dari alerter)
+![Diagram sequence PlantUML: ElastAlert2 melakukan loop tiap 30 detik, untuk tiap rule query Elasticsearch, mencocokkan hasil ke kondisi rule, menyusun pesan, mengecek realert, lalu POST ke Telegram Bot API dan mencatat status ke index elastalert_status](../../../docs/diagrams/sesi7-elastalert-dataflow.svg)
 
-host-security-parsed-*  ──┐
-traces-apm-default      ──┤
-                           │  1. Tiap 30 detik (run_every,
-                           │     config.yaml), untuk SETIAP
-                           │     rule di rules/*.yaml:
-                           │
-                           │  2. Query ES = index + filter rule
-                           │     itu, rentang waktu 5 menit
-                           │     terakhir (buffer_time)
-                           │            │
-                           │            ▼
-                           │  3. Hasil query dicocokkan ke
-                           │     kondisi rule (mis. type:
-                           │     frequency -> hitung jumlah
-                           │     dokumen, bandingkan ke
-                           │     num_events dalam timeframe)
-                           │            │
-                           │     cocok? │ tidak cocok -> selesai,
-                           │            │ tunggu siklus berikutnya
-                           │            ▼
-                           │  4. Susun isi pesan (alert_text/
-                           │     alert_text_args, atau format
-                           │     default kalau tidak diisi)
-                           │            │
-                           │            ▼
-                           │  5. Panggil SETIAP alerter di
-                           │     daftar `alert:` -- di sesi
-                           │     ini cuma satu: "telegram" ────────▶ POST
-                           │            │                          /sendMessage
-                           │            ▼                          (pakai
-                           │  6. Catat hasil siklus + status       telegram_bot_token,
-                           │     kirim (berhasil/gagal) ke          telegram_room_id)
-                           │     index elastalert_status*
-                           │     milik ElastAlert2 sendiri
-                           │            │
-                           │            ▼                               │
-                           │  7. `realert` -- kalau rule yang           │
-                           │     SAMA baru saja mengirim alert,         ▼
-                           │     TAHAN dulu (default di sesi      Pesan muncul
-                           │     ini: 5 menit), supaya Telegram    di grup/chat
-                           │     Anda tidak dibanjiri pesan         Anda
-                           │     identik berulang-ulang
-```
+*Dua loop bersarang: loop luar tiap 30 detik (`run_every`), loop dalam
+untuk setiap rule di `rules/*.yaml`. Elasticsearch HANYA di-query (panah
+putus-putus = respons), tidak pernah ditulis oleh ElastAlert2 kecuali ke
+index miliknya sendiri (`elastalert_status*`, dipakai untuk mencatat
+hasil tiap siklus — inilah yang saya baca untuk memverifikasi pengiriman
+berhasil tanpa perlu akses Telegram langsung). Percabangan `alt` kedua
+(`realert`) adalah pengaman anti-spam: kalau rule yang sama baru saja
+mengirim alert, siklus berikutnya cuma mencatat status tanpa mengirim
+ulang ke Telegram.*
 
 **Poin paling penting dari diagram ini:** ElastAlert2 **TIDAK mengubah
 atau menyentuh data** di Elasticsearch sama sekali — dia cuma
