@@ -12,11 +12,13 @@
 services:
   log-generator:
     build: ./host-security/log-generator
+    restart: unless-stopped
     volumes:
       - host-security-logs:/var/log/host-security
 
   logstash-host:
     image: docker.elastic.co/logstash/logstash:9.5.2
+    restart: unless-stopped
     environment:
       - "LS_JAVA_OPTS=-Xms256m -Xmx256m"
       - xpack.monitoring.enabled=false
@@ -26,6 +28,7 @@ services:
 
   filebeat-host:
     image: docker.elastic.co/beats/filebeat:9.5.2
+    restart: unless-stopped
     user: root
     volumes:
       - ./host-security/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
