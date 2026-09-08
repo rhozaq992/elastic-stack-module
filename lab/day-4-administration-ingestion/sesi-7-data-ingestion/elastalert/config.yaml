@@ -7,6 +7,16 @@ run_every:
   seconds: 30
 buffer_time:
   minutes: 5
+
+# Default APScheduler misfire_grace_time ElastAlert2 cuma 5 detik -- terlalu
+# ketat untuk stack sesi ini (5 rule berjalan tiap 30 detik, di atas Docker
+# Compose ~9 container: ES, Kibana, APM-server, payment-lab, elastalert,
+# + 3 container host-security). Kalau satu siklus rule telat lebih dari
+# nilai ini (lumrah terjadi di laptop yang menjalankan sebanyak itu
+# container sekaligus), APScheduler diam-diam men-skip siklus itu alih-alih
+# menjalankannya belakangan. Dinaikkan ke 5 menit supaya siklus yang telat
+# tetap dijalankan.
+misfire_grace_time: 300
 es_host: elasticsearch
 es_port: 9200
 use_ssl: false

@@ -1,0 +1,32 @@
+name: "Notifikasi Response Time APM Tinggi - payment-lab"
+type: metric_aggregation
+index: "traces-apm-default"
+buffer_time:
+  minutes: 4
+
+filter:
+  - term:
+      service.name: "payment-lab"
+  - term:
+      processor.event: "transaction"
+
+metric_agg_key: transaction.duration.us
+metric_agg_type: avg
+max_threshold: 1500000
+
+alert:
+  - "telegram"
+telegram_bot_token: "GANTI_DENGAN_TOKEN_BOT_ANDA"
+telegram_room_id: "GANTI_DENGAN_CHAT_ID_ANDA"
+telegram_thread_id: 2
+
+alert_text_type: alert_text_only
+alert_text: |
+  Response time APM payment-lab MELEBIHI batas normal!
+  Rata-rata durasi transaksi 4 menit terakhir: {0} mikrodetik
+  (batas normal: di bawah 1.500.000 mikrodetik / 1.5 detik -- baseline
+  normal payment-lab ada di sekitar 600.000 mikrodetik / 0.6 detik).
+alert_text_args: ["metric_agg_value"]
+
+realert:
+  minutes: 5

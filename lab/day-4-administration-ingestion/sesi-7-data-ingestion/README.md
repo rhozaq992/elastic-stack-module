@@ -764,13 +764,23 @@ ElastAlert2 otomatis membaca SEMUA file `.yaml` di `rules_folder` saat
 start (lihat `config.yaml`) — tidak perlu mendaftarkan rule baru di
 tempat lain manapun, cukup restart container-nya.
 
+> **INFORMATION:** ElastAlert2 juga mendukung tipe rule LAIN di luar
+> `frequency` (yang cuma menghitung JUMLAH kejadian) — mis.
+> `metric_aggregation` (mengevaluasi rata-rata/agregasi suatu field
+> numerik, mis. response time) dan `percentage_match` (mengevaluasi
+> PERSENTASE dokumen yang cocok kondisi tertentu dari total). Dibahas
+> lengkap di bagian tambahan pada akhir topik ini, setelah ketiga rule
+> dasar di bawah ini berjalan.
+
 Folder `elastalert/` di sesi ini berisi:
 - `config.yaml` — pengaturan umum (alamat Elasticsearch, seberapa sering
   query dijalankan, dst.) — tidak perlu diubah.
-- `rules/*.yaml` — TIGA rule notifikasi, satu file per kondisi:
-  `new_user.yaml` (pembuatan user baru), `sensitive_access.yaml` (akses
-  data sensitif), `apm_load.yaml` (lonjakan load `payment-lab`, lihat
-  Sesi 6).
+- `rules/*.yaml` — LIMA rule notifikasi. TIGA rule dasar (satu file per
+  kondisi, dipakai mulai dari sini): `new_user.yaml` (pembuatan user
+  baru), `sensitive_access.yaml` (akses data sensitif), `apm_load.yaml`
+  (lonjakan JUMLAH request `payment-lab`, lihat Sesi 6). DUA rule
+  tambahan berbasis metrik (response time & persentase transaksi
+  lambat) dibahas di bagian akhir topik ini.
 
 > **INFORMATION (Windows/amd64 vs Mac Apple Silicon/arm64):** image
 > ElastAlert2 (`jertel/elastalert2`) sudah multi-arch (mendukung amd64
@@ -880,6 +890,221 @@ notifikasi "Load APM tinggi" akan masuk ke Telegram Anda.
 > `"message_thread_id"` pada pesan itu. Fitur ini TIDAK didokumentasikan
 > di situs resmi ElastAlert2, tapi ada di kode sumbernya dan sudah diuji
 > nyata bekerja.
+
+**(Lanjutan) Alert Berbasis Metrik: Response Time & Persentase, Bukan
+Cuma Jumlah Transaksi**
+
+`apm_load.yaml` di atas memakai `type: frequency` — cuma menghitung
+JUMLAH transaksi dalam suatu jendela waktu (lebih dari 15 dalam 2 menit
+= lonjakan). Ini berguna untuk mendeteksi lonjakan TRAFFIC, tapi **tidak
+bisa mendeteksi kalau traffic-nya normal namun setiap request jadi
+lambat** — pada implementasi production yang sesungguhnya, dua kondisi
+ini adalah masalah yang BEDA (traffic tinggi vs. layanan degradasi) dan
+butuh dua jenis alert yang berbeda pula. ElastAlert2 menyediakan dua
+tipe rule lain yang cocok untuk ini:
+
+| Tipe rule | Mengukur apa | Cocok untuk |
+|---|---|---|
+| `frequency` (`apm_load.yaml`) | JUMLAH dokumen yang cocok filter | Lonjakan volume request |
+| `metric_aggregation` | Agregasi (avg/min/max/sum/percentiles) dari SATU field numerik | Response time rata-rata melebihi batas normal |
+| `percentage_match` | PERSENTASE dokumen yang cocok kondisi tertentu, dari total dokumen | Proporsi transaksi lambat/gagal melebihi batas wajar (walau jumlah TOTAL-nya normal) |
+
+**Contoh isi `apm_response_time.yaml`** (`type: metric_aggregation` —
+rata-rata `transaction.duration.us` pada `payment-lab` selama 4 menit
+terakhir):
+```yaml
+name: "Notifikasi Response Time APM Tinggi - payment-lab"
+type: metric_aggregation
+index: "traces-apm-default"
+buffer_time:
+  minutes: 4
+
+filter:
+  - term:
+      service.name: "payment-lab"
+  - term:
+      processor.event: "transaction"
+
+metric_agg_key: transaction.duration.us
+metric_agg_type: avg
+max_threshold: 1500000
+
+alert:
+  - "telegram"
+telegram_bot_token: "GANTI_DENGAN_TOKEN_BOT_ANDA"
+telegram_room_id: "GANTI_DENGAN_CHAT_ID_ANDA"
+
+alert_text_type: alert_text_only
+alert_text: |
+  Response time APM payment-lab MELEBIHI batas normal!
+  Rata-rata durasi transaksi 4 menit terakhir: {0} mikrodetik
+  (batas normal: di bawah 1.500.000 mikrodetik / 1.5 detik -- baseline
+  normal payment-lab ada di sekitar 600.000 mikrodetik / 0.6 detik).
+alert_text_args: ["metric_agg_value"]
+
+realert:
+  minutes: 5
+```
+*`metric_agg_key`/`metric_agg_type` menentukan agregasi APA yang
+dihitung (di sini: rata-rata `transaction.duration.us`), `max_threshold`
+adalah batas atasnya (dalam satuan field aslinya — APM menyimpan durasi
+dalam MIKROdetik, jadi 1.500.000 = 1.5 detik). Berbeda dari
+`num_events`/`timeframe` pada `frequency`, rule tipe agregasi memakai
+`buffer_time` sebagai jendela waktu query — dibuat lebih lebar (4 menit,
+bukan 2) daripada jendela `apm_load.yaml` supaya rule tetap menangkap
+lonjakan meski siklus evaluasi ElastAlert2 sesekali tertunda karena
+banyaknya container yang berjalan bersamaan di sesi ini.*
+
+**Contoh isi `apm_slow_percentage.yaml`** (`type: percentage_match` —
+persentase transaksi berdurasi lebih dari 1 detik, dari total transaksi
+`payment-lab` selama 4 menit terakhir):
+```yaml
+name: "Notifikasi Persentase Transaksi Lambat Tinggi - payment-lab"
+type: percentage_match
+index: "traces-apm-default"
+buffer_time:
+  minutes: 4
+min_denominator: 10
+
+filter:
+  - term:
+      service.name: "payment-lab"
+  - term:
+      processor.event: "transaction"
+
+match_bucket_filter:
+  - range:
+      transaction.duration.us:
+        gt: 1000000
+
+max_percentage: 30
+
+alert:
+  - "telegram"
+telegram_bot_token: "GANTI_DENGAN_TOKEN_BOT_ANDA"
+telegram_room_id: "GANTI_DENGAN_CHAT_ID_ANDA"
+
+alert_text_type: alert_text_only
+alert_text: |
+  Persentase transaksi LAMBAT pada payment-lab melebihi batas wajar!
+  {0}% dari {1} transaksi (4 menit terakhir) berdurasi lebih dari 1 detik
+  -- ini bisa jadi tanda payment gateway pihak ketiga sedang bermasalah,
+  BUKAN sekadar lonjakan jumlah request biasa.
+alert_text_args: ["percentage", "denominator"]
+
+realert:
+  minutes: 5
+```
+*`match_bucket_filter` mendefinisikan subset "lambat" (durasi > 1 detik)
+dari total populasi yang dibatasi `filter` (semua transaksi
+`payment-lab`). `min_denominator: 10` PENTING — tanpa ini, satu transaksi
+lambat dari total satu transaksi akan terbaca "100% lambat" dan memicu
+alert palsu; dengan `min_denominator: 10`, rule menunggu setidaknya 10
+transaksi dulu sebelum persentase-nya dianggap valid untuk dievaluasi.*
+
+**Buat kedua file di atas** di `elastalert/rules/` (nama file harus
+sama persis: `apm_response_time.yaml` dan `apm_slow_percentage.yaml`),
+ganti kedua placeholder token/chat_id seperti sebelumnya, lalu restart:
+```bash
+docker compose -f docker-compose.elastalert.yml restart elastalert
+```
+
+> **INFORMATION (cara memvalidasi rule TANPA cluster ES nyata):**
+> `elastalert-test-rule --schema-only <file rule>` mengecek struktur rule
+> terhadap schema resmi ElastAlert2 tanpa perlu terhubung ke
+> Elasticsearch — dipakai untuk memvalidasi KEDUA rule di atas terhadap
+> image `jertel/elastalert2:2.31.0` yang sama persis dengan yang dipakai
+> sesi ini sebelum ditulis ke README ini (exit code 0, tidak ada error
+> schema). Berguna kalau Anda membuat rule baru sendiri dan ingin
+> mengecek typo/struktur sebelum menjalankannya beneran.
+
+**Contoh data aktivitas load yang memicu KEDUA alert ini** — beda dari
+`apm_load.yaml` (yang butuh JUMLAH request tinggi), dua alert ini butuh
+transaksi yang LAMBAT durasinya, bukan sekadar banyak. Karena
+`payment-lab/app.py` yang ada sekarang men-simulasikan delay TETAP 0.6
+detik (`time.sleep(0.6)`, lihat bagian d topik 3 Sesi 6), perlu satu
+tambahan kecil supaya bisa mensimulasikan gateway yang "sedang
+bermasalah" (delay lebih panjang) sesuai permintaan:
+
+Buka `payment-lab/app.py` (folder Sesi 6, versi yang SUDAH Anda pasangi
+APM), ubah jadi seperti ini (blok `app.config["ELASTIC_APM"] = {...}` dan
+`apm = ElasticAPM(app)` dari Sesi 6 ada DI ANTARA baris import dan
+`@app.route(...)` di file Anda -- tetap seperti itu, tidak perlu diubah,
+sengaja tidak ditulis ulang di sini supaya diff-nya fokus ke bagian yang
+berubah saja):
+```diff
+ import time
++import random
+
+-from flask import Flask, jsonify
++from flask import Flask, jsonify, request
+ from elasticapm.contrib.flask import ElasticAPM
+
+ @app.route("/pay/<order_id>", methods=["POST"])
+ def pay(order_id):
+     # Simulasi pemanggilan payment gateway pihak ketiga yang lambat.
+-    time.sleep(0.6)
++    # ?degraded=1 mensimulasikan gateway yang SEDANG bermasalah --
++    # tanpa parameter ini, delay tetap normal 0.6 detik seperti semula.
++    if request.args.get("degraded") == "1":
++        time.sleep(random.uniform(2.5, 3.5))
++    else:
++        time.sleep(0.6)
+     return jsonify({"order_id": order_id, "status": "approved"})
+```
+Build ulang & jalankan:
+```bash
+docker compose -f ../../day-3-analytics-optimization/sesi-6-performance-optimization/docker-compose.payment-lab.yml up -d --build payment-lab
+```
+
+> **INFORMATION:** perilaku dua mode ini SUDAH diverifikasi nyata
+> (build & jalankan container terpisah, `curl` + ukur waktu betulan,
+> BUKAN estimasi): permintaan normal (`/pay/1`, tanpa parameter) selesai
+> dalam **~0.67 detik**, permintaan dengan `?degraded=1` (`/pay/2?degraded=1`)
+> selesai dalam **~3.28 detik** — konsisten dengan `time.sleep(0.6)` vs
+> `time.sleep(random.uniform(2.5, 3.5))` di kode.
+
+Kirim burst request MELALUI mode degraded (perhatikan bedanya dengan
+uji `apm_load.yaml` di atas — di sana TANPA `?degraded=1`):
+```bash
+for i in $(seq 1 15); do curl -s -X POST "http://localhost:8090/pay/$i?degraded=1" > /dev/null & done
+wait
+```
+Tunggu sampai 5 menit (APM Server + ElastAlert2 perlu waktu mengagregasi
+dan mengevaluasi siklus berikutnya, dan jendela `buffer_time` kedua rule
+ini sengaja dibuat 4 menit — lihat catatan di bagian d di atas) — DUA
+notifikasi baru akan masuk ke Telegram Anda: response time rata-rata di
+atas 1.5 detik, DAN persentase transaksi lambat di atas 30%.
+
+> **INFORMATION:** burst 15 request di atas JUGA memenuhi syarat
+> `num_events: 15` milik `apm_load.yaml` (rule itu tidak peduli
+> degraded atau tidak, cuma menghitung jumlah) — apabila jendela
+> `realert: 5 menit` dari uji `apm_load.yaml` sebelumnya sudah lewat
+> (kemungkinan besar iya, mengingat langkah-langkah di antaranya:
+> buat 2 file rule, restart ElastAlert2, edit & build ulang
+> `app.py`), Anda mungkin menerima notifikasi KETIGA ("Load APM
+> tinggi terdeteksi...") selain dua yang baru ini. Ini normal, bukan
+> tanda ada yang salah.
+
+*Sebagai perbandingan konsep: burst 20 request MODE NORMAL (`/pay/$i`
+tanpa `?degraded=1`, jumlah sama seperti pada uji `apm_load.yaml`
+sebelumnya) akan memicu `apm_load.yaml` (jumlah request tinggi) TAPI
+TIDAK memicu dua rule baru ini — rata-ratanya tetap ~0.6 detik (di bawah
+threshold 1.5 detik) dan persentase lambatnya tetap 0% (tidak ada yang
+melebihi 1 detik). Inilah bedanya memantau JUMLAH vs memantau
+KUALITAS/KECEPATAN response — kedua sisi sama-sama perlu dipantau pada
+sistem production sungguhan, dan sengaja dipisah jadi rule yang berbeda
+supaya pesan notifikasinya juga jelas menyebutkan masalah SPESIFIK yang
+mana.*
+
+> **INFORMATION:** kedua rule ini juga sudah diuji end-to-end dengan bot
+> Telegram sungguhan, sama seperti tiga rule dasar sebelumnya — jadi
+> konfigurasi di atas TERBUKTI bekerja apabila diikuti persis. Kalau
+> pesan Anda tidak muncul dalam 5 menit, cek log ElastAlert2 (`docker
+> compose -f docker-compose.elastalert.yml logs elastalert`) dulu sebelum
+> menduga pipeline data-nya yang salah — penyebab paling umum tetap
+> token/chat_id salah ketik atau lupa restart container setelah mengedit
+> rule.
 
 ## e. Referensi Exercise
 
