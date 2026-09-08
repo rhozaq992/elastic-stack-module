@@ -626,6 +626,14 @@ Sesi 1) berisi:
   tambahan pattern `useradd` dan deteksi command sensitif), outputnya
   kali ini benar-benar ke index `host-security-parsed-*`.
 
+> **INFORMATION (Windows/amd64 vs Mac Apple Silicon/arm64):**
+> `log-generator` (satu-satunya image custom di stack ini) di-build
+> LANGSUNG lewat `docker build` saat perintah di bawah dijalankan —
+> sama seperti `payment-lab` di Sesi 6, otomatis sesuai arsitektur
+> perangkat Anda. `filebeat`/`logstash` adalah image resmi Elastic yang
+> sudah multi-arch. Tidak ada override apa pun yang perlu ditambahkan,
+> baik di Windows maupun Mac.
+
 **[Terminal] Jalankan (dari direktori sesi ini):**
 ```bash
 docker compose -f docker-compose.host-security.yml up -d --build
@@ -763,6 +771,12 @@ Folder `elastalert/` di sesi ini berisi:
   `new_user.yaml` (pembuatan user baru), `sensitive_access.yaml` (akses
   data sensitif), `apm_load.yaml` (lonjakan load `payment-lab`, lihat
   Sesi 6).
+
+> **INFORMATION (Windows/amd64 vs Mac Apple Silicon/arm64):** image
+> ElastAlert2 (`jertel/elastalert2`) sudah multi-arch (mendukung amd64
+> DAN arm64 dalam satu tag yang sama) — `docker compose up` otomatis
+> menarik varian yang sesuai perangkat Anda. Tidak ada override apa pun
+> yang perlu ditambahkan di sini juga.
 
 **Buka masing-masing file di `elastalert/rules/`**, ganti placeholder
 `GANTI_DENGAN_TOKEN_BOT_ANDA` dengan token dari topik 7 langkah 5, dan
