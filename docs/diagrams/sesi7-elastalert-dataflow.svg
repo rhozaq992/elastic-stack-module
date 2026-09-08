@@ -12,44 +12,44 @@
   </defs>
 
   <!-- Box 1: Elasticsearch (source, query-only) -->
-  <rect x="30" y="100" width="250" height="95" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
-  <text x="155" y="128" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a">Elasticsearch</text>
-  <text x="155" y="150" text-anchor="middle" font-size="10.5" fill="#1e3a8a">host-security-parsed-*,</text>
-  <text x="155" y="166" text-anchor="middle" font-size="10.5" fill="#1e3a8a">traces-apm-default</text>
-  <text x="155" y="182" text-anchor="middle" font-size="10" fill="#3730a3">(index sumber, HANYA dibaca)</text>
+  <rect x="30" y="100" width="220" height="95" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
+  <text x="140" y="128" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a">Elasticsearch</text>
+  <text x="140" y="150" text-anchor="middle" font-size="10.5" fill="#1e3a8a">host-security-parsed-*,</text>
+  <text x="140" y="166" text-anchor="middle" font-size="10.5" fill="#1e3a8a">traces-apm-default</text>
+  <text x="140" y="182" text-anchor="middle" font-size="9.5" fill="#3730a3">(index sumber, HANYA dibaca)</text>
 
   <!-- Arrow 1: ES -> ElastAlert2 -->
-  <path d="M 280 148 L 325 148" stroke="#1d4ed8" stroke-width="2.5" fill="none" marker-end="url(#arrowEa)" />
+  <path d="M 250 148 L 355 148" stroke="#1d4ed8" stroke-width="2.5" fill="none" marker-end="url(#arrowEa)" />
   <text x="302" y="136" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1d4ed8">query</text>
   <text x="302" y="168" text-anchor="middle" font-size="9.5" fill="#1d4ed8">(tiap 30 detik,</text>
   <text x="302" y="180" text-anchor="middle" font-size="9.5" fill="#1d4ed8">per rule)</text>
 
   <!-- Box 2: ElastAlert2 -->
-  <rect x="330" y="100" width="280" height="95" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
-  <text x="470" y="126" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a">ElastAlert2</text>
-  <text x="470" y="146" text-anchor="middle" font-size="10.5" fill="#1e3a8a">container terpisah, rule engine</text>
-  <text x="470" y="162" text-anchor="middle" font-size="10.5" fill="#1e3a8a">rules/*.yaml</text>
-  <text x="470" y="180" text-anchor="middle" font-size="10.5" fill="#1e3a8a">loop tiap 30 detik (run_every)</text>
+  <rect x="360" y="100" width="240" height="95" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
+  <text x="480" y="126" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a">ElastAlert2</text>
+  <text x="480" y="146" text-anchor="middle" font-size="10.5" fill="#1e3a8a">container terpisah, rule engine</text>
+  <text x="480" y="162" text-anchor="middle" font-size="10.5" fill="#1e3a8a">rules/*.yaml</text>
+  <text x="480" y="180" text-anchor="middle" font-size="10.5" fill="#1e3a8a">loop tiap 30 detik (run_every)</text>
 
   <!-- Arrow 2: ElastAlert2 -> Telegram -->
-  <path d="M 610 148 L 655 148" stroke="#1d4ed8" stroke-width="2.5" fill="none" marker-end="url(#arrowEa)" />
-  <text x="632" y="136" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1d4ed8">POST</text>
-  <text x="632" y="168" text-anchor="middle" font-size="9.5" fill="#1d4ed8">/sendMessage</text>
-  <text x="632" y="180" text-anchor="middle" font-size="9.5" fill="#1d4ed8">(rule terpenuhi)</text>
+  <path d="M 600 148 L 705 148" stroke="#1d4ed8" stroke-width="2.5" fill="none" marker-end="url(#arrowEa)" />
+  <text x="652" y="136" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1d4ed8">POST</text>
+  <text x="652" y="168" text-anchor="middle" font-size="9.5" fill="#1d4ed8">/sendMessage</text>
+  <text x="652" y="180" text-anchor="middle" font-size="9.5" fill="#1d4ed8">(rule terpenuhi)</text>
 
   <!-- Box 3: Telegram Bot API -->
-  <rect x="660" y="100" width="310" height="95" rx="8" fill="#ecfdf5" stroke="#047857" stroke-width="2" />
-  <text x="815" y="130" text-anchor="middle" font-size="14" font-weight="700" fill="#065f46">Telegram Bot API</text>
-  <text x="815" y="152" text-anchor="middle" font-size="11" fill="#065f46">chat/topic tujuan Anda</text>
-  <text x="815" y="170" text-anchor="middle" font-size="10.5" fill="#065f46">(sesuai chat_id / thread_id)</text>
+  <rect x="710" y="100" width="260" height="95" rx="8" fill="#ecfdf5" stroke="#047857" stroke-width="2" />
+  <text x="840" y="130" text-anchor="middle" font-size="14" font-weight="700" fill="#065f46">Telegram Bot API</text>
+  <text x="840" y="152" text-anchor="middle" font-size="11" fill="#065f46">chat/topic tujuan Anda</text>
+  <text x="840" y="170" text-anchor="middle" font-size="10.5" fill="#065f46">(sesuai chat_id / thread_id)</text>
 
   <!-- Return arrow: ElastAlert2 -> Elasticsearch (status log, tidak pernah ke index sumber) -->
-  <path d="M 470 195 L 470 222 L 155 222 L 155 195" stroke="#047857" stroke-width="2.5" fill="none" marker-end="url(#arrowEaGreen)" />
-  <text x="312" y="214" text-anchor="middle" font-size="10.5" font-weight="700" fill="#047857">catat status siklus (index elastalert_status*)</text>
+  <path d="M 480 195 L 480 222 L 140 222 L 140 195" stroke="#047857" stroke-width="2.5" fill="none" marker-end="url(#arrowEaGreen)" />
+  <text x="310" y="214" text-anchor="middle" font-size="10.5" font-weight="700" fill="#047857">catat status siklus (index elastalert_status*)</text>
 
   <!-- explanatory steps -->
   <rect x="30" y="238" width="940" height="100" rx="10" fill="#f4f4f5" stroke="#d4d4d8" stroke-width="1.5" />
-  <text x="50" y="258" font-size="12" fill="#27272a"><tspan font-weight="700">1. ElastAlert2</tspan> menjalankan query ke Elasticsearch tiap 30 detik untuk SETIAP rule (<tspan font-family="monospace">rules/*.yaml</tspan>) -- mengecek kondisi seperti jumlah event dalam jendela waktu tertentu.</text>
+  <text x="50" y="258" font-size="12" fill="#27272a"><tspan font-weight="700">1. ElastAlert2</tspan> menjalankan query ke Elasticsearch tiap 30 detik untuk SETIAP rule (<tspan font-family="monospace">rules/*.yaml</tspan>) -- mengecek kondisi jumlah event dalam jendela waktu.</text>
   <text x="50" y="275" font-size="12" fill="#27272a"><tspan font-weight="700">2. Kalau kondisi rule terpenuhi</tspan> dan belum dalam jendela realert, ElastAlert2 mengirim pesan lewat POST ke Telegram Bot API.</text>
   <text x="50" y="292" font-size="12" fill="#27272a"><tspan font-weight="700">3. Setiap siklus</tspan> (cocok atau tidak) dicatat ke index <tspan font-family="monospace">elastalert_status*</tspan> -- dipakai untuk audit &amp; mencegah alert berulang (realert).</text>
   <text x="50" y="309" font-size="12" fill="#27272a"><tspan font-weight="700">4. ElastAlert2 TIDAK PERNAH mengubah</tspan> data di index sumber -- cuma membaca (query) dan menulis ke index status miliknya sendiri.</text>
