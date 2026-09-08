@@ -615,9 +615,12 @@ bergantung folder sesi lain kecuali jaringan Docker `elk-lab-net` dari
 Sesi 1) berisi:
 - `log-generator/` — script Python yang terus menghasilkan baris
   `auth.log`/`bash_history` PALSU, mayoritas aktivitas normal (login SSH
-  berhasil, command sehari-hari), sesekali anomali: percobaan brute-force
-  SSH, **pembuatan user baru** (`useradd`), dan **akses ke file
-  sensitif** (`/etc/shadow`, `/etc/passwd`, `id_rsa`, `.env`, dst.).
+  berhasil, command sehari-hari), diselingi anomali: percobaan
+  brute-force SSH dan **pembuatan user baru** (`useradd`) — keduanya
+  memang dibuat JARANG (realistis, 1-2 menit sekali) — serta **akses ke
+  file sensitif** (`/etc/shadow`, `/etc/passwd`, `id_rsa`, `.env`, dst.)
+  yang SENGAJA dibuat lebih SERING (puluhan detik sekali) supaya Anda
+  tidak perlu menunggu lama saat menguji rule notifikasinya di topik 8.
 - `filebeat/filebeat.yml` — membaca dua file itu dari volume bersama.
 - `logstash/pipeline/` — grok pattern yang SAMA seperti topik 3 (plus
   tambahan pattern `useradd` dan deteksi command sensitif), outputnya
@@ -689,16 +692,18 @@ sendiri, dan token bot tidak perlu dibagikan ke siapa pun.
    `123456789:AAHdqT-contoh-token-anda-sendiri`. **Simpan baik-baik**,
    token ini setara password penuh ke bot Anda.
 
-**Dapatkan `chat_id` Anda** (dibutuhkan topik 8, ID numerik tujuan pesan):
-1. Klik link `t.me/lab_elk_stack_modul_student_N_bot` dari balasan
-   BotFather, tekan **Start** (kirim minimal satu pesan apa saja ke bot
-   Anda sendiri — bot belum bisa mengirim pesan ke Anda sebelum ini).
-2. Buka URL berikut di browser (ganti `<TOKEN>` dengan token dari
-   langkah 5):
-   ```
-   https://api.telegram.org/bot<TOKEN>/getUpdates
-   ```
-3. Expected Output — JSON berisi `"chat":{"id": 123456789, ...}` — angka
+**Dapatkan `chat_id` Anda** (dibutuhkan topik 8, ID numerik tujuan pesan
+— penomoran di bawah SENGAJA pakai huruf, bukan angka, supaya tidak
+tertukar dengan 5 langkah pembuatan bot di atas):
+- **Langkah A.** Klik link `t.me/lab_elk_stack_modul_student_N_bot` dari
+  balasan BotFather, tekan **Start** (kirim minimal satu pesan apa saja
+  ke bot Anda sendiri — bot belum bisa mengirim pesan ke Anda sebelum ini).
+- **Langkah B.** Buka URL berikut di browser (ganti `<TOKEN>` dengan
+  token dari langkah 5 di atas):
+  ```
+  https://api.telegram.org/bot<TOKEN>/getUpdates
+  ```
+- **Langkah C.** Expected Output — JSON berisi `"chat":{"id": 123456789, ...}` — angka
    itu adalah `chat_id` Anda.
 
 > **INFORMATION:** apabila responsnya `{"ok":true,"result":[]}` (kosong),
@@ -716,7 +721,7 @@ Folder `elastalert/` di sesi ini berisi:
 
 **Buka masing-masing file di `elastalert/rules/`**, ganti placeholder
 `GANTI_DENGAN_TOKEN_BOT_ANDA` dengan token dari topik 7 langkah 5, dan
-`GANTI_DENGAN_CHAT_ID_ANDA` dengan `chat_id` dari topik 7 langkah 3 (di
+`GANTI_DENGAN_CHAT_ID_ANDA` dengan `chat_id` dari topik 7 langkah C (di
 KETIGA file).
 
 **Contoh isi `new_user.yaml`** (dua rule lain memakai struktur serupa,

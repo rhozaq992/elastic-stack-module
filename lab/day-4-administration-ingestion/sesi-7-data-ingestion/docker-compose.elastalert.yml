@@ -2,10 +2,11 @@
 # (github.com/jertel/elastalert2, Apache 2.0). Membaca rule dari
 # elastalert/rules/, mengevaluasi query ke Elasticsearch tiap 30 detik
 # (config.yaml), dan mengirim notifikasi ke Telegram lewat alerter
-# bawaannya sendiri. Lihat README bagian d topik 7.
+# bawaannya sendiri. Lihat README bagian d topik 8.
 services:
   elastalert:
     image: jertel/elastalert2:2.31.0
+    restart: unless-stopped
     volumes:
       - ./elastalert/config.yaml:/opt/elastalert/config.yaml:ro
       - ./elastalert/rules:/opt/elastalert/rules:ro
