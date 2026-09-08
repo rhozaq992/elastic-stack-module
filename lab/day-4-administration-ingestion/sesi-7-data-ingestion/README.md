@@ -711,6 +711,88 @@ tertukar dengan 5 langkah pembuatan bot di atas):
 
 ### 8. Pasang ElastAlert2 & Hubungkan ke Telegram
 
+**Alur data end-to-end** — penting dipahami SEBELUM mengutak-atik rule,
+supaya jelas bagian mana yang benar-benar perlu diubah:
+
+```
+Elasticsearch                ElastAlert2                    Telegram
+(data SUDAH ada,        (proses TERPISAH, jalan       (cuma menerima HTTP
+ dari topik 6/Sesi 6)    terus di container-nya)        POST dari alerter)
+
+host-security-parsed-*  ──┐
+traces-apm-default      ──┤
+                           │  1. Tiap 30 detik (run_every,
+                           │     config.yaml), untuk SETIAP
+                           │     rule di rules/*.yaml:
+                           │
+                           │  2. Query ES = index + filter rule
+                           │     itu, rentang waktu 5 menit
+                           │     terakhir (buffer_time)
+                           │            │
+                           │            ▼
+                           │  3. Hasil query dicocokkan ke
+                           │     kondisi rule (mis. type:
+                           │     frequency -> hitung jumlah
+                           │     dokumen, bandingkan ke
+                           │     num_events dalam timeframe)
+                           │            │
+                           │     cocok? │ tidak cocok -> selesai,
+                           │            │ tunggu siklus berikutnya
+                           │            ▼
+                           │  4. Susun isi pesan (alert_text/
+                           │     alert_text_args, atau format
+                           │     default kalau tidak diisi)
+                           │            │
+                           │            ▼
+                           │  5. Panggil SETIAP alerter di
+                           │     daftar `alert:` -- di sesi
+                           │     ini cuma satu: "telegram" ────────▶ POST
+                           │            │                          /sendMessage
+                           │            ▼                          (pakai
+                           │  6. Catat hasil siklus + status       telegram_bot_token,
+                           │     kirim (berhasil/gagal) ke          telegram_room_id)
+                           │     index elastalert_status*
+                           │     milik ElastAlert2 sendiri
+                           │            │
+                           │            ▼                               │
+                           │  7. `realert` -- kalau rule yang           │
+                           │     SAMA baru saja mengirim alert,         ▼
+                           │     TAHAN dulu (default di sesi      Pesan muncul
+                           │     ini: 5 menit), supaya Telegram    di grup/chat
+                           │     Anda tidak dibanjiri pesan         Anda
+                           │     identik berulang-ulang
+```
+
+**Poin paling penting dari diagram ini:** ElastAlert2 **TIDAK mengubah
+atau menyentuh data** di Elasticsearch sama sekali — dia cuma
+**membaca** (query) secara berkala, lalu memutuskan sendiri kapan harus
+memanggil Telegram. Kalau tidak ada dokumen yang cocok dengan `filter`
+rule, siklus itu selesai tanpa aksi apa pun (Anda akan lihat ini sebagai
+`matches: 0` kalau memeriksa index `elastalert_status_status` langsung
+lewat Dev Tools).
+
+**Anatomi satu file rule** — KETIGA file di `elastalert/rules/` memakai
+struktur yang SAMA persis, cuma beda isi tiga bagian ini:
+
+| Bagian | Contoh (`new_user.yaml`) | Fungsi |
+|---|---|---|
+| **Sumber & kondisi** | `index: "host-security-parsed-*"`, `type: frequency`, `filter: log_type.keyword: "user_created"`, `num_events: 1`, `timeframe: {minutes: 1}` | Data MANA yang dipantau, dan kapan dianggap "terjadi" |
+| **Tujuan notifikasi** | `alert: ["telegram"]`, `telegram_bot_token`, `telegram_room_id` (opsional `telegram_thread_id`) | KE MANA pesan dikirim |
+| **Isi pesan** | `alert_text_type: alert_text_only`, `alert_text`, `alert_text_args` | Apa yang DITULIS di pesan itu |
+
+Untuk memakai KETIGA rule yang sudah disediakan, Anda **HANYA perlu
+mengubah bagian "Tujuan notifikasi"** (ganti dua placeholder token/chat_id)
+— bagian "Sumber & kondisi" dan "Isi pesan" sudah benar dan sudah teruji,
+tidak perlu disentuh sama sekali. Baru kalau suatu saat Anda ingin
+membuat rule notifikasi BARU (kondisi lain di luar 3 yang sudah ada),
+Anda akan mengubah bagian "Sumber & kondisi" dan "Isi pesan" juga —
+caranya: salin salah satu file `.yaml` di `elastalert/rules/` jadi nama
+baru, ganti `filter`/`index` sesuai kondisi yang mau dipantau, sesuaikan
+`alert_text_args` dengan nama field yang relevan pada data itu.
+ElastAlert2 otomatis membaca SEMUA file `.yaml` di `rules_folder` saat
+start (lihat `config.yaml`) — tidak perlu mendaftarkan rule baru di
+tempat lain manapun, cukup restart container-nya.
+
 Folder `elastalert/` di sesi ini berisi:
 - `config.yaml` — pengaturan umum (alamat Elasticsearch, seberapa sering
   query dijalankan, dst.) — tidak perlu diubah.
