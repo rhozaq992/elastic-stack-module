@@ -1,0 +1,83 @@
+# Stack mandiri: simulator switch ISO 8583 (Sesi 7, topik baru) -- semua
+# file ada di folder iso8583-switch/ ini sendiri, tidak bergantung folder
+# sesi lain. Satu-satunya ketergantungan ke luar: jaringan Docker
+# `elk-lab-net` (dibuat Sesi 1), supaya logstash-iso8583 bisa menjangkau
+# `elasticsearch:9200`.
+#
+# Data SINTETIS/DUMMY sepenuhnya (institusi fiktif "TDEMO", PAN dari test
+# BIN range) -- BUKAN dari data sample manapun. log-generator menulis pesan
+# ISO 8583 mentah (format @TAG@, mirip capture switch nyata) ke DUA file
+# terpisah -- switch-send.log (request) dan switch-recv.log (response),
+# mengikuti konvensi capture switch produksi yang memisah file per arah
+# (send/receive) -- terus-menerus ke volume bersama -> decoder (binary Go,
+# moov-io/iso8583) tail KEDUA file
+# itu konkuren, decode tiap pesan jadi JSON -> filebeat-iso8583 kirim ke
+# logstash-iso8583 (persistent queue sebagai buffer 1 hari) -> Elasticsearch
+# index iso8583-switch-*. Lihat README bagian d topik baru & diagram
+# docs/diagrams/sesi7-iso8583-switch-dataflow.svg.
+#
+# VM ini TIDAK berhenti otomatis (restart: unless-stopped) -- biarkan
+# jalan sampai seluruh Sesi 7 selesai, baru `docker compose -f
+# docker-compose.iso8583-switch.yml down`.
+services:
+  log-generator:
+    build:
+      context: ./iso8583-switch
+      dockerfile: log-generator/Dockerfile
+    restart: unless-stopped
+    volumes:
+      - iso8583-switch-raw:/var/log/iso8583-switch
+
+  decoder:
+    build:
+      context: ./iso8583-switch
+      dockerfile: decoder/Dockerfile
+    restart: unless-stopped
+    environment:
+      - RAW_INPUT_SEND=/data/raw/switch-send.log
+      - RAW_INPUT_RECV=/data/raw/switch-recv.log
+      - DECODED_OUTPUT=/data/decoded/decoded.jsonl
+    volumes:
+      - iso8583-switch-raw:/data/raw
+      - iso8583-switch-decoded:/data/decoded
+    depends_on:
+      - log-generator
+
+  logstash-iso8583:
+    image: docker.elastic.co/logstash/logstash:9.5.2
+    restart: unless-stopped
+    environment:
+      - "LS_JAVA_OPTS=-Xms256m -Xmx256m"
+      - xpack.monitoring.enabled=false
+      # Persistent queue (disk-based) = buffer 1 hari -- lihat README Sesi 7
+      # bagian "Kenapa queue.max_bytes segini" untuk perhitungan throughput
+      # nyata di balik angka ini. Diset lewat env var (bukan logstash.yml
+      # ter-mount) karena entrypoint image ini menulis ke logstash.yml saat
+      # start -- bind mount :ro bikin itu gagal (Read-only file system).
+      - queue.type=persisted
+      - queue.max_bytes=200mb
+    volumes:
+      - ./iso8583-switch/logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - iso8583-switch-queue:/usr/share/logstash/data
+    networks: [elk-lab-net]
+
+  filebeat-iso8583:
+    image: docker.elastic.co/beats/filebeat:9.5.2
+    restart: unless-stopped
+    user: root
+    volumes:
+      - ./iso8583-switch/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - iso8583-switch-decoded:/data/decoded:ro
+    depends_on:
+      - logstash-iso8583
+      - decoder
+    networks: [elk-lab-net]
+
+volumes:
+  iso8583-switch-raw:
+  iso8583-switch-decoded:
+  iso8583-switch-queue:
+
+networks:
+  elk-lab-net:
+    external: true

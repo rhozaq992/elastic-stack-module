@@ -172,13 +172,17 @@ menjalankan pipeline sungguhan.*
 > **langsung di OS Linux** menggunakan package manager, bukan hanya
 > `docker pull`.
 
-**Siapkan "VM" percobaan:**
+**Siapkan "VM" percobaan** (langsung disambungkan ke `elk-lab-net` sejak
+awal — dipakai belakangan supaya pipeline ini bisa mengirim data ke
+Elasticsearch yang sama seperti Sesi 1, bukan cuma `stdout`):
 ```bash
-docker run -d --name native-vm ubuntu:22.04 sleep infinity
+docker run -d --name native-vm --network elk-lab-net ubuntu:22.04 sleep infinity
 ```
 > **INFORMATION:** container Ubuntu polos ini mensimulasikan VM/bare-metal
 > Linux — pada server sungguhan, langkah-langkah di bawah berlaku PERSIS
-> SAMA.
+> SAMA. Kalau `native-vm` sudah pernah dibuat TANPA `--network elk-lab-net`
+> (mis. dari percobaan lab versi sebelumnya), sambungkan belakangan pakai
+> `docker network connect elk-lab-net native-vm` — hasilnya sama.
 
 **Buka terminal BARU/TERPISAH** (jangan lanjutkan di terminal yang sama
 dengan langkah-langkah sebelumnya) — Logstash pada langkah 6 nanti perlu
@@ -222,10 +226,11 @@ Verifikasi:
 Expected Output: `filebeat version 9.5.2 (arm64)...` dan
 `logstash 9.5.2`.
 
-**3. Buat config Logstash** — pipeline sederhana, membaca file, melakukan
-parsing `%{COMBINEDAPACHELOG}` (pattern bawaan Logstash, sama seperti
-`web-service.conf` yang Anda gunakan untuk Robot Shop), output ke `stdout`
-terlebih dahulu:
+**3. Buat config Logstash** — pipeline sederhana, membaca event yang
+sudah berbentuk JSON (lihat langkah 5), output LANGSUNG ke Elasticasearch
+(beda dari versi lab sebelumnya yang ke `stdout` dulu) — supaya peserta
+yang lebih nyaman GUI bisa memverifikasi pipeline ini lewat Kibana
+Discover, bukan cuma baca terminal:
 ```bash
 mkdir -p /etc/logstash/conf.d
 cat > /etc/logstash/conf.d/native-demo.conf << 'EOF'
@@ -233,20 +238,26 @@ input {
   beats { port => 5044 }
 }
 filter {
-  grok { match => { "message" => "%{COMBINEDAPACHELOG}" } }
+  mutate { convert => { "amount" => "integer" } }
 }
 output {
-  stdout { codec => rubydebug }
+  elasticsearch {
+    hosts => ["http://elasticsearch:9200"]
+    index => "native-vm-iso8583-demo-%{+YYYY.MM.dd}"
+  }
 }
 EOF
 chown logstash:logstash /etc/logstash/conf.d/native-demo.conf
 ```
-> **INFORMATION:** output diarahkan ke `stdout` terlebih dahulu supaya
-> hasilnya langsung terlihat tanpa perlu setup Elasticsearch di container
-> percobaan ini.
+> **INFORMATION:** `elasticsearch:9200` bisa dijangkau dari sini karena
+> `native-vm` disambungkan ke `elk-lab-net` pada langkah persiapan VM di
+> atas — jaringan Docker yang sama dipakai Elasticsearch Sesi 1. Kalau
+> Anda MEMANG ingin melihat versi `stdout` (tanpa dependensi Elasticsearch
+> sama sekali, seperti versi lab sebelumnya), ganti blok `output` dengan
+> `stdout { codec => rubydebug }` -- keduanya valid, cuma beda tujuan.
 
-**4. Buat config Filebeat** — membaca file log contoh, mengirim ke
-Logstash:
+**4. Buat config Filebeat** — membaca `decoded.jsonl` (hasil decode ISO
+8583 pada langkah 5, sudah berbentuk JSON), mengirim ke Logstash:
 ```bash
 mkdir -p /etc/filebeat
 cat > /etc/filebeat/filebeat.yml << 'EOF'
@@ -254,28 +265,80 @@ filebeat.inputs:
   - type: filestream
     id: native-demo
     paths:
-      - /tmp/sample-access.log
+      - /tmp/iso8583-sample/decoded.jsonl
+    parsers:
+      - ndjson:
+          keys_under_root: true
+          add_error_key: true
+          overwrite_keys: true
 
 output.logstash:
   hosts: ["localhost:5044"]
 EOF
 ```
 > **INFORMATION:** pola arsitekturnya SAMA seperti topik 1 di atas —
-> Filebeat membaca file, mengirim ke Logstash lewat port beats.
+> Filebeat membaca file, mengirim ke Logstash lewat port beats. Parser
+> `ndjson` dipakai (bukan grok) karena sumbernya sudah JSON bersih, hasil
+> decoder ISO 8583 pada topik baru di bagian bawah README ini.
 
-**5. Siapkan data contoh** (mensimulasikan log Apache/Nginx access):
+**5. Siapkan data contoh ISO 8583** (dummy, institusi fiktif "TDEMO" —
+BUKAN data institusi manapun) — pakai binary decoder yang SAMA dengan
+topik "ISO 8583 Switch Simulator" di bagian bawah README ini, supaya
+peserta melihat sendiri fungsinya sebelum data itu masuk ke pipeline
+Filebeat/Logstash:
 ```bash
-cat > /tmp/sample-access.log << 'EOF'
-203.0.113.42 - - [12/Mar/2026:08:14:23 +0000] "GET /index.html HTTP/1.1" 200 4523 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-198.51.100.17 - - [12/Mar/2026:08:14:25 +0000] "GET /images/logo.png HTTP/1.1" 200 1820 "http://example.com/index.html" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
-203.0.113.99 - - [12/Mar/2026:08:14:31 +0000] "POST /api/login HTTP/1.1" 401 512 "-" "curl/8.4.0"
-198.51.100.5 - - [12/Mar/2026:08:14:40 +0000] "GET /favicon.ico HTTP/1.1" 404 209 "-" "Mozilla/5.0 (X11; Linux x86_64)"
-203.0.113.7 - - [12/Mar/2026:08:15:02 +0000] "GET /products?category=shoes HTTP/1.1" 200 8877 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)"
+mkdir -p /tmp/iso8583-sample
+cat > /tmp/iso8583-sample/switch-sample.log << 'EOF'
+@TAG@ 1 120 112 15:00:01.000000 1 800000 1
+02007238000008C0800016400000000000000131000000000001500009161500001000011500000916260916100001ATMD0001BANKDEMO0000001360
+@TAG@ 2 122 112 15:00:01.100000 2 800000 2
+0210723800000AC080001640000000000000013100000000000150000916150000100001150000091626091610000100ATMD0001BANKDEMO0000001360
+@TAG@ 3 120 112 15:00:02.000000 1 800000 3
+02007238000008C0800016400000000000000231000000000001500009161500001000021500000916260916100002ATMD0002BANKDEMO0000002360
+@TAG@ 4 122 112 15:00:02.100000 2 800000 4
+0210723800000AC080001640000000000000023100000000000150000916150000100002150000091626091610000200ATMD0002BANKDEMO0000002360
 EOF
 ```
-> **INFORMATION:** formatnya adalah format standar yang sama seperti yang
-> Anda temukan pada dokumentasi resmi Apache/Nginx atau tutorial mana pun
-> di internet mengenai Combined Log Format.
+> **INFORMATION:** dua pasang pesan ISO 8583 (request MTI `0200` +
+> response MTI `0210`) dalam format wrapper `@TAG@` mirip capture switch
+> nyata -- bitmap & field-nya dijelaskan di topik "ISO 8583 Switch
+> Simulator" di bawah. Untuk lab ini Anda cukup salin blok di atas apa
+> adanya, tidak perlu menyusun bitmap manual.
+
+Salin binary decoder dari host ke `native-vm` (binary yang sama persis
+dengan `iso8583-switch/decoder/bin/`, sudah di-build sebelumnya — lihat
+topik baru di bawah), lalu decode sample di atas jadi JSON:
+```bash
+# dijalankan dari terminal HOST (bukan di dalam native-vm), path relatif
+# di bawah ini artinya Anda harus berada DI DIREKTORI SESI INI
+# (lab/day-4-administration-ingestion/sesi-7-data-ingestion) -- kalau
+# terminal pertama Anda masih di folder sesi-4 (bekas topik 1), `cd` ke
+# sini dulu:
+cd lab/day-4-administration-ingestion/sesi-7-data-ingestion
+docker cp iso8583-switch/decoder/bin/iso8583tool-linux-arm64 native-vm:/usr/local/bin/iso8583tool
+# ganti -arm64 jadi -amd64 kalau host Anda x86_64 -- lihat langkah
+# "Identifikasi Arsitektur CPU" di docs/prerequisites.md.
+
+# kembali ke terminal native-vm:
+chmod +x /usr/local/bin/iso8583tool
+cat /tmp/iso8583-sample/switch-sample.log | iso8583tool decode - > /tmp/iso8583-sample/decoded.jsonl
+cat /tmp/iso8583-sample/decoded.jsonl
+```
+Expected Output (diverifikasi nyata, 4 baris JSON — 2 request `mti:
+"0200"` dengan `capture_direction: "1"` dan 2 response `mti: "0210"`
+dengan `capture_direction: "2"` serta field `response_code` — pasangan
+`mti`/`capture_direction` ini SAMA seperti yang dijelaskan pada topik
+"ISO 8583 Switch Simulator" di bawah):
+```json
+{"@timestamp":"2026-09-16T15:19:04.904Z","amount":"15000","capture_direction":"1","capture_seq":"1","capture_time":"15:00:01.000000","currency_code":"360","local_date":"0916","local_time":"150000","merchant_id":"BANKDEMO0000001","mti":"0200","pan":"4000000000000001","processing_code":"310000","rrn":"260916100001","stan":"100001","terminal_id":"ATMD0001","transmission_datetime":"0916150000"}
+{"@timestamp":"2026-09-16T15:19:04.904Z","amount":"15000","capture_direction":"2","capture_seq":"2","capture_time":"15:00:01.100000","currency_code":"360","local_date":"0916","local_time":"150000","merchant_id":"BANKDEMO0000001","mti":"0210","pan":"4000000000000001","processing_code":"310000","response_code":"00","rrn":"260916100001","stan":"100001","terminal_id":"ATMD0001","transmission_datetime":"0916150000"}
+```
+> **INFORMATION:** `iso8583tool decode -` (dengan `-` di akhir) membaca
+> dari stdin dan BERHENTI otomatis setelah EOF -- cocok untuk demo
+> sekali-jalan seperti ini. Tanpa `-` (mis. `iso8583tool decode
+> /path/file.log`), tool ini akan TERUS `tail` file itu selamanya
+> (dipakai oleh service `decoder` pada topik baru di bawah, yang memang
+> perlu berjalan terus selama Sesi 7).
 
 **6. Jalankan Logstash** (di background, sebagai non-root user `logstash`):
 ```bash
@@ -309,22 +372,32 @@ startup) sebelum melanjutkan ke langkah 7 — periksa dengan
   --path.home /usr/share/filebeat --path.config /etc/filebeat \
   --path.data /tmp/fb-data --path.logs /tmp/fb-logs
 ```
-Expected Output — pada terminal Logstash (langkah 6), 5 dokumen
-ter-parse, tiap dokumen berisi `response.status_code`, `url.original`,
-`source.address`, `user_agent.original`:
+Beda dari versi lab sebelumnya (yang outputnya tampil di terminal
+Logstash), pipeline ini output-nya ke Elasticsearch — verifikasi lewat
+**GUI Kibana** (bukan CLI), cocok untuk peserta yang lebih terbiasa
+klik-klik daripada baca terminal:
+
+1. Buka Kibana (☰ → **Management → Stack Management → Data Views →
+   Create data view**), index pattern: `native-vm-iso8583-demo-*`
+2. ☰ → **Analytics → Discover**, pilih data view yang baru dibuat
+3. 4 dokumen (2 `mti: "0200"`, 2 `mti: "0210"`) harus langsung terlihat,
+   lengkap dengan field `pan`, `amount`, `terminal_id`, `merchant_id`,
+   `response_code` (khusus dokumen `0210`) — sama persis dengan field
+   yang tadi Anda lihat di `decoded.jsonl` (langkah 5), TAPI sekarang
+   ada di Elasticsearch, bisa di-filter/di-search dari Kibana.
+
+Kalau lebih suka CLI, verifikasi yang sama juga bisa lewat:
+```bash
+curl -s "http://localhost:9200/native-vm-iso8583-demo-*/_count"
 ```
-{
-    "url" => { "original" => "/products?category=shoes" },
-    "http" => {
-        "response" => { "status_code" => 200, "body" => { "bytes" => 8877 } }
-    },
-    "source" => { "address" => "203.0.113.7" },
-    "user_agent" => { "original" => "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)" }
-}
+Expected Output (diverifikasi nyata):
+```json
+{"count":4,"_shards":{"total":1,"successful":1,"skipped":0,"failed":0}}
 ```
-> **INFORMATION:** field yang ter-extract ini PERSIS sama seperti hasil
-> parsing `web-service.conf` terhadap log Robot Shop — instalasi manual
-> ini menghasilkan pipeline yang fungsinya identik dengan versi Docker.
+> **INFORMATION:** ini bukti konkret bahwa pipeline instalasi MANUAL
+> (bukan Docker) benar-benar bisa tersambung ke stack Elasticsearch yang
+> sama seperti seluruh lab lain di sesi ini — proses instalasi native
+> yang Anda praktikkan bukan cuma demo terisolasi.
 
 **8. Perluas cakupan pengumpulan data — log aktivitas SSH & command
 history.** Log akses web (langkah 1-7) hanya menjawab "traffic apa yang
@@ -385,7 +458,7 @@ Logstash untuk memilih filter yang sesuai):
 
 **Tambahkan filter baru pada Logstash** (edit
 `/etc/logstash/conf.d/native-demo.conf`, tambahkan di dalam blok
-`filter { }` yang sudah ada, SEBELUM baris grok `%{COMBINEDAPACHELOG}`):
+`filter { }` yang sudah ada, SEBELUM baris `mutate { convert => ... }`):
 ```
   if [log_source] == "ssh_auth" {
     grok {
@@ -411,32 +484,75 @@ Logstash untuk memilih filter yang sesuai):
   }
 ```
 
-**Restart Filebeat** (Ctrl+C pada terminal langkah 7, lalu jalankan
-ulang perintah yang sama) dan tunggu beberapa detik. Expected Output —
-4 dokumen SSH (1 `ssh_login_success`, 3 `ssh_login_failed` dari
-percobaan brute-force) dan 4 dokumen `bash_history`, tampil di terminal
-Logstash (langkah 6):
+**Restart Logstash** (WAJIB, SEBELUM Filebeat — beda dari langkah 7 yang
+cuma butuh restart Filebeat). Logstash pada langkah 6 dijalankan TANPA
+`--config.reload.automatic`, jadi filter baru yang baru saja Anda tambahkan
+ke `native-demo.conf` TIDAK otomatis terbaca oleh proses yang sudah
+berjalan — Anda harus menghentikannya lalu menjalankan ulang PERSIS
+command langkah 6. Karena Logstash pada langkah 6 dijalankan di
+background (`su -s /bin/bash logstash -c "... &"`, bukan di terminal
+foreground seperti Filebeat), hentikan lewat `pkill`, bukan Ctrl+C:
+```bash
+pkill -f org.logstash.Logstash
 ```
+> **INFORMATION:** tunggu proses BENAR-BENAR berhenti (beberapa detik)
+> sebelum menjalankan ulang command langkah 6 — Logstash mengunci
+> `--path.data` (`/tmp/ls-data`) selama berjalan, dan restart yang
+> dijalankan terlalu cepat (sebelum proses lama benar-benar keluar) akan
+> gagal dengan error `Logstash could not be started because there is
+> already another instance using the configured data directory`. Cek dulu
+> dengan `ps aux | grep logstash` sampai tidak ada proses `logstash`/`java`
+> tersisa, baru jalankan ulang command langkah 6 di atas.
+
+**Restart Filebeat** (Ctrl+C pada terminal langkah 7, lalu jalankan
+ulang perintah yang sama) dan tunggu beberapa detik. Sama seperti
+langkah 7, verifikasi lewat Kibana Discover (data view
+`native-vm-iso8583-demo-*` yang sama, field `log_type` membedakan
+dokumen ISO 8583 vs SSH vs bash_history) atau lewat CLI — total dokumen
+per `log_type` (membuktikan SSH DAN bash_history sama-sama masuk ke index
+yang sama):
+```bash
+curl -s "http://localhost:9200/native-vm-iso8583-demo-*/_search" -H 'Content-Type: application/json' -d '{
+  "size": 0,
+  "aggs": { "by_log_type": { "terms": { "field": "log_type.keyword" } } }
+}'
+```
+Expected Output (diverifikasi nyata) — `bash_history: 4`,
+`ssh_login_failed: 3`, `ssh_login_success: 1`:
+```json
 {
-    "log_source" => "ssh_auth",
-      "log_type" => "ssh_login_failed",
-        "ssh_user" => "root",
-         "src_ip" => "198.51.100.23",
-       "src_port" => 41822
+  "aggregations": {
+    "by_log_type": {
+      "buckets": [
+        { "key": "bash_history", "doc_count": 4 },
+        { "key": "ssh_login_failed", "doc_count": 3 },
+        { "key": "ssh_login_success", "doc_count": 1 }
+      ]
+    }
+  }
 }
-{
-    "log_source" => "ssh_auth",
-      "log_type" => "ssh_login_success",
-        "ssh_user" => "deploy",
-    "auth_method" => "publickey",
-         "src_ip" => "10.20.30.41",
-       "src_port" => 52344
-}
-{
-    "log_source" => "bash_history",
-      "log_type" => "bash_history",
-        "command" => "sudo systemctl restart app"
-}
+```
+Detail per dokumen SSH (query lebih spesifik, field diringkas lewat
+`python3` — pola yang sama seperti pada bagian "Best Practice" topik 4 di
+atas, supaya output tidak tenggelam di antara field metadata Filebeat
+seperti `agent`/`ecs`/`log`):
+```bash
+curl -s "http://localhost:9200/native-vm-iso8583-demo-*/_search?q=log_source:ssh_auth" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+for h in d['hits']['hits']:
+    s = h['_source']
+    print({k: s.get(k) for k in ('log_type', 'ssh_user', 'auth_method', 'src_ip', 'src_port')})
+"
+```
+Expected Output (diverifikasi nyata) — 3 `ssh_login_failed` dari percobaan
+brute-force (`root` dari `198.51.100.23`) dan 1 `ssh_login_success`
+(`deploy` dari `10.20.30.41`, lewat `publickey`):
+```
+{'log_type': 'ssh_login_failed', 'ssh_user': 'root', 'auth_method': None, 'src_ip': '198.51.100.23', 'src_port': 41822}
+{'log_type': 'ssh_login_failed', 'ssh_user': 'root', 'auth_method': None, 'src_ip': '198.51.100.23', 'src_port': 41822}
+{'log_type': 'ssh_login_failed', 'ssh_user': 'root', 'auth_method': None, 'src_ip': '198.51.100.23', 'src_port': 41822}
+{'log_type': 'ssh_login_success', 'ssh_user': 'deploy', 'auth_method': 'publickey', 'src_ip': '10.20.30.41', 'src_port': 52344}
 ```
 > **INFORMATION:** pola query yang sama seperti pada payment/cart/web
 > (agregasi per field, filter per status) berlaku juga di sini — mis.
@@ -1105,6 +1221,112 @@ mana.*
 > menduga pipeline data-nya yang salah — penyebab paling umum tetap
 > token/chat_id salah ketik atau lupa restart container setelah mengedit
 > rule.
+
+### 9. ISO 8583 Switch Simulator (dummy) — Buffer & Decoder Binary Nyata
+
+Topik 3-8 di atas memakai log Robot Shop/host-security yang sudah dalam
+bentuk teks biasa (Apache/syslog). Di dunia nyata, transaksi kartu/switch
+pembayaran mengalir dalam format **ISO 8583** — pesan biner/ASCII
+terstruktur (bitmap + field bernomor), bukan baris teks bebas. Topik ini
+mensimulasikan itu: satu stack Docker mandiri yang generate, decode, dan
+kirim transaksi ISO 8583 DUMMY ke Elasticsearch secara terus-menerus,
+lengkap dengan decoder yang benar-benar bisa Anda jalankan sendiri.
+
+> **INFORMATION:** seluruh data pada topik ini SINTETIS — institusi
+> fiktif "TDEMO", PAN dari test BIN range (`400000`/`510000`/`601100`,
+> rentang uji standar industri kartu, BUKAN kartu nasabah manapun).
+> Tidak ada data institusi/nasabah nyata yang dipakai untuk membangun
+> topik ini.
+
+**Teori singkat — struktur pesan ISO 8583:**
+- **MTI (Message Type Indicator)** — 4 digit, mis. `0200` (financial
+  request) atau `0210` (financial response).
+- **Bitmap** — 8 byte (64 bit) yang menandai field mana saja yang HADIR
+  pada pesan ini — bit ke-N menyala kalau field nomor N ada.
+- **Field bernomor** — mis. field 2 (PAN), field 4 (amount), field 11
+  (STAN/System Trace Audit Number), field 37 (RRN/Retrieval Reference
+  Number), field 39 (response code, HANYA ada di pesan response), dst.
+  Field bisa fixed-length (mis. field 3, selalu 6 digit) atau
+  variable-length dengan prefix panjang (mis. field 2/PAN, diawali 2
+  digit panjang sebelum nilainya — disebut LLVAR).
+
+Diagram alur lengkap: [`docs/diagrams/sesi7-iso8583-switch-dataflow.svg`](../../../docs/diagrams/sesi7-iso8583-switch-dataflow.svg).
+
+**Contoh Implementasi — jalankan stack simulator:**
+
+Seluruh file ada di `iso8583-switch/` (folder sesi ini) +
+`docker-compose.iso8583-switch.yml` (root folder sesi ini, sibling dari
+`docker-compose.host-security.yml`/`docker-compose.elastalert.yml`):
+```bash
+docker compose -f docker-compose.iso8583-switch.yml up -d --build
+```
+Expected Output (diverifikasi nyata) — 4 container jalan:
+`log-generator`, `decoder`, `logstash-iso8583`, `filebeat-iso8583`.
+
+> **INFORMATION:** `log-generator` (Python) menulis pasangan pesan ISO
+> 8583 (request `0200` + response `0210`) terus-menerus ke **DUA file
+> terpisah** di volume bersama — `switch-send.log` (request) dan
+> `switch-recv.log` (response) — mirror langsung dari konvensi capture
+> switch produksi (biasa dipisah per arah: file "S"/send dan "R"/receive),
+> format `@TAG@` mirip capture switch nyata. `decoder` (binary Go, LIHAT
+> bagian "decoder binary" di bawah) mem-`tail` KEDUA file itu secara
+> konkuren dan decode tiap pesan jadi JSON — field `capture_direction`
+> pada hasil JSON (`1`=send, `2`=recv) langsung mencerminkan file mana
+> pesan itu berasal, jadi peserta tetap bisa membedakan arah request vs
+> response walau nanti keduanya digabung ke index Elasticsearch yang
+> sama. `--build` WAJIB dipakai pertama kali supaya kedua image (yang
+> menyertakan binary decoder) ter-build sesuai arsitektur host Anda
+> secara otomatis — sudah diverifikasi jalan tanpa override apa pun baik
+> di ARM (host pembangunan lab ini) maupun x86_64 (binary
+> `iso8583tool-linux-amd64` disertakan juga).
+
+**Decoder binary — lihat & jalankan sendiri fungsinya:**
+
+Binary hasil build sendiri ada di `iso8583-switch/decoder/bin/` (source
+Go di `iso8583-switch/decoder/src/`, pakai library
+[`moov-io/iso8583`](https://github.com/moov-io/iso8583) — 532 stars per
+September 2026, dipilih karena ringan & jadi 1 binary statis, dibanding
+alternatif `jPOS` yang stars-nya lebih tinggi tapi merupakan framework
+switch penuh, bukan sekadar decoder). Coba jalankan manual:
+```bash
+docker compose -f docker-compose.iso8583-switch.yml exec decoder sh -c \
+  "tail -3 /data/decoded/decoded.jsonl"
+```
+Expected Output (diverifikasi nyata, bentuk & isi field bisa beda —
+data digenerate acak — tapi strukturnya SELALU seperti ini; perhatikan
+`mti`/`capture_direction` SELALU berpasangan: `0200`+`"1"` untuk request
+dari `switch-send.log`, `0210`+`"2"` untuk response dari
+`switch-recv.log`):
+```json
+{"@timestamp":"2026-09-16T15:00:54.701074377Z","amount":"331523468","capture_direction":"1","capture_seq":"79","capture_time":"15:00:54.402563","currency_code":"360","local_date":"0916","local_time":"150054","merchant_id":"BANKDEMO0000003","mti":"0200","pan":"6011007465976462","processing_code":"310000","rrn":"260916161974","stan":"161974","terminal_id":"ATMD0005","transmission_datetime":"0916150054"}
+{"@timestamp":"2026-09-16T15:00:56.206919252Z","amount":"138460736","capture_direction":"2","capture_seq":"82","capture_time":"15:00:55.982846","currency_code":"360","local_date":"0916","local_time":"150055","merchant_id":"BANKDEMO0000003","mti":"0210","pan":"5100001598370413","processing_code":"400000","response_code":"00","rrn":"260916161975","stan":"161975","terminal_id":"ATMD0003","transmission_datetime":"0916150055"}
+```
+
+**Buffer 1 hari — kenapa `queue.max_bytes` di `logstash-iso8583` diset 200mb:**
+
+Diukur nyata dari stack ini (bukan tebakan): rata-rata **1.6
+dokumen/detik**, rata-rata **~420 byte/dokumen JSON mentah** (diukur
+lewat `wc -c` pada `decoded.jsonl` sungguhan). Estimasi 1 hari:
+`1.6 x 86400 x 420 byte` &asymp; **55 MB/hari**. `queue.max_bytes: 200mb`
+(diset di `docker-compose.iso8583-switch.yml`, env var `queue.type:
+persisted`) memberi headroom &asymp;3.6x di atas volume 1 hari yang
+terukur — cukup untuk menampung traffic normal SATU HARI PENUH kalau
+Elasticsearch sempat tidak bisa diakses, tanpa kehilangan data (disimpan
+di disk, bukan memory).
+
+**VM ini TIDAK berhenti otomatis** (`restart: unless-stopped` pada
+semua service) — biarkan jalan sampai SELURUH Sesi 7 selesai (termasuk
+topik 3-8 di atas yang juga butuh Elasticsearch yang sama), baru:
+```bash
+docker compose -f docker-compose.iso8583-switch.yml down
+```
+
+**Verifikasi lewat Kibana (GUI):**
+1. ☰ → **Management → Stack Management → Data Views → Create data view**,
+   index pattern: `iso8583-switch-*`
+2. ☰ → **Analytics → Discover** — transaksi baru terus bertambah setiap
+   beberapa detik, field `mti`/`pan`/`amount`/`response_code` langsung
+   terlihat tanpa perlu query manual.
 
 ## e. Referensi Exercise
 

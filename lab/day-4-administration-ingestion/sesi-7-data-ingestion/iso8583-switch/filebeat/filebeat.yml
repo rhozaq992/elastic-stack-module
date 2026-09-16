@@ -1,0 +1,20 @@
+# Filebeat khusus iso8583-switch/ (Sesi 7) -- membaca decoded.jsonl (hasil
+# decoder Go, 1 objek JSON per baris) dan mengirimkannya ke
+# logstash-iso8583, TERPISAH dari filebeat-host/filebeat-rs sesi lain
+# supaya folder ini tetap mandiri.
+filebeat.inputs:
+  - type: filestream
+    id: iso8583-switch-decoded
+    paths:
+      - /data/decoded/decoded.jsonl
+    parsers:
+      - ndjson:
+          keys_under_root: true
+          add_error_key: true
+          overwrite_keys: true
+
+output.logstash:
+  hosts: ["logstash-iso8583:5044"]
+
+logging.level: info
+logging.to_stderr: true
