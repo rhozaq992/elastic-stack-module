@@ -337,8 +337,8 @@ dengan `capture_direction: "2"` serta field `response_code` — pasangan
 > dari stdin dan BERHENTI otomatis setelah EOF -- cocok untuk demo
 > sekali-jalan seperti ini. Tanpa `-` (mis. `iso8583tool decode
 > /path/file.log`), tool ini akan TERUS `tail` file itu selamanya
-> (dipakai oleh service `decoder` pada topik baru di bawah, yang memang
-> perlu berjalan terus selama Sesi 7).
+> (dipakai oleh proses `decoder` di dalam `iso8583-switch-vm` pada topik
+> baru di bawah, yang memang perlu berjalan terus selama Sesi 7).
 
 **6. Jalankan Logstash** (di background, sebagai non-root user `logstash`):
 ```bash
