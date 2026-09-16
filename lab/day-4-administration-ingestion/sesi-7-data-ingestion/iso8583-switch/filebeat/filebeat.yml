@@ -2,6 +2,33 @@
 # decoder Go, 1 objek JSON per baris) dan mengirimkannya ke
 # logstash-iso8583, TERPISAH dari filebeat-host/filebeat-rs sesi lain
 # supaya folder ini tetap mandiri.
+#
+# CATATAN KEAMANAN -- config ini dibuat untuk lab training di jaringan
+# Docker internal terisolasi, BELUM aman kalau dipakai apa adanya pada
+# sistem dengan tingkat keamanan lebih tinggi. Yang perlu ditambahkan:
+#
+#   - output.logstash di bawah pakai plain TCP ke port 5044, TANPA TLS
+#     dan TANPA autentikasi. Untuk produksi, tambahkan `ssl.enabled: true`
+#     + `ssl.certificate_authorities`/`ssl.certificate`/`ssl.key` (mutual
+#     TLS) pada sisi Filebeat DAN buka `ssl` yang sepadan di input Beats
+#     Logstash (logstash/pipeline/00-input.conf).
+#   - Tidak ada processor yang me-redact/drop field sensitif (mis. `pan`)
+#     sebelum data meninggalkan host ini -- kalau data sumbernya
+#     mengandung PAN sungguhan (bukan data dummy seperti di lab ini),
+#     tambahkan processor `drop_fields`/`truncate_fields`/script custom
+#     di sini SEBELUM output, jangan andalkan masking di sisi Logstash/ES
+#     saja (defense in depth -- data sensitif sebaiknya sudah aman
+#     sebelum meninggalkan proses pengirim).
+#   - Filebeat container ini jalan sebagai `user: root` (lihat
+#     docker-compose.iso8583-switch.yml) supaya bisa baca volume
+#     decoded.jsonl -- di sistem lebih ketat, pertimbangkan ownership
+#     non-root pada volume tsb supaya Filebeat tidak perlu root sama
+#     sekali.
+#   - Tidak ada `queue`/disk buffer terenkripsi di sisi Filebeat (beda
+#     dari persistent queue Logstash yang sudah ada) -- registry Filebeat
+#     (state file `/usr/share/filebeat/data`) tersimpan plaintext di disk
+#     volume; pertimbangkan enkripsi volume tingkat host kalau lingkungan
+#     produksi mewajibkannya.
 filebeat.inputs:
   - type: filestream
     id: iso8583-switch-decoded

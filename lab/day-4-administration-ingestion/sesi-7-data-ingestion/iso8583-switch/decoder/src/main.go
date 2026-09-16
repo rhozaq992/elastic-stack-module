@@ -11,6 +11,31 @@
 //
 // Library: github.com/moov-io/iso8583 (github.com/moov-io/iso8583, 532
 // stars per Sept 2026) -- lihat README Sesi 7 kenapa dipilih.
+//
+// # CATATAN KEAMANAN -- kalau tool ini mau dipakai di luar lab training ini
+// (mis. terhubung ke switch/sistem produksi sungguhan dengan tingkat
+// keamanan lebih tinggi), tool ini BELUM aman dipakai apa adanya. Yang
+// perlu ditambahkan dulu:
+//
+//   - PAN (field 2) TIDAK di-mask/truncate sebelum ditulis ke JSON --
+//     field["pan"] berisi nomor kartu LENGKAP. Standar PCI DSS mewajibkan
+//     PAN disimpan/di-log dalam bentuk masked (mis. 6 digit awal + 4
+//     digit akhir saja) atau di-tokenize, tidak pernah plaintext penuh
+//     di storage/log. Tambahkan masking di decodeOneMessage() sebelum
+//     field ini pernah keluar dari proses ini.
+//   - Tidak ada validasi/batas ukuran terhadap input msgLine sebelum
+//     di-Unpack() -- pesan yang sengaja dibuat malformed/oversized dari
+//     sumber tidak tepercaya berpotensi memicu panic/resource exhaustion.
+//     Untuk sumber data yang tidak tepercaya, tambahkan validasi
+//     panjang/format sebelum decode, dan recover() di sekeliling Unpack.
+//   - Tidak ada autentikasi/enkripsi pada file input (RAW_INPUT_SEND/
+//     RAW_INPUT_RECV) -- siapa pun yang bisa tulis ke path itu bisa
+//     menyuntik pesan palsu. Di lingkungan produksi, batasi permission
+//     file itu (mis. 0600, owner khusus) dan/atau ganti sumbernya jadi
+//     koneksi langsung yang terautentikasi ke switch, bukan file.
+//   - Proses ini jalan tanpa drop privilege/seccomp/capability restriction
+//     apa pun -- pertimbangkan container non-root + read-only filesystem
+//     kecuali direktori output kalau dipakai di luar lab ini.
 package main
 
 import (
