@@ -1228,9 +1228,10 @@ Topik 3-8 di atas memakai log Robot Shop/host-security yang sudah dalam
 bentuk teks biasa (Apache/syslog). Di dunia nyata, transaksi kartu/switch
 pembayaran mengalir dalam format **ISO 8583** — pesan biner/ASCII
 terstruktur (bitmap + field bernomor), bukan baris teks bebas. Topik ini
-mensimulasikan itu: satu stack Docker mandiri yang generate, decode, dan
-kirim transaksi ISO 8583 DUMMY ke Elasticsearch secara terus-menerus,
-lengkap dengan decoder yang benar-benar bisa Anda jalankan sendiri.
+mensimulasikan itu: **1 VM/container** yang di dalamnya generator log DAN
+decoder berjalan bersamaan, mengirim transaksi ISO 8583 DUMMY ke
+Elasticsearch secara terus-menerus, lengkap dengan decoder yang
+benar-benar bisa Anda jalankan sendiri.
 
 > **INFORMATION:** seluruh data pada topik ini SINTETIS — institusi
 > fiktif "TDEMO", PAN dari test BIN range (`400000`/`510000`/`601100`,
@@ -1238,19 +1239,40 @@ lengkap dengan decoder yang benar-benar bisa Anda jalankan sendiri.
 > Tidak ada data institusi/nasabah nyata yang dipakai untuk membangun
 > topik ini.
 
-**Teori singkat — struktur pesan ISO 8583:**
-- **MTI (Message Type Indicator)** — 4 digit, mis. `0200` (financial
-  request) atau `0210` (financial response).
-- **Bitmap** — 8 byte (64 bit) yang menandai field mana saja yang HADIR
-  pada pesan ini — bit ke-N menyala kalau field nomor N ada.
-- **Field bernomor** — mis. field 2 (PAN), field 4 (amount), field 11
-  (STAN/System Trace Audit Number), field 37 (RRN/Retrieval Reference
-  Number), field 39 (response code, HANYA ada di pesan response), dst.
-  Field bisa fixed-length (mis. field 3, selalu 6 digit) atau
-  variable-length dengan prefix panjang (mis. field 2/PAN, diawali 2
-  digit panjang sebelum nilainya — disebut LLVAR).
+**Teori — struktur pesan ISO 8583 & cara decoder membacanya:**
 
-Diagram alur lengkap: [`docs/diagrams/sesi7-iso8583-switch-dataflow.svg`](../../../docs/diagrams/sesi7-iso8583-switch-dataflow.svg).
+Setiap pesan yang ditulis `log-generator` (dan yang dibaca `decoder`)
+terdiri dari 2 baris: baris **envelope** (`@TAG@ ...`, metadata capture —
+nomor urut, panjang pesan, waktu, arah) diikuti baris **pesan ISO 8583
+mentah itu sendiri**:
+```
+@TAG@ <seq> <len> <session> <HH:MM:SS.ffffff> <direction:1|2> <const> <counter>
+<MTI><BITMAP-HEX><FIELD1><FIELD2>...<FIELDN>
+```
+- **MTI (Message Type Indicator)** — 4 digit di awal pesan, mis. `0200`
+  (financial request) atau `0210` (financial response, MTI request + 10).
+- **Bitmap** — 8 byte (64 bit, ditulis sebagai 16 karakter hex) yang
+  menandai field bernomor mana saja yang HADIR pada pesan ini — bit ke-N
+  menyala (1) kalau field nomor N ikut disertakan. Contoh sederhana
+  (angka ilustrasi, BUKAN bitmap sungguhan lab ini): kalau cuma field
+  2, 3, dan 4 yang aktif, 8 bit pertama bitmap adalah `01110000` (bit
+  ke-2,3,4 dari kiri menyala) — dalam praktiknya bitmap lab ini menyala
+  di lebih banyak posisi karena field yang dipakai (2, 3, 4, 7, 11, 12,
+  13, 37, 39, 41, 42, 49) tersebar sampai byte ke-7.
+- **Field bernomor** — decoder tahu PERSIS bagaimana membaca tiap field
+  dari definisi `switchSpec` di `iso8583-switch/decoder/src/spec.go`
+  (field number → panjang & tipe), field 2 (PAN) LLVAR (2 digit prefix
+  panjang sebelum nilainya, karena panjang PAN bisa beda-beda), field
+  lain FIXED-length (mis. field 3/processing code selalu 6 digit, field
+  39/response code selalu 2 digit — HANYA ada di pesan response `0210`).
+  `iso8583tool decode` membaca MTI, lalu bitmap untuk tahu field mana
+  yang ada, lalu membaca tiap field sesuai definisi panjangnya di
+  `spec.go` secara berurutan — persis proses yang sama dipakai
+  `iso8583tool encode` di sisi `log-generator`, jadi keduanya SELALU
+  konsisten (satu sumber definisi field, bukan 2 implementasi terpisah
+  yang bisa "miss-match").
+
+![Diagram alur ISO 8583 switch simulator: 1 VM/container berisi log-generator (Python, menulis switch-send.log dan switch-recv.log) dan decoder (binary Go moov-io/iso8583, tail kedua file, decode jadi JSON) berjalan bersamaan, lalu filebeat-iso8583 membaca decoded.jsonl, logstash-iso8583 buffer via persistent queue, masuk ke index Elasticsearch iso8583-switch-*](../../../docs/diagrams/sesi7-iso8583-switch-dataflow.svg)
 
 **Contoh Implementasi — jalankan stack simulator:**
 
@@ -1260,25 +1282,33 @@ Seluruh file ada di `iso8583-switch/` (folder sesi ini) +
 ```bash
 docker compose -f docker-compose.iso8583-switch.yml up -d --build
 ```
-Expected Output (diverifikasi nyata) — 4 container jalan:
-`log-generator`, `decoder`, `logstash-iso8583`, `filebeat-iso8583`.
+Expected Output (diverifikasi nyata) — 3 container jalan:
+`iso8583-switch-vm`, `logstash-iso8583`, `filebeat-iso8583`.
 
-> **INFORMATION:** `log-generator` (Python) menulis pasangan pesan ISO
-> 8583 (request `0200` + response `0210`) terus-menerus ke **DUA file
-> terpisah** di volume bersama — `switch-send.log` (request) dan
-> `switch-recv.log` (response) — mirror langsung dari konvensi capture
-> switch produksi (biasa dipisah per arah: file "S"/send dan "R"/receive),
-> format `@TAG@` mirip capture switch nyata. `decoder` (binary Go, LIHAT
-> bagian "decoder binary" di bawah) mem-`tail` KEDUA file itu secara
-> konkuren dan decode tiap pesan jadi JSON — field `capture_direction`
-> pada hasil JSON (`1`=send, `2`=recv) langsung mencerminkan file mana
-> pesan itu berasal, jadi peserta tetap bisa membedakan arah request vs
-> response walau nanti keduanya digabung ke index Elasticsearch yang
-> sama. `--build` WAJIB dipakai pertama kali supaya kedua image (yang
-> menyertakan binary decoder) ter-build sesuai arsitektur host Anda
-> secara otomatis — sudah diverifikasi jalan tanpa override apa pun baik
-> di ARM (host pembangunan lab ini) maupun x86_64 (binary
-> `iso8583tool-linux-amd64` disertakan juga).
+> **INFORMATION:** `iso8583-switch-vm` adalah **1 VM/container** yang di
+> dalamnya JALAN BERSAMAAN 2 proses — persis pola native-vm Topic 3 di
+> atas (Filebeat+Logstash sekaligus di 1 VM), bukan 2 container
+> Docker terpisah:
+> 1. `log-generator` (Python) menulis pasangan pesan ISO 8583 (request
+>    `0200` + response `0210`) terus-menerus ke **DUA file terpisah** —
+>    `switch-send.log` (request) dan `switch-recv.log` (response) —
+>    mirror langsung dari konvensi capture switch produksi (biasa
+>    dipisah per arah: file "S"/send dan "R"/receive).
+> 2. `decoder` (binary Go, LIHAT bagian "decoder binary" di bawah)
+>    mem-`tail` KEDUA file itu (lewat filesystem yang sama di dalam VM
+>    yang sama, bukan lewat jaringan) dan decode tiap pesan jadi JSON —
+>    field `capture_direction` pada hasil JSON (`1`=send, `2`=recv)
+>    langsung mencerminkan file mana pesan itu berasal.
+>
+> Kedua proses dijalankan oleh 1 entrypoint (`iso8583-switch/vm/entrypoint.sh`)
+> yang start keduanya lalu `wait` — kalau salah satu proses mati, seluruh
+> VM ikut berhenti supaya `restart: unless-stopped` menghidupkan ulang
+> KEDUANYA bersih, bukan meninggalkan 1 proses zombie. `--build` WAJIB
+> dipakai pertama kali supaya image (yang menyertakan binary decoder)
+> ter-build sesuai arsitektur host Anda secara otomatis — sudah
+> diverifikasi jalan tanpa override apa pun baik di ARM (host
+> pembangunan lab ini) maupun x86_64 (binary `iso8583tool-linux-amd64`
+> disertakan juga).
 
 **Decoder binary — lihat & jalankan sendiri fungsinya:**
 
@@ -1287,9 +1317,10 @@ Go di `iso8583-switch/decoder/src/`, pakai library
 [`moov-io/iso8583`](https://github.com/moov-io/iso8583) — 532 stars per
 September 2026, dipilih karena ringan & jadi 1 binary statis, dibanding
 alternatif `jPOS` yang stars-nya lebih tinggi tapi merupakan framework
-switch penuh, bukan sekadar decoder). Coba jalankan manual:
+switch penuh, bukan sekadar decoder). Coba jalankan manual (`exec` masuk
+ke `iso8583-switch-vm`, VM yang sama tempat decoder-nya berjalan):
 ```bash
-docker compose -f docker-compose.iso8583-switch.yml exec decoder sh -c \
+docker compose -f docker-compose.iso8583-switch.yml exec iso8583-switch-vm sh -c \
   "tail -3 /data/decoded/decoded.jsonl"
 ```
 Expected Output (diverifikasi nyata, bentuk & isi field bisa beda —
@@ -1298,8 +1329,8 @@ data digenerate acak — tapi strukturnya SELALU seperti ini; perhatikan
 dari `switch-send.log`, `0210`+`"2"` untuk response dari
 `switch-recv.log`):
 ```json
-{"@timestamp":"2026-09-16T15:00:54.701074377Z","amount":"331523468","capture_direction":"1","capture_seq":"79","capture_time":"15:00:54.402563","currency_code":"360","local_date":"0916","local_time":"150054","merchant_id":"BANKDEMO0000003","mti":"0200","pan":"6011007465976462","processing_code":"310000","rrn":"260916161974","stan":"161974","terminal_id":"ATMD0005","transmission_datetime":"0916150054"}
-{"@timestamp":"2026-09-16T15:00:56.206919252Z","amount":"138460736","capture_direction":"2","capture_seq":"82","capture_time":"15:00:55.982846","currency_code":"360","local_date":"0916","local_time":"150055","merchant_id":"BANKDEMO0000003","mti":"0210","pan":"5100001598370413","processing_code":"400000","response_code":"00","rrn":"260916161975","stan":"161975","terminal_id":"ATMD0003","transmission_datetime":"0916150055"}
+{"@timestamp":"2026-09-16T15:50:55.564371293Z","amount":"317336594","capture_direction":"2","capture_seq":"434","capture_time":"15:50:55.506548","currency_code":"360","local_date":"0916","local_time":"155055","merchant_id":"BANKDEMO0000001","mti":"0210","pan":"5100001582328681","processing_code":"310000","response_code":"00","rrn":"260916111524","stan":"111524","terminal_id":"ATMD0005","transmission_datetime":"0916155055"}
+{"@timestamp":"2026-09-16T15:50:56.569232294Z","amount":"438878080","capture_direction":"1","capture_seq":"435","capture_time":"15:50:56.489555","currency_code":"360","local_date":"0916","local_time":"155056","merchant_id":"BANKDEMO0000003","mti":"0200","pan":"5100006281479329","processing_code":"310000","rrn":"260916111525","stan":"111525","terminal_id":"ATMD0003","transmission_datetime":"0916155056"}
 ```
 
 **Buffer 1 hari — kenapa `queue.max_bytes` di `logstash-iso8583` diset 200mb:**
@@ -1327,6 +1358,93 @@ docker compose -f docker-compose.iso8583-switch.yml down
 2. ☰ → **Analytics → Discover** — transaksi baru terus bertambah setiap
    beberapa detik, field `mti`/`pan`/`amount`/`response_code` langsung
    terlihat tanpa perlu query manual.
+
+![Kibana Discover menampilkan data view iso8583-switch-*, 1348 dokumen dalam 15 menit terakhir, field mti/pan/amount/response_code/capture_direction/stan/terminal_id terlihat langsung tanpa query manual, institusi fiktif TDEMO/BANKDEMO](../../../docs/screenshots/sesi-7/04-discover-iso8583-switch-data.png)
+
+**Skenario query: cari transaksi gagal, lalu export CSV**
+
+Peserta jarang butuh SEMUA transaksi — biasanya yang dicari adalah
+transaksi yang GAGAL (untuk investigasi) atau kategori tertentu. Coba
+filter dengan KQL langsung di search bar Discover:
+```
+response_code: ("05" or "51")
+```
+(`05` = do not honor, `51` = insufficient funds — dua response code
+gagal paling umum pada data dummy lab ini)
+
+![Kibana Discover terfilter KQL response_code: ("05" or "51"), menampilkan 74 dokumen transaksi gagal, response_code 05/51 ter-highlight kuning pada tiap baris](../../../docs/screenshots/sesi-7/05-discover-filtered-failed-transactions.png)
+
+Untuk mengekspor hasil filter ini jadi file (mis. dikirim ke tim lain
+yang tidak punya akses Kibana): klik ikon **⋮ (More) → Export tab
+results → CSV**. Kibana membuka panel **"Export Discover session as
+CSV"** — klik **Generate CSV**:
+
+![Panel Export Discover session as CSV menampilkan Post URL ke /api/reporting/generate/csv_searchsource dan tombol Generate CSV](../../../docs/screenshots/sesi-7/06-discover-export-csv-panel.png)
+
+> **INFORMATION:** export CSV di Kibana berjalan lewat **Reporting API**
+> secara asinkron (job di-queue, bukan download instan) — panel di atas
+> juga menampilkan **Post URL** yang bisa dipakai memicu export ini
+> secara programatik dari luar Kibana (mis. dari script/cron), bukan
+> cuma lewat klik UI. Sudah diverifikasi nyata di lab ini: job selesai
+> dalam hitungan detik, hasil CSV berisi 64 baris (63 transaksi gagal +
+> header), seluruh datanya sintetis (`TDEMO`/`BANKDEMO`, test BIN PAN)
+> persis seperti yang tampil di Discover.
+
+**Dashboard ringkasan — transaksi per hari, gagal, berhasil, contoh data:**
+
+Sama seperti mini dashboard eCommerce di Sesi 5 (Lens, point-and-click,
+tanpa satu query Dev Tools pun), bangun 4 panel berikut lalu gabung ke
+1 dashboard:
+
+1. **Bar chart "Transaksi per Hari"** — ☰ → Analytics → Visualize
+   Library → **Create visualization → Visualization** (Lens). Data
+   view `iso8583-switch-*`. Horizontal axis: **Date histogram** pada
+   `@timestamp`; Vertical axis: fungsi **Count**. Save to library
+   (jangan attach ke dashboard dulu — pilih **"None"** lalu **"Save
+   and add to library"**).
+2. **Metric "Transaksi Berhasil"** — visualisasi baru lagi, ganti tipe
+   chart ke **Metric** (dropdown "Bar" di kanan atas → pilih Metric).
+   Isi search bar KQL dengan `response_code: "00"`, Primary metric:
+   fungsi **Count**. Save to library.
+3. **Metric "Transaksi Gagal"** — sama seperti langkah 2, tapi KQL-nya
+   `mti: "0210" and not response_code: "00"` — BUKAN cuma
+   `not response_code: "00"` saja.
+
+   > **INFORMATION:** jebakan nyata yang ketemu saat membangun panel ini
+   > — KQL `not response_code: "00"` SENDIRIAN ternyata juga ikut
+   > menghitung dokumen request (`mti: "0200"` — TIDAK PUNYA field
+   > `response_code` sama sekali, karena response code cuma ada di
+   > pesan response `0210`), bukan cuma transaksi response yang
+   > benar-benar gagal. Diverifikasi nyata: tanpa `mti: "0210" and`, metric ini
+   > menunjukkan ~785 (nyaris SEMUA dokumen non-`00`, termasuk seluruh
+   > request `0200`) — setelah ditambah `mti: "0210" and`, turun jadi
+   > angka yang benar (~79, cocok dengan jumlah response
+   > `05`/`51` sungguhan). Alasannya: negasi (`not field: value`) pada
+   > KQL bernilai TRUE untuk dokumen yang field-nya tidak ada sama
+   > sekali, bukan cuma untuk dokumen yang field-nya ada tapi beda
+   > nilai — sama persis kelasnya dengan jebakan "field salah tipe"
+   > yang sudah dibahas di Sesi 3, cuma bentuknya beda (di sini soal
+   > field yang TIDAK ADA pada sebagian dokumen, bukan soal tipe data).
+4. **Contoh data mentah** — bukan Lens, tapi **Discover session
+   tersimpan**: buka Discover dengan data view `iso8583-switch-*`,
+   tambahkan kolom `mti`, `pan`, `amount`, `response_code`, `stan`,
+   `terminal_id` (klik ikon **+** di sebelah tiap field pada panel kiri),
+   urutkan berdasarkan `@timestamp` terbaru (default), **Save** dengan
+   nama bebas (mis. "ISO 8583 - Contoh Transaksi").
+
+Lalu ☰ → **Analytics → Dashboards → Create dashboard** → **Add** →
+tab **"From library"** → cari & klik keempat item di atas satu per
+satu → **Save**.
+
+![Dashboard ISO 8583 - Ringkasan Transaksi: panel tabel Contoh Transaksi (1418 dokumen), metric Transaksi Gagal 79, metric Transaksi Berhasil 630, bar chart Transaksi per Hari](../../../docs/screenshots/sesi-7/07-dashboard-iso8583-ringkasan.png)
+
+*Hasil nyata dari stack lab ini — angka SELALU beda tiap kali Anda coba
+(generator terus jalan sejak `docker compose up`), tapi pola relatifnya
+konsisten: `Transaksi Gagal` + `Transaksi Berhasil` harus SELALU sama
+dengan total dokumen bertipe response (`mti: "0210"`) pada rentang waktu
+yang sama — bisa disilang-cek lewat `curl` aggregation kalau ingin
+verifikasi manual, sama seperti prinsip yang sudah dipakai di topik-topik
+sebelumnya sesi ini.*
 
 ## e. Referensi Exercise
 

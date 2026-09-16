@@ -1,12 +1,16 @@
 import json
+import os
 import platform
 import random
 import subprocess
 import time
 from datetime import datetime, timezone
 
-SEND_LOG = "/var/log/iso8583-switch/switch-send.log"  # request (S), pola penamaan capture switch produksi
-RECV_LOG = "/var/log/iso8583-switch/switch-recv.log"  # response (R), pola penamaan capture switch produksi
+# Sama seperti decoder (RAW_INPUT_SEND/RAW_INPUT_RECV) -- generator & decoder
+# jalan di dalam 1 VM/container yang sama sekarang, path ini harus konsisten
+# di antara keduanya (lihat vm/entrypoint.sh).
+SEND_LOG = os.environ.get("RAW_INPUT_SEND", "/data/raw/switch-send.log")  # request (S), pola penamaan capture switch produksi
+RECV_LOG = os.environ.get("RAW_INPUT_RECV", "/data/raw/switch-recv.log")  # response (R), pola penamaan capture switch produksi
 
 # ponytail: pilih binary sesuai arsitektur container saat runtime (bukan
 # ARG buildx TARGETARCH) -- lebih portable, tidak bergantung BuildKit.

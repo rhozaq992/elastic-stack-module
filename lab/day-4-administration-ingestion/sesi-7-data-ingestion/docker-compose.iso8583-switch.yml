@@ -5,13 +5,16 @@
 # `elasticsearch:9200`.
 #
 # Data SINTETIS/DUMMY sepenuhnya (institusi fiktif "TDEMO", PAN dari test
-# BIN range) -- BUKAN dari data sample manapun. log-generator menulis pesan
-# ISO 8583 mentah (format @TAG@, mirip capture switch nyata) ke DUA file
-# terpisah -- switch-send.log (request) dan switch-recv.log (response),
-# mengikuti konvensi capture switch produksi yang memisah file per arah
-# (send/receive) -- terus-menerus ke volume bersama -> decoder (binary Go,
-# moov-io/iso8583) tail KEDUA file
-# itu konkuren, decode tiap pesan jadi JSON -> filebeat-iso8583 kirim ke
+# BIN range) -- BUKAN dari data sample manapun. `iso8583-switch-vm` adalah
+# SATU VM/container yang di dalamnya log-generator (Python) DAN decoder
+# (binary Go, moov-io/iso8583) berjalan BERSAMAAN sebagai 2 proses (lihat
+# iso8583-switch/vm/entrypoint.sh) -- pola yang sama seperti native-vm
+# Topic 3 menjalankan Filebeat+Logstash sekaligus di 1 VM. log-generator
+# menulis pesan ISO 8583 mentah (format @TAG@, mirip capture switch nyata)
+# ke DUA file terpisah -- switch-send.log (request) dan switch-recv.log
+# (response), mengikuti konvensi capture switch produksi yang memisah file
+# per arah (send/receive). decoder tail KEDUA file itu konkuren di dalam
+# VM yang sama, decode tiap pesan jadi JSON -> filebeat-iso8583 kirim ke
 # logstash-iso8583 (persistent queue sebagai buffer 1 hari) -> Elasticsearch
 # index iso8583-switch-*. Lihat README bagian d topik baru & diagram
 # docs/diagrams/sesi7-iso8583-switch-dataflow.svg.
@@ -20,18 +23,10 @@
 # jalan sampai seluruh Sesi 7 selesai, baru `docker compose -f
 # docker-compose.iso8583-switch.yml down`.
 services:
-  log-generator:
+  iso8583-switch-vm:
     build:
       context: ./iso8583-switch
-      dockerfile: log-generator/Dockerfile
-    restart: unless-stopped
-    volumes:
-      - iso8583-switch-raw:/var/log/iso8583-switch
-
-  decoder:
-    build:
-      context: ./iso8583-switch
-      dockerfile: decoder/Dockerfile
+      dockerfile: vm/Dockerfile
     restart: unless-stopped
     environment:
       - RAW_INPUT_SEND=/data/raw/switch-send.log
@@ -40,8 +35,6 @@ services:
     volumes:
       - iso8583-switch-raw:/data/raw
       - iso8583-switch-decoded:/data/decoded
-    depends_on:
-      - log-generator
 
   logstash-iso8583:
     image: docker.elastic.co/logstash/logstash:9.5.2
@@ -70,7 +63,7 @@ services:
       - iso8583-switch-decoded:/data/decoded:ro
     depends_on:
       - logstash-iso8583
-      - decoder
+      - iso8583-switch-vm
     networks: [elk-lab-net]
 
 volumes:

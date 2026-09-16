@@ -6,59 +6,61 @@
     <marker id="arrowIso" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
       <path d="M0,0 L0,6 L9,3 z" fill="#1d4ed8" />
     </marker>
+    <marker id="arrowIsoSmall" markerWidth="8" markerHeight="8" refX="6" refY="2.5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,5 L7,2.5 z" fill="#4338ca" />
+    </marker>
   </defs>
 
-  <!-- Box 1: log-generator -->
-  <rect x="20" y="90" width="175" height="110" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
-  <text x="107" y="115" text-anchor="middle" font-size="13" font-weight="700" fill="#1e3a8a">log-generator</text>
-  <text x="107" y="135" text-anchor="middle" font-size="10" fill="#1e3a8a">Python, generate_switch_log.py</text>
-  <text x="107" y="152" text-anchor="middle" font-size="10" fill="#1e3a8a">pesan @TAG@ dummy</text>
-  <text x="107" y="169" text-anchor="middle" font-size="10" fill="#1e3a8a">(request 0200 + response 0210)</text>
-  <text x="107" y="185" text-anchor="middle" font-size="9" fill="#3730a3">-&gt; switch-send.log (S)</text>
-  <text x="107" y="197" text-anchor="middle" font-size="9" fill="#3730a3">-&gt; switch-recv.log (R)</text>
+  <!-- Box 1: iso8583-switch-vm (1 container, 2 proses di dalamnya) -->
+  <rect x="20" y="90" width="280" height="110" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
+  <text x="160" y="108" text-anchor="middle" font-size="12" font-weight="700" fill="#1e3a8a">iso8583-switch-vm (1 VM/container)</text>
+  <line x1="160" y1="116" x2="160" y2="192" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="3,3" />
 
-  <path d="M 195 145 L 235 145" stroke="#1d4ed8" stroke-width="2.5" fill="none" marker-end="url(#arrowIso)" />
+  <text x="88" y="132" text-anchor="middle" font-size="10" font-weight="700" fill="#1e3a8a">log-generator</text>
+  <text x="88" y="146" text-anchor="middle" font-size="9" fill="#1e3a8a">(proses 1, Python)</text>
+  <text x="88" y="163" text-anchor="middle" font-size="8.5" fill="#3730a3">-&gt; switch-send.log (S)</text>
+  <text x="88" y="175" text-anchor="middle" font-size="8.5" fill="#3730a3">-&gt; switch-recv.log (R)</text>
 
-  <!-- Box 2: decoder -->
-  <rect x="240" y="90" width="175" height="110" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
-  <text x="327" y="115" text-anchor="middle" font-size="13" font-weight="700" fill="#1e3a8a">decoder</text>
-  <text x="327" y="135" text-anchor="middle" font-size="10" fill="#1e3a8a">binary Go, moov-io/iso8583</text>
-  <text x="327" y="152" text-anchor="middle" font-size="10" fill="#1e3a8a">tail send+recv.log, decode</text>
-  <text x="327" y="169" text-anchor="middle" font-size="10" fill="#1e3a8a">pesan ISO 8583 -&gt; JSON</text>
-  <text x="327" y="188" text-anchor="middle" font-size="9" fill="#3730a3">-&gt; decoded.jsonl (volume)</text>
+  <path d="M 118 168 L 200 168" stroke="#4338ca" stroke-width="1.5" fill="none" marker-end="url(#arrowIsoSmall)" />
 
-  <path d="M 415 145 L 455 145" stroke="#1d4ed8" stroke-width="2.5" fill="none" marker-end="url(#arrowIso)" />
+  <text x="232" y="132" text-anchor="middle" font-size="10" font-weight="700" fill="#1e3a8a">decoder</text>
+  <text x="232" y="146" text-anchor="middle" font-size="9" fill="#1e3a8a">(proses 2, binary Go)</text>
+  <text x="232" y="163" text-anchor="middle" font-size="8.5" fill="#3730a3">tail send+recv.log</text>
+  <text x="232" y="175" text-anchor="middle" font-size="8.5" fill="#3730a3">-&gt; decoded.jsonl</text>
 
-  <!-- Box 3: filebeat-iso8583 -->
-  <rect x="460" y="90" width="165" height="110" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
-  <text x="542" y="115" text-anchor="middle" font-size="13" font-weight="700" fill="#1e3a8a">filebeat-iso8583</text>
-  <text x="542" y="135" text-anchor="middle" font-size="10" fill="#1e3a8a">filestream input</text>
-  <text x="542" y="152" text-anchor="middle" font-size="10" fill="#1e3a8a">parser ndjson</text>
-  <text x="542" y="169" text-anchor="middle" font-size="10" fill="#1e3a8a">(decoded.jsonl sudah JSON)</text>
+  <text x="160" y="192" text-anchor="middle" font-size="8" fill="#6366f1">2 proses, 1 filesystem bersama -- bukan 2 container</text>
 
-  <path d="M 625 145 L 665 145" stroke="#1d4ed8" stroke-width="2.5" fill="none" marker-end="url(#arrowIso)" />
+  <path d="M 300 145 L 335 145" stroke="#1d4ed8" stroke-width="2.5" fill="none" marker-end="url(#arrowIso)" />
 
-  <!-- Box 4: logstash-iso8583 -->
-  <rect x="670" y="90" width="175" height="110" rx="8" fill="#fff7ed" stroke="#c2410c" stroke-width="2" />
-  <text x="757" y="115" text-anchor="middle" font-size="13" font-weight="700" fill="#7c2d12">logstash-iso8583</text>
-  <text x="757" y="135" text-anchor="middle" font-size="10" fill="#7c2d12">persistent queue (disk)</text>
-  <text x="757" y="152" text-anchor="middle" font-size="10" fill="#7c2d12">buffer -- max_bytes 200mb</text>
-  <text x="757" y="169" text-anchor="middle" font-size="10" fill="#7c2d12">(~1 hari traffic lab ini)</text>
-  <text x="757" y="188" text-anchor="middle" font-size="9" fill="#9a3412">convert amount -&gt; integer</text>
+  <!-- Box 2: filebeat-iso8583 -->
+  <rect x="340" y="90" width="180" height="110" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
+  <text x="430" y="115" text-anchor="middle" font-size="13" font-weight="700" fill="#1e3a8a">filebeat-iso8583</text>
+  <text x="430" y="135" text-anchor="middle" font-size="10" fill="#1e3a8a">filestream input</text>
+  <text x="430" y="152" text-anchor="middle" font-size="10" fill="#1e3a8a">parser ndjson</text>
+  <text x="430" y="169" text-anchor="middle" font-size="10" fill="#1e3a8a">(decoded.jsonl sudah JSON)</text>
 
-  <path d="M 845 145 L 885 145" stroke="#1d4ed8" stroke-width="2.5" fill="none" marker-end="url(#arrowIso)" />
+  <path d="M 520 145 L 555 145" stroke="#1d4ed8" stroke-width="2.5" fill="none" marker-end="url(#arrowIso)" />
 
-  <!-- Box 5: Elasticsearch -->
-  <rect x="890" y="90" width="90" height="110" rx="8" fill="#ecfdf5" stroke="#047857" stroke-width="2" />
-  <text x="935" y="120" text-anchor="middle" font-size="12" font-weight="700" fill="#065f46">Elastic-</text>
-  <text x="935" y="136" text-anchor="middle" font-size="12" font-weight="700" fill="#065f46">search</text>
-  <text x="935" y="160" text-anchor="middle" font-size="9" fill="#065f46">index</text>
-  <text x="935" y="174" text-anchor="middle" font-size="8.5" fill="#065f46">iso8583-switch-*</text>
+  <!-- Box 3: logstash-iso8583 -->
+  <rect x="560" y="90" width="220" height="110" rx="8" fill="#fff7ed" stroke="#c2410c" stroke-width="2" />
+  <text x="670" y="115" text-anchor="middle" font-size="13" font-weight="700" fill="#7c2d12">logstash-iso8583</text>
+  <text x="670" y="135" text-anchor="middle" font-size="10" fill="#7c2d12">persistent queue (disk)</text>
+  <text x="670" y="152" text-anchor="middle" font-size="10" fill="#7c2d12">buffer -- max_bytes 200mb</text>
+  <text x="670" y="169" text-anchor="middle" font-size="10" fill="#7c2d12">(~1 hari traffic lab ini)</text>
+  <text x="670" y="188" text-anchor="middle" font-size="9" fill="#9a3412">convert amount -&gt; integer</text>
+
+  <path d="M 780 145 L 815 145" stroke="#1d4ed8" stroke-width="2.5" fill="none" marker-end="url(#arrowIso)" />
+
+  <!-- Box 4: Elasticsearch -->
+  <rect x="820" y="90" width="160" height="110" rx="8" fill="#ecfdf5" stroke="#047857" stroke-width="2" />
+  <text x="900" y="120" text-anchor="middle" font-size="13" font-weight="700" fill="#065f46">Elasticsearch</text>
+  <text x="900" y="150" text-anchor="middle" font-size="9" fill="#065f46">index</text>
+  <text x="900" y="166" text-anchor="middle" font-size="9.5" fill="#065f46">iso8583-switch-*</text>
 
   <!-- explanatory steps -->
   <rect x="20" y="238" width="960" height="175" rx="10" fill="#f4f4f5" stroke="#d4d4d8" stroke-width="1.5" />
-  <text x="40" y="260" font-size="12" fill="#27272a"><tspan font-weight="700">1. log-generator</tspan> menulis pesan ISO 8583 SINTETIS ke DUA file terpisah -- request MTI 0200 ke <tspan font-family="monospace">switch-send.log</tspan>, response MTI 0210 ke <tspan font-family="monospace">switch-recv.log</tspan> (format wrapper <tspan font-family="monospace">@TAG@</tspan>, mirror S/R capture switch nyata) -- institusi fiktif "TDEMO", PAN dari test BIN range, BUKAN data institusi manapun.</text>
-  <text x="40" y="280" font-size="12" fill="#27272a"><tspan font-weight="700">2. decoder</tspan> (binary Go hasil build sendiri, pakai library <tspan font-family="monospace">moov-io/iso8583</tspan>) tail KEDUA file itu konkuren dan decode tiap pesan ISO 8583 (bitmap + field) jadi satu baris JSON, ditandai <tspan font-family="monospace">capture_direction</tspan> (1=send, 2=recv) -- binary-nya ada di <tspan font-family="monospace">iso8583-switch/decoder/bin/</tspan>, bisa dijalankan manual untuk dilihat peserta.</text>
+  <text x="40" y="260" font-size="12" fill="#27272a"><tspan font-weight="700">1. iso8583-switch-vm</tspan> adalah SATU container ("VM") yang di dalamnya JALAN BERSAMAAN 2 proses -- <tspan font-family="monospace">log-generator</tspan> (Python) menulis pesan ISO 8583 SINTETIS ke DUA file (request MTI 0200 ke <tspan font-family="monospace">switch-send.log</tspan>, response MTI 0210 ke <tspan font-family="monospace">switch-recv.log</tspan>, format wrapper <tspan font-family="monospace">@TAG@</tspan>) -- institusi fiktif "TDEMO", PAN dari test BIN range, BUKAN data institusi manapun.</text>
+  <text x="40" y="280" font-size="12" fill="#27272a"><tspan font-weight="700">2. decoder</tspan> (proses ke-2 di VM yang SAMA, binary Go hasil build sendiri, pakai library <tspan font-family="monospace">moov-io/iso8583</tspan>) tail KEDUA file itu konkuren lewat filesystem bersama (bukan jaringan) dan decode tiap pesan jadi satu baris JSON, ditandai <tspan font-family="monospace">capture_direction</tspan> (1=send, 2=recv) -- binary-nya ada di <tspan font-family="monospace">iso8583-switch/decoder/bin/</tspan>, bisa dijalankan manual untuk dilihat peserta.</text>
   <text x="40" y="300" font-size="12" fill="#27272a"><tspan font-weight="700">3. filebeat-iso8583</tspan> membaca <tspan font-family="monospace">decoded.jsonl</tspan> (sudah JSON bersih, parser <tspan font-family="monospace">ndjson</tspan>) dan mengirimkannya ke Logstash lewat protokol beats.</text>
   <text x="40" y="320" font-size="12" fill="#27272a"><tspan font-weight="700">4. logstash-iso8583</tspan> memakai <tspan font-family="monospace">persistent queue</tspan> (disk, bukan memory) sebagai buffer -- kalau Elasticsearch sempat tidak bisa diakses, event tetap aman sampai +-1 hari traffic lab ini sebelum antrean penuh.</text>
   <text x="40" y="340" font-size="12" fill="#27272a"><tspan font-weight="700">5. Elasticsearch</tspan> menyimpan hasil akhir ke index <tspan font-family="monospace">iso8583-switch-*</tspan>, siap dieksplorasi lewat Discover/Dev Tools -- persis seperti Robot Shop/host-security di topik lain sesi ini.</text>
