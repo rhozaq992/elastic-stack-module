@@ -11,3 +11,8 @@ Silabus_ELK_Training_V2.xlsx
 *.swp
 lab/day-2-query-relevance/sesi-3-query-dsl/parsed_transactions.jsonl
 lab/day-2-query-relevance/sesi-3-query-dsl/raw_switch_capture.log
+
+# Config Claude Code lokal (symlink ke repo private elk-training-sync,
+# hook SessionStart buat cek status git antar device) -- JANGAN pernah
+# ikut commit ke repo public ini.
+.claude/settings.json
