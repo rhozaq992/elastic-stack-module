@@ -256,6 +256,17 @@ chown logstash:logstash /etc/logstash/conf.d/native-demo.conf
 > sama sekali, seperti versi lab sebelumnya), ganti blok `output` dengan
 > `stdout { codec => rubydebug }` -- keduanya valid, cuma beda tujuan.
 
+> **CATATAN KEAMANAN** (kalau pola ini mau dipakai di luar lab training
+> ini): `http://elasticsearch:9200` di atas plain HTTP, TANPA TLS dan
+> TANPA autentikasi -- cukup untuk jaringan Docker internal terisolasi
+> ini, TAPI untuk sistem produksi/tingkat keamanan lebih tinggi
+> Elasticsearch-nya perlu `xpack.security.enabled` + kredensial, dan
+> output Logstash ini perlu `ssl_enabled`/`ssl_certificate_authorities`
+> (TLS, idealnya mutual TLS). Field `pan` yang mengalir lewat pipeline
+> ini juga BELUM di-mask/truncate -- lihat catatan yang sama di
+> `iso8583-switch/decoder/src/main.go` (PCI DSS mewajibkan PAN tidak
+> pernah plaintext penuh di storage/log produksi).
+
 **4. Buat config Filebeat** — membaca `decoded.jsonl` (hasil decode ISO
 8583 pada langkah 5, sudah berbentuk JSON), mengirim ke Logstash:
 ```bash
@@ -280,6 +291,17 @@ EOF
 > Filebeat membaca file, mengirim ke Logstash lewat port beats. Parser
 > `ndjson` dipakai (bukan grok) karena sumbernya sudah JSON bersih, hasil
 > decoder ISO 8583 pada topik baru di bagian bawah README ini.
+
+> **CATATAN KEAMANAN:** hop `output.logstash` di atas ke `localhost:5044`
+> aman dari eksposur jaringan luar karena Filebeat DAN Logstash sama-sama
+> jalan DI DALAM container `native-vm` yang sama -- beda dari stack
+> `iso8583-switch` di topik bawah yang Filebeat/Logstash-nya lintas
+> container lewat Docker network (plain TCP juga, lihat catatan di
+> `iso8583-switch/filebeat/filebeat.yml`). Kalau pola instalasi manual
+> ini diadaptasi ke topologi produksi sungguhan (Filebeat di satu mesin,
+> Logstash di mesin terpisah), tambahkan TLS (`ssl.certificate_authorities`,
+> `ssl.certificate`, `ssl.key`) pada `output.logstash` -- jangan asumsikan
+> `localhost` di lab ini otomatis berarti aman di topologi multi-host.
 
 **5. Siapkan data contoh ISO 8583** (dummy, institusi fiktif "TDEMO" —
 BUKAN data institusi manapun) — pakai binary decoder yang SAMA dengan
