@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 420" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="1040" height="420" fill="#ffffff" rx="12" />
+  <text x="520" y="32" text-anchor="middle" font-size="20" font-weight="700" fill="#1a1a1a">Siklus ILM: Hot -&gt; Warm -&gt; Cold -&gt; Frozen -&gt; Delete</text>
+  <text x="520" y="53" text-anchor="middle" font-size="12" fill="#52525b">Index bergerak satu arah, dipindahkan otomatis begitu min_age tiap fase tercapai</text>
+
+  <!-- arrow line -->
+  <line x1="55" y1="215" x2="985" y2="215" stroke="#a1a1aa" stroke-width="2" marker-end="url(#arrow)" />
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#a1a1aa" />
+    </marker>
+  </defs>
+
+  <!-- HOT -->
+  <rect x="40" y="75" width="180" height="128" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="2" />
+  <text x="130" y="97" text-anchor="middle" font-size="14" font-weight="700" fill="#991b1b">HOT</text>
+  <text x="130" y="117" text-anchor="middle" font-size="10.5" fill="#7f1d1d">tulis + baca aktif</text>
+  <text x="130" y="135" text-anchor="middle" font-size="10.5" fill="#7f1d1d">rollover, set_priority</text>
+  <text x="130" y="153" text-anchor="middle" font-size="10.5" fill="#7f1d1d">hardware: SSD/NVMe</text>
+  <text x="130" y="171" text-anchor="middle" font-size="10" font-weight="700" fill="#b91c1c">rollover: 1 menit (lab)</text>
+  <text x="130" y="188" text-anchor="middle" font-size="9" fill="#b91c1c">produksi: 1 hari / 50gb</text>
+
+  <!-- WARM -->
+  <rect x="240" y="75" width="180" height="128" rx="10" fill="#fffbeb" stroke="#b45309" stroke-width="2" />
+  <text x="330" y="97" text-anchor="middle" font-size="14" font-weight="700" fill="#78350f">WARM</text>
+  <text x="330" y="117" text-anchor="middle" font-size="10.5" fill="#78350f">baca aktif, tulis berhenti</text>
+  <text x="330" y="135" text-anchor="middle" font-size="10.5" fill="#78350f">shrink, forcemerge</text>
+  <text x="330" y="153" text-anchor="middle" font-size="10.5" fill="#78350f">hardware: disk lebih murah</text>
+  <text x="330" y="171" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">min_age: 2 menit (lab)</text>
+  <text x="330" y="188" text-anchor="middle" font-size="9" fill="#92400e">produksi: 1 hari</text>
+
+  <!-- COLD -->
+  <rect x="440" y="75" width="180" height="128" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" />
+  <text x="530" y="97" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a">COLD</text>
+  <text x="530" y="117" text-anchor="middle" font-size="10.5" fill="#1e3a8a">jarang diakses</text>
+  <text x="530" y="135" text-anchor="middle" font-size="10.5" fill="#1e3a8a">readonly</text>
+  <text x="530" y="153" text-anchor="middle" font-size="10.5" fill="#1e3a8a">hardware: disk kapasitas besar</text>
+  <text x="530" y="171" text-anchor="middle" font-size="10" font-weight="700" fill="#1e40af">min_age: 3 menit (lab)</text>
+  <text x="530" y="188" text-anchor="middle" font-size="9" fill="#1e40af">produksi: 7 hari</text>
+
+  <!-- FROZEN -->
+  <rect x="640" y="75" width="180" height="128" rx="10" fill="#f5f3ff" stroke="#6d28d9" stroke-width="2" stroke-dasharray="5 3" />
+  <text x="730" y="97" text-anchor="middle" font-size="14" font-weight="700" fill="#4c1d95">FROZEN</text>
+  <text x="730" y="117" text-anchor="middle" font-size="10.5" fill="#4c1d95">hampir tak pernah dibuka</text>
+  <text x="730" y="135" text-anchor="middle" font-size="10.5" fill="#4c1d95">(opsional, jarang dipakai)</text>
+  <text x="730" y="153" text-anchor="middle" font-size="10.5" fill="#4c1d95">retensi compliance</text>
+  <text x="730" y="171" text-anchor="middle" font-size="10" font-weight="700" fill="#5b21b6">di luar cakupan lab</text>
+
+  <!-- DELETE -->
+  <rect x="840" y="75" width="150" height="128" rx="10" fill="#f4f4f5" stroke="#52525b" stroke-width="2" />
+  <text x="915" y="97" text-anchor="middle" font-size="14" font-weight="700" fill="#27272a">DELETE</text>
+  <text x="915" y="117" text-anchor="middle" font-size="10.5" fill="#3f3f46">dihapus permanen</text>
+  <text x="915" y="135" text-anchor="middle" font-size="10.5" fill="#3f3f46">wait_for_snapshot,</text>
+  <text x="915" y="150" text-anchor="middle" font-size="10.5" fill="#3f3f46">delete</text>
+  <text x="915" y="171" text-anchor="middle" font-size="10" font-weight="700" fill="#3f3f46">min_age: 4 menit (lab)</text>
+  <text x="915" y="188" text-anchor="middle" font-size="9" fill="#3f3f46">produksi: 30 hari</text>
+
+  <!-- wait_for_snapshot callout -->
+  <rect x="700" y="255" width="290" height="70" rx="10" fill="#ecfdf5" stroke="#047857" stroke-width="1.5" />
+  <text x="845" y="277" text-anchor="middle" font-size="11.5" font-weight="700" fill="#065f46">wait_for_snapshot: policy lab-daily-snapshots</text>
+  <text x="845" y="297" text-anchor="middle" font-size="10.5" fill="#065f46">Index BARU dihapus setelah SLM policy ini</text>
+  <text x="845" y="313" text-anchor="middle" font-size="10.5" fill="#065f46">berhasil snapshot index ini, bukan sebelumnya.</text>
+  <line x1="845" y1="255" x2="915" y2="203" stroke="#047857" stroke-width="1.5" stroke-dasharray="3 2" />
+
+  <rect x="40" y="340" width="960" height="60" rx="10" fill="#f4f4f5" stroke="#d4d4d8" stroke-width="1.5" />
+  <text x="60" y="362" font-size="12" fill="#3f3f46">min_age dihitung sejak index PERTAMA KALI di-rollover, BUKAN sejak index dibuat.</text>
+  <text x="60" y="382" font-size="12" fill="#3f3f46">Angka "(lab)" dikompres jadi menit supaya progresnya bisa dilihat langsung -- pantau lewat tab Index lifecycle di Kibana.</text>
+</svg>
