@@ -53,18 +53,27 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: iso8583tool encode|decode [file...]")
+		fmt.Fprintln(os.Stderr, "usage: iso8583tool encode|decode [-file] [path...]")
 		os.Exit(2)
 	}
 	switch os.Args[1] {
 	case "encode":
 		runEncode()
 	case "decode":
-		paths := os.Args[2:]
-		if len(paths) == 0 {
-			paths = []string{"-"}
+		args := os.Args[2:]
+		tailing := true
+		if len(args) > 0 && args[0] == "-file" {
+			// -file: decode pesan yang SUDAH ada di file lalu keluar (dipakai
+			// untuk file export/hasil capture statis) -- beda dari default
+			// (tail -f style, dipakai untuk log switch yang masih ditulis
+			// proses lain selama sesi berjalan, TIDAK diubah).
+			tailing = false
+			args = args[1:]
 		}
-		runDecode(paths)
+		if len(args) == 0 {
+			args = []string{"-"}
+		}
+		runDecode(args, tailing)
 	default:
 		fmt.Fprintf(os.Stderr, "unknown subcommand %q\n", os.Args[1])
 		os.Exit(2)
@@ -151,7 +160,7 @@ func must(err error) {
 // goroutine menulis lewat satu writer yang sama, dikunci mutex, supaya
 // baris JSON dari 2 file yang bersamaan tidak saling interleave/corrupt
 // di stdout (Filebeat mengasumsikan 1 objek JSON valid per baris).
-func runDecode(paths []string) {
+func runDecode(paths []string, tailing bool) {
 	out := bufio.NewWriter(os.Stdout)
 	defer out.Flush()
 	var writeMu sync.Mutex
@@ -180,7 +189,7 @@ func runDecode(paths []string) {
 		go func(f *os.File) {
 			defer wg.Done()
 			defer f.Close()
-			tailReader(f, true, writeLine)
+			tailReader(f, tailing, writeLine)
 		}(f)
 	}
 	wg.Wait()
